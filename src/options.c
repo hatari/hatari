@@ -702,9 +702,11 @@ static void Opt_ShowHelp(void)
  * otherwise 'value' is show as the option user gave.
  * Return false if error string was given, otherwise true
  */
-bool Opt_ShowError(opt_id_t optid, const char *value, const char *error)
+bool Opt_ShowError(int optid, const char *value, const char *error)
 {
 	const opt_t *opt;
+
+	assert(optid > 0);  /* enum zero is OPT_HEADER */
 
 	Opt_ShowVersion();
 	printf("Usage:\n hatari [options] [disk image name]\n\n"
@@ -720,7 +722,10 @@ bool Opt_ShowError(opt_id_t optid, const char *value, const char *error)
 		{
 			for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 			{
-				if (optid == opt->id)
+				/* enum signedness is implementation dependent,
+				 * only in C23 one could specify enum type
+				 */
+				if ((opt_id_t)optid == opt->id)
 					break;
 			}
 			if (value != NULL)
