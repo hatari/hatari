@@ -9,11 +9,18 @@
 
 const char Screen_fileid[] = "Hatari screen.c";
 
-#include <SDL.h>
-#include <SDL_endian.h>
 #include <assert.h>
 
 #include "main.h"
+
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
+#include <SDL.h>
+#define SDL_MapSurfaceRGB(s, r, g, b) SDL_MapRGB(s->format, r, g, b)
+#define SDL_SetWindowRelativeMouseMode(w, b) SDL_SetRelativeMouseMode(b)
+#endif
+
 #include "configuration.h"
 #include "control.h"
 #include "conv_gen.h"
@@ -93,7 +100,7 @@ void Screen_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32
 
 uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue)
 {
-	return SDL_MapRGB(sdlscrn->format, red, green, blue);
+	return SDL_MapSurfaceRGB(sdlscrn, red, green, blue);
 }
 
 
@@ -124,6 +131,21 @@ static void Screen_FreeSDL2Resources(void)
 void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
                            int *rshift, int *gshift, int *bshift)
 {
+#if ENABLE_SDL3
+	if (rmask)
+		*rmask = 0x00FF0000;
+	if (gmask)
+		*gmask = 0x0000FF00;
+	if (bmask)
+		*bmask = 0x000000FF;
+
+	if (rshift)
+		*rshift = 16;
+	if (gshift)
+		*gshift = 8;
+	if (bshift)
+		*bshift = 0;
+#else
 	if (rmask)
 		*rmask = sdlscrn->format->Rmask;
 	if (gmask)
@@ -137,6 +159,7 @@ void Screen_GetPixelFormat(uint32_t *rmask, uint32_t *gmask, uint32_t *bmask,
 		*gshift = sdlscrn->format->Gshift;
 	if (bshift)
 		*bshift = sdlscrn->format->Bshift;
+#endif
 }
 
 
@@ -296,9 +319,9 @@ void Screen_GetDesktopSize(int *width, int *height)
  */
 void Screen_SetTextureScale(int width, int height, int win_width, int win_height, bool bForce)
 {
-	static char prev_quality;
 	float scale_w, scale_h, scale;
-	char quality;
+	static bool prev_nearest;
+	bool nearest;
 
 	if (!(bUseSdlRenderer && sdlRenderer))
 		return;
@@ -318,21 +341,19 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 		 */
 		scale = (scale_w + scale_h) / 2.0;
 
-	if (scale == floorf(scale))
-		quality = '0';	// nearest pixel
-	else
-		quality = '1';	// linear filtering
+	nearest = (scale == floorf(scale));	// use nearest pixel filtering?
 
-	DEBUGPRINT(("%dx%d / %dx%d -> scale = %g, Render Scale Quality = %c\n",
-		    win_width, win_height, width, height, scale, quality));
+	DEBUGPRINT(("%dx%d / %dx%d -> scale = %g, nearest pixel = %d\n",
+		    win_width, win_height, width, height, scale, nearest));
 
-	if (bForce || quality != prev_quality)
+	if (bForce || nearest != prev_nearest)
 	{
-		char hint[2] = { quality, 0 };
-		prev_quality = quality;
+#if !ENABLE_SDL3
+		char hint[2] = { nearest ? '0' : '1', 0 };
 
 		/* hint needs to be there before texture */
 		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
+#endif
 
 		if (sdlTexture)
 		{
@@ -345,10 +366,15 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 					       width, height);
 		if (!sdlTexture)
 		{
-			fprintf(stderr, "%dx%d@%d texture\n",
-				width, height, sdlscrn->format->BitsPerPixel);
+			fprintf(stderr, "%dx%d texture\n", width, height);
 			Main_ErrorExit("Failed to create texture:", SDL_GetError(), -3);
 		}
+
+#if ENABLE_SDL3
+		if (nearest)
+			SDL_SetTextureScaleMode(sdlTexture, SDL_SCALEMODE_NEAREST);
+#endif
+		prev_nearest = nearest;
 	}
 }
 
@@ -360,7 +386,7 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
-	char *psSdlVideoDriver;
+	const char *psSdlVideoDriver;
 	bool bUseDummyMode;
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
@@ -399,10 +425,12 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 	if (bInFullScreen)
 	{
-		sdlVideoFlags = SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
+		sdlVideoFlags = SDL_WINDOW_INPUT_GRABBED;
+#if !ENABLE_SDL3
 		if (ConfigureParams.Screen.bKeepResolution)
-			sdlVideoFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+			sdlVideoFlags |= SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN_DESKTOP;
 		else
+#endif
 			sdlVideoFlags |= SDL_WINDOW_FULLSCREEN;
 	}
 	else
@@ -443,7 +471,11 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 
 	/* Disable closing Hatari with alt+F4 under Windows as alt+F4 can be used by some emulated programs */
+#if ENABLE_SDL3
+	SDL_SetHintWithPriority(SDL_HINT_WINDOWS_CLOSE_ON_ALT_F4, "0", SDL_HINT_OVERRIDE);
+#else
 	SDL_SetHintWithPriority(SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1", SDL_HINT_OVERRIDE);
+#endif
 
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d (%s) -> window: %d x %d\n", width, height,
@@ -456,8 +488,11 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 	else
 	{
-		sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
+		sdlWindow = SDL_CreateWindow("Hatari",
+#if !ENABLE_SDL3
 		                             SDL_WINDOWPOS_UNDEFINED,
+		                             SDL_WINDOWPOS_UNDEFINED,
+#endif
 		                             win_width, win_height, sdlVideoFlags);
 		if (!sdlWindow)
 		{
@@ -468,9 +503,12 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	if (bUseSdlRenderer)
 	{
 		int rm, bm, gm;
-		SDL_RendererInfo sRenderInfo = { 0 };
 
+#if ENABLE_SDL3
+		sdlRenderer = SDL_CreateRenderer(sdlWindow, NULL);
+#else
 		sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
+#endif
 		if (!sdlRenderer)
 		{
 			fprintf(stderr, "%dx%d renderer\n", win_width, win_height);
@@ -478,7 +516,13 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		}
 
 		if (bInFullScreen)
+#if ENABLE_SDL3
+			SDL_SetRenderLogicalPresentation(sdlRenderer, width,
+							 height,
+							 SDL_LOGICAL_PRESENTATION_LETTERBOX);
+#else
 			SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+#endif
 		else
 			SDL_RenderSetScale(sdlRenderer, scale, scale);
 
@@ -487,13 +531,19 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		SDL_RenderClear(sdlRenderer);
 		SDL_RenderPresent(sdlRenderer);
 
-		SDL_GetRendererInfo(sdlRenderer, &sRenderInfo);
-		bIsSoftwareRenderer = sRenderInfo.flags & SDL_RENDERER_SOFTWARE;
-
 		rm = 0x00FF0000;
 		gm = 0x0000FF00;
 		bm = 0x000000FF;
+#if ENABLE_SDL3
+		sdlscrn = SDL_CreateSurface(width, height,
+					    SDL_GetPixelFormatForMasks(32, rm, gm, bm, 0));
+#else
 		sdlscrn = SDL_CreateRGBSurface(0, width, height, 32, rm, gm, bm, 0);
+
+		SDL_RendererInfo sRenderInfo = { 0 };
+		SDL_GetRendererInfo(sdlRenderer, &sRenderInfo);
+		bIsSoftwareRenderer = sRenderInfo.flags & SDL_RENDERER_SOFTWARE;
+#endif
 
 		Screen_SetTextureScale(width, height, win_width, win_height, true);
 	}
@@ -569,6 +619,17 @@ void Screen_Init(void)
 {
 	SDL_Surface *pIconSurf;
 	char sIconFileName[FILENAME_MAX];
+#if ENABLE_SDL3
+	const SDL_DisplayMode *dm;
+
+	/* Get information about desktop resolution */
+	dm = SDL_GetDesktopDisplayMode(1);
+	if (dm)
+	{
+		desktop_width = dm->w;
+		desktop_height = dm->h;
+	}
+#else
 	SDL_DisplayMode dm;
 
 	/* Get information about desktop resolution */
@@ -577,6 +638,7 @@ void Screen_Init(void)
 		desktop_width = dm.w;
 		desktop_height = dm.h;
 	}
+#endif
 	else
 	{
 		Log_Printf(LOG_ERROR, "SDL_GetDesktopDisplayMode failed: %s",
@@ -606,7 +668,7 @@ void Screen_Init(void)
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{
-		SDL_SetColorKey(pIconSurf, SDL_TRUE, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
+		SDL_SetColorKey(pIconSurf, SDL_TRUE, SDL_MapSurfaceRGB(pIconSurf, 255, 255, 255));
 		SDL_SetWindowIcon(sdlWindow, pIconSurf);
 		SDL_FreeSurface(pIconSurf);
 	}
@@ -680,7 +742,8 @@ void Screen_EnterFullScreen(void)
 		{
 			ConvST_Refresh();
 		}
-		SDL_SetRelativeMouseMode(true);  /* Grab mouse pointer in fullscreen */
+		/* Grab mouse pointer in fullscreen */
+		SDL_SetWindowRelativeMouseMode(sdlWindow, true);
 	}
 }
 
@@ -728,7 +791,7 @@ void Screen_ReturnFromFullScreen(void)
 		if (!bGrabMouse)
 		{
 			/* Un-grab mouse pointer in windowed mode */
-			SDL_SetRelativeMouseMode(false);
+			SDL_SetWindowRelativeMouseMode(sdlWindow, false);
 		}
 	}
 }
@@ -736,14 +799,14 @@ void Screen_ReturnFromFullScreen(void)
 
 void Screen_UngrabMouse(void)
 {
-	SDL_SetRelativeMouseMode(false);
+	SDL_SetWindowRelativeMouseMode(sdlWindow, false);
 	bGrabMouse = false;
 }
 
 
 void Screen_GrabMouseIfNecessary(void)
 {
-	SDL_SetRelativeMouseMode(bInFullScreen || bGrabMouse);
+	SDL_SetWindowRelativeMouseMode(sdlWindow, bInFullScreen || bGrabMouse);
 }
 
 
@@ -869,7 +932,11 @@ uint32_t Screen_GetGenConvHeight(void)
  */
 int Screen_SaveBMP(const char *filename)
 {
+#if ENABLE_SDL3
+	if(!SDL_SaveBMP_IO(sdlscrn, SDL_IOFromFile(filename, "wb"), 1))
+#else
 	if(SDL_SaveBMP_RW(sdlscrn, SDL_RWFromFile(filename, "wb"), 1) < 0)
+#endif
 	{
 		Log_Printf(LOG_WARN, "SDL_SaveBMP_RW failed: %s", SDL_GetError());
 		return -1;

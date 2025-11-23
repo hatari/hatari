@@ -53,6 +53,10 @@ const char Statusbar_fileid[] = "Hatari statusbar.c";
 #include "str.h"
 #include "lilo.h"
 
+#if !ENABLE_SDL3
+#define SDL_MapSurfaceRGB(s, r, g, b) SDL_MapRGB(s->format, r, g, b)
+#endif
+
 #define DEBUG 0
 #if DEBUG
 # include <execinfo.h>
@@ -276,7 +280,11 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 	if (OverlayUnderside && (
 	    OverlayUnderside->w != OverlayLedRect.w ||
 	    OverlayUnderside->h != OverlayLedRect.h ||
+#if ENABLE_SDL3
+	    OverlayUnderside->format != surf->format))
+#else
 	    OverlayUnderside->format->BitsPerPixel != surf->format->BitsPerPixel))
+#endif
 	{
 		SDL_FreeSurface(OverlayUnderside);
 		OverlayUnderside = NULL;
@@ -304,15 +312,15 @@ void Statusbar_Init(SDL_Surface *surf)
 	assert(surf);
 
 	/* dark green and light green for leds themselves */
-	LedColor[ LED_STATE_OFF ]	= SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
-	LedColor[ LED_STATE_ON ]	= SDL_MapRGB(surf->format, 0x00, 0xc0, 0x00);
-	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
-	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
-	BltColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
-	BltColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
-	RecColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
-	RecColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
-	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
+	LedColor[ LED_STATE_OFF ]	= SDL_MapSurfaceRGB(surf, 0x00, 0x40, 0x00);
+	LedColor[ LED_STATE_ON ]	= SDL_MapSurfaceRGB(surf, 0x00, 0xc0, 0x00);
+	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapSurfaceRGB(surf, 0x00, 0xe0, 0x00);
+	LedColorBg  = SDL_MapSurfaceRGB(surf, 0x00, 0x00, 0x00);
+	BltColorOff = SDL_MapSurfaceRGB(surf, 0x40, 0x00, 0x00);
+	BltColorOn  = SDL_MapSurfaceRGB(surf, 0xe0, 0x00, 0x00);
+	RecColorOff = SDL_MapSurfaceRGB(surf, 0x40, 0x00, 0x00);
+	RecColorOn  = SDL_MapSurfaceRGB(surf, 0xe0, 0x00, 0x00);
+	GrayBg      = SDL_MapSurfaceRGB(surf, 0xc0, 0xc0, 0xc0);
 
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++)
@@ -763,12 +771,17 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
 	if (!OverlayUnderside)
 	{
 		SDL_Surface *bak;
+#if ENABLE_SDL3
+		bak = SDL_CreateSurface(OverlayLedRect.w, OverlayLedRect.h,
+					surf->format);
+#else
 		SDL_PixelFormat *fmt = surf->format;
 		bak = SDL_CreateRGBSurface(surf->flags,
 					   OverlayLedRect.w, OverlayLedRect.h,
 					   fmt->BitsPerPixel,
 					   fmt->Rmask, fmt->Gmask, fmt->Bmask,
 					   fmt->Amask);
+#endif
 		assert(bak);
 		OverlayUnderside = bak;
 	}

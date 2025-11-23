@@ -7,9 +7,14 @@
   Handling of the real joysticks/-pads from the host.
 */
 
-#include <SDL.h>
-
 #include "main.h"
+
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
+#include <SDL.h>
+#endif
+
 #include "configuration.h"
 #include "ioMem.h"
 #include "joy.h"
@@ -31,6 +36,12 @@
 #define STE_JOY_ANALOG_MIN_VALUE 0x04	/* minimum value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MID_VALUE 0x24	/* neutral mid value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MAX_VALUE 0x43	/* maximum value for STE analog joystick/paddle axis */
+
+static int nPadsConnected;
+
+#if ENABLE_SDL3
+static SDL_JoystickID *joy_ids;
+#endif
 
 static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structures */
 {
@@ -57,7 +68,7 @@ const char *JoyUI_GetName(int id)
  */
 int JoyUI_GetMaxId(void)
 {
-	int count = SDL_NumJoysticks();
+	int count = JoyUI_NumJoysticks();
 	if (count > JOYSTICK_COUNT)
 		count = JOYSTICK_COUNT;
 	if (count > 0)
@@ -67,7 +78,11 @@ int JoyUI_GetMaxId(void)
 
 int JoyUI_NumJoysticks(void)
 {
+#if ENABLE_SDL3
+	return nPadsConnected;
+#else
 	return SDL_NumJoysticks();
+#endif
 }
 
 
@@ -96,17 +111,26 @@ bool JoyUI_ValidateJoyId(int i)
  */
 void JoyUI_Init(void)
 {
-	int i, nPadsConnected;
+	int i;
 
 	/* Initialise SDL's joystick subsystem: */
+#if ENABLE_SDL3
+	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
+#else
 	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
+#endif
 	{
 		Log_Printf(LOG_ERROR, "Could not init joysticks: %s\n", SDL_GetError());
 		return;
 	}
 
 	/* Scan joystick connection array for working joysticks */
+#if ENABLE_SDL3
+	/* FIXME: The joy_ids handling likely needs some more works... */
+	joy_ids = SDL_GetJoysticks(&nPadsConnected);
+#else
 	nPadsConnected = SDL_NumJoysticks();
+#endif
 	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
 	{
 		/* Open the joystick for use */
@@ -132,11 +156,7 @@ void JoyUI_Init(void)
  */
 void JoyUI_UnInit(void)
 {
-	int i, nPadsConnected;
-
-	nPadsConnected = SDL_NumJoysticks();
-
-	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
+	for (int i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
 	{
 		if (bJoystickWorking[i] == true)
 		{
@@ -145,6 +165,11 @@ void JoyUI_UnInit(void)
 		}
 		sdlJoystick[i] = NULL;
 	}
+
+#if ENABLE_SDL3
+	SDL_free(joy_ids);
+#endif
+	nPadsConnected = 0;
 }
 
 

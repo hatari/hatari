@@ -8,7 +8,11 @@
 #ifndef HATARI_SCREEN_SDL_H
 #define HATARI_SCREEN_SDL_H
 
+#if ENABLE_SDL3
+#include <SDL3/SDL_video.h>
+#else
 #include <SDL_video.h>    /* for SDL_Surface */
+#endif
 
 extern SDL_Surface *sdlscrn;
 extern SDL_Window *sdlWindow;

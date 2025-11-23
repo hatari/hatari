@@ -27,6 +27,10 @@ const char Keymap_fileid[] = "Hatari keymap.c";
 #include "debugui.h"
 #include "log.h"
 
+#if ENABLE_SDL3
+#include <SDL3/SDL_oldnames.h>
+#endif
+
 /* if not able to map */
 #define ST_NO_SCANCODE 0xff
 
