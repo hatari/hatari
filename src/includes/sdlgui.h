@@ -10,7 +10,11 @@
 #ifndef HATARI_SDLGUI_H
 #define HATARI_SDLGUI_H
 
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL.h>
+#endif
 
 /* object types: */
 enum

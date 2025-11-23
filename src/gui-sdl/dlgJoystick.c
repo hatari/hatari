@@ -14,6 +14,12 @@ const char DlgJoystick_fileid[] = "Hatari dlgJoystick.c";
 #include "joy_ui.h"
 #include "str.h"
 
+#if ENABLE_SDL3
+#define ev2key(e) e.key.key
+#else
+#define ev2key(e) e.key.keysym.sym
+#endif
+
 #define DLGJOY_STJOYNAME     3
 #define DLGJOY_PREVSTJOY     4
 #define DLGJOY_NEXTSTJOY     5
@@ -135,7 +141,7 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 		SDL_WaitEvent(&sdlEvent);
 		if (sdlEvent.type == SDL_KEYDOWN)
 		{
-			*pKey = sdlEvent.key.keysym.sym;
+			*pKey = ev2key(sdlEvent);
 			snprintf(sKeyName, sizeof(sKeyName), "(now: '%s')", SDL_GetKeyName(*pKey));
 			SDLGui_DrawDialog(joykeysdlg);
 		}
@@ -234,7 +240,11 @@ static void DlgJoystick_MapOneButton(const char *name, int *pButton)
 				bDone = bSet;
 				break;
 			case SDL_KEYDOWN:
-				if ((sdlEvent.key.keysym.sym == SDLK_ESCAPE) && (sdlEvent.key.repeat == 0))
+#if ENABLE_SDL3
+				if (sdlEvent.key.key == SDLK_ESCAPE && sdlEvent.key.repeat == 0)
+#else
+				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE && sdlEvent.key.repeat == 0)
+#endif
 				{
 					*pButton = -1;
 					bSet = true;
@@ -243,7 +253,7 @@ static void DlgJoystick_MapOneButton(const char *name, int *pButton)
 				}
 				break;
 			case SDL_KEYUP:
-				if (sdlEvent.key.keysym.sym == SDLK_ESCAPE)
+				if (ev2key(sdlEvent) == SDLK_ESCAPE)
 				{
 					bDone = bSet;
 				}
@@ -286,7 +296,7 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy)
 	int i;
 
 	/* Check if joystick ID is available */
-	if (SDL_NumJoysticks() <= 0)
+	if (JoyUI_NumJoysticks() <= 0)
 	{
 		strcpy(sSdlStickName, "0: (none available)");
 	}

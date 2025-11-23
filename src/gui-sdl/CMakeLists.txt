@@ -12,4 +12,5 @@ add_library(GuiSdl
 	dlgSound.c dlgSystem.c sdlgui.c
 	)
 
+target_compile_definitions(GuiSdl PRIVATE SDL_ENABLE_OLD_NAMES)
 target_link_libraries(GuiSdl PRIVATE ${SDL2_LIBRARIES})
