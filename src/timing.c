@@ -211,7 +211,7 @@ uint32_t Timing_SetRunVBLs(uint32_t vbls)
 
 
 /**
- * Set VBL wait slowdown factor/multiplayer
+ * Set VBL wait slowdown factor/multiplier
  *
  * Return NULL on success, error string on error
  */
