@@ -86,6 +86,10 @@ natfeats/
 - "make test" test for Native Features emulator interface, and
    example code for different compilers / assemblers on how to use it
 
+options/
+- "make test" verifies that Hatari options parsing succeeds and fails
+   when expected, for all options
+
 profile/
 - "make test" test for debugger profile features and related
   breakpoint chaining + disassembling functionality
