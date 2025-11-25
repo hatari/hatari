@@ -1176,9 +1176,10 @@ static bool Opt_HandleArgument(const char *path)
 
 /**
  * parse all Hatari command line options and set Hatari state accordingly.
- * Returns true if everything was OK, false otherwise.
+ * Returns true if everything was OK to continue, false not. In latter case
+ * "exitval" is set to suitable exit value.
  */
-bool Opt_ParseParameters(int argc, const char * const argv[])
+bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 {
 	/* variables used only by a single option */
 	int ncpu, skips, planes, cpuclock, threshold, memsize;
@@ -1196,6 +1197,9 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = false;
 	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+
+	/* when false is returned, it's by default an error */
+	*exitval = 1;
 
 	for(i = 1; i < argc; i++)
 	{
@@ -1216,10 +1220,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[])
 			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
+			*exitval = 0;
 			return false;
 
 		case OPT_VERSION:
 			Opt_ShowVersion();
+			*exitval = 0;
 			return false;
 
 		case OPT_CONFIRMQUIT:

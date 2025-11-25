@@ -789,10 +789,11 @@ int main(int argc, char *argv[])
 	Main_LoadInitialConfig();
 
 	/* Check for any passed parameters */
-	if (!Opt_ParseParameters(argc, (const char * const *)argv))
+	int exitval;
+	if (!Opt_ParseParameters(argc, (const char * const *)argv, &exitval))
 	{
 		Control_RemoveFifo();
-		Main_ErrorExit(NULL, NULL, 1);
+		Main_ErrorExit(NULL, NULL, exitval);
 	}
 	/* monitor type option might require "reset" -> true */
 	Configuration_Apply(true);
