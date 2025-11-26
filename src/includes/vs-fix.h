@@ -10,6 +10,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> /* For getting SDK version */
 #include <direct.h>  /* For rmdir(), mkdir(), etc. */
+#include <malloc.h>  /* For alloca() */
 
 // Stop Visual Studio complaining
 #pragma warning (disable:4018)	/* signed / unsigned mismatch */
