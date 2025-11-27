@@ -454,14 +454,12 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	Screen_FreeSDL2Resources();
 	if (sdlWindow &&
 	    ((bInFullScreen && !ConfigureParams.Screen.bKeepResolution) ||
-	     (bPrevInFullScreen != bInFullScreen) ||
 	     bForceChange
 	    ))
 	{
 		SDL_DestroyWindow(sdlWindow);
 		sdlWindow = NULL;
 	}
-	bPrevInFullScreen = bInFullScreen;
 
 	if (bPrevUseVsync != ConfigureParams.Screen.bUseVsync)
 	{
@@ -483,8 +481,19 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 
 	if (sdlWindow)
 	{
-		if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MAXIMIZED) == 0)
+		if (bPrevInFullScreen != bInFullScreen)
+		{
+#if ENABLE_SDL3
+			SDL_SetWindowFullscreen(sdlWindow, bInFullScreen);
+			SDL_SyncWindow(sdlWindow);
+#else
+			SDL_SetWindowFullscreen(sdlWindow, sdlVideoFlags);
+#endif
+		}
+		else if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MAXIMIZED) == 0)
+		{
 			SDL_SetWindowSize(sdlWindow, win_width, win_height);
+		}
 	}
 	else
 	{
@@ -583,6 +592,8 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
 
 	Avi_SetSurface(sdlscrn->pixels, sdlscrn->w, sdlscrn->h, sdlscrn->pitch);
+
+	bPrevInFullScreen = bInFullScreen;
 
 	return true;
 }
