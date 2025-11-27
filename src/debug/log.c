@@ -708,6 +708,7 @@ void Log_Trace(const char *format, ...)
 
 /** dummy */
 const char* Log_CheckTraceOptions (const char *FlagsStr)
+{
 	return "Hatari has been compiled without ENABLE_TRACING!";
 }
 
