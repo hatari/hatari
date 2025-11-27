@@ -1153,10 +1153,18 @@ void SDLGui_ScaleMouseStateCoordinates(int *x, int *y)
 /**
  * Scale mouse event coordinates in case we've got a re-sized SDL2 window
  */
-static void SDLGui_ScaleMouseButtonCoordinates(SDL_MouseButtonEvent *bev)
+static void SDLGui_ScaleMouseButtonCoordinates(SDL_Event *event)
 {
+	SDL_MouseButtonEvent *bev = &event->button;
+
 	if (bInFullScreen)
+	{
+#if ENABLE_SDL3
+		SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(sdlWindow),
+		                                    event);
+#endif
 		return;
+	}
 
 	int x = bev->x, y = bev->y;
 	SDLGui_ScaleMouseStateCoordinates(&x, &y);
@@ -1332,7 +1340,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 					break;
 				}
 				/* It was the left button: Find the object under the mouse cursor */
-				SDLGui_ScaleMouseButtonCoordinates(&sdlEvent.button);
+				SDLGui_ScaleMouseButtonCoordinates(&sdlEvent);
 				obj = SDLGui_FindObj(dlg, sdlEvent.button.x, sdlEvent.button.y);
 				if (obj != SDLGUI_NOTFOUND)
 				{
@@ -1365,7 +1373,7 @@ int SDLGui_DoDialogExt(SGOBJ *dlg, bool (*isEventOut)(SDL_EventType), SDL_Event 
 					break;
 				}
 				/* It was the left button: Find the object under the mouse cursor */
-				SDLGui_ScaleMouseButtonCoordinates(&sdlEvent.button);
+				SDLGui_ScaleMouseButtonCoordinates(&sdlEvent);
 				obj = SDLGui_FindObj(dlg, sdlEvent.button.x, sdlEvent.button.y);
 				if (obj != SDLGUI_NOTFOUND)
 				{
