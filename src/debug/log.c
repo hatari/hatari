@@ -619,6 +619,8 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 	return errstr;
 }
 
+#if ENABLE_TRACING
+
 /**
  * Parse/check specified trace flags.
  * Return error string or NULL for success.
@@ -628,8 +630,6 @@ const char* Log_CheckTraceOptions (const char *FlagsStr)
 	uint64_t flags = LogTraceFlags;
 	return Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAY_SIZE(TraceFlags), &flags);
 }
-
-#if ENABLE_TRACING
 
 /**
  * Parse trace flags and store results in LogTraceFlags.
@@ -707,9 +707,14 @@ void Log_Trace(const char *format, ...)
 #else	/* !ENABLE_TRACING */
 
 /** dummy */
+const char* Log_CheckTraceOptions (const char *FlagsStr)
+	return "Hatari has been compiled without ENABLE_TRACING!";
+}
+
+/** dummy */
 const char* Log_SetTraceOptions (const char *FlagsStr)
 {
-	return "Hatari has been compiled without ENABLE_TRACING!";
+	return Log_CheckTraceOptions(FlagsStr);
 }
 
 /** dummy */
