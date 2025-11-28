@@ -621,18 +621,18 @@ static uint8_t Keymap_RemapKeyToSTScanCode(SDL_Keycode symkey, SDL_Scancode scan
 	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_SCANCODE)
 	{
 		uint8_t ret = Keymap_PcToStScanCode(scancode);
-
-		if (ret == ST_NO_SCANCODE && symkey)
+		if (ret != ST_NO_SCANCODE)
+			return ret;
+		if (symkey == 0)
 		{
-			/* assume SimulateKey
-			 * -> KeyUp/Down
-			 *    -> Remap (with scancode mode configured)
-			 *       -> PcToStScanCode
-			 */
-			return Keymap_SymbolicToStScanCode(symkey);
+			Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n",
+			           scancode);
+			return ret;
 		}
-		Log_Printf(LOG_WARN, "Unhandled scancode 0x%x!\n", scancode);
-		return ret;
+		/* If we did not get a scancode, but symkey is non-zero,
+		 * this likely means we're simulating a key press via
+		 * Keymap_SimulateCharacter(), thus use the function
+		 * Keymap_SymbolicToStScanCode() below to translate it */
 	}
 
 	/* Use symbolic mapping */
