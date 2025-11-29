@@ -426,7 +426,8 @@ void	SCC_Check_Lan_IsEnabled ( void )
  */
 void	SCC_Update_TimerC_Clock ( void )
 {
-	if ( Config_IsMachineTT() )
+	if ( Config_IsMachineTT()
+	    && ( ( SCC.Chn[1].WR[11] >> 3 ) & 3 ) == SCC_BAUDRATE_SOURCE_CLOCK_RTXC )
 	{
 		LOG_TRACE(TRACE_SCC, "scc update tcclk from tt mfp\n" );
 		SCC_Update_BaudRate ( 1 );		/* Update channel B baudrate if needed */
