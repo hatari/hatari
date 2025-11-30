@@ -51,7 +51,8 @@ if(WIN32)
 	endif(CMAKE_COMPILER_IS_GNUCC)
 endif(WIN32)
 
-include_directories(includes debug falcon cpu ${CMAKE_BINARY_DIR})
+include_directories(includes debug falcon cpu ${CMAKE_BINARY_DIR}
+                    ${SDL2_INCLUDE_DIRS})
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
