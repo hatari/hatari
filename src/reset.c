@@ -18,6 +18,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "gui_event.h"
 #include "hdc.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -142,7 +143,7 @@ int Reset_Cold(void)
 
 	/* Set mouse pointer to the middle of the screen */
 	Screen_GetDimension(NULL, &w, &h, NULL);
-	Main_WarpMouse(w / 2, h / 2, false);
+	GuiEvent_WarpMouse(w / 2, h / 2, false);
 
 	return Reset_ST(true);
 }

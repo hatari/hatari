@@ -56,14 +56,13 @@
 
 
 extern bool bQuitProgram;
+extern bool bEmulationActive;
 
 extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(int exitval);
 extern void Main_SetQuitValue(int exitval);
-extern void Main_WarpMouse(int x, int y, bool restore);
 extern bool Main_ShowCursor(bool show);
-extern void Main_EventHandler(void);
 extern void Main_ErrorExit(const char *msg1, const char *msg2, int errval);
 
 #endif /* ifndef HATARI_MAIN_H */

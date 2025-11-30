@@ -82,6 +82,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 #include "ikbd.h"
 #include "cycles.h"
 #include "cycInt.h"
+#include "gui_event.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"
@@ -1782,7 +1783,7 @@ static int IKBD_CheckPressedKey(void)
 void IKBD_InterruptHandler_AutoSend(void)
 {
 	/* Handle user events and other messages, (like quit message) */
-	Main_EventHandler();
+	GuiEvent_EventHandler();
 
 	/* Remove this interrupt from list and re-order.
 	 * (needs to be done after UI event handling so

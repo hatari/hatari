@@ -11,6 +11,7 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c";
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
+#include "gui_event.h"
 #include "sdlgui.h"
 #include "screen.h"
 #include "screen_sdl.h"
@@ -128,7 +129,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 				/* Memory snapshot has been loaded - leave GUI immediately */
 				*bLoadedSnapshot = true;
 				Main_ShowCursor(bOldMouseVisibility);
-				Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+				GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 				return true;
 			}
 			break;
@@ -178,7 +179,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		*bReset = true;
 
 	Main_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	return (retbut == MAINDLG_OK);
 }

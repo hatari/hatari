@@ -22,6 +22,7 @@ const char DlgAlert_fileid[] = "Hatari dlgAlert.c";
 
 #include "main.h"
 #include "dialog.h"
+#include "gui_event.h"
 #include "screen.h"
 #include "screen_sdl.h"
 #include "sdlgui.h"
@@ -168,7 +169,7 @@ static bool DlgAlert_ShowDlg(const char *text)
 
 	Screen_UpdateRect(sdlscrn, 0,0, 0,0);
 	Main_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	if (bWasEmuActive)
 		Main_UnPauseEmulation();

@@ -12,6 +12,7 @@
 #include "conv_gen.h"
 #include "conv_st.h"
 #include "endianswap.h"
+#include "gui_event.h"
 #include "ioMem.h"
 #include "log.h"
 #include "memorySnapShot.h"
@@ -869,7 +870,7 @@ void ConvGen_SetSize(int width, int height, bool bForceChange)
 	/* In case surface format changed, remap the native palette */
 	ConvGen_RemapPalette();
 
-	Main_WarpMouse(screenwidth / 2, screenheight / 2, false);
+	GuiEvent_WarpMouse(screenwidth / 2, screenheight / 2, false);
 }
 
 
