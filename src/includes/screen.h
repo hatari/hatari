@@ -19,7 +19,7 @@ void Screen_UnLock(void);
 void Screen_ClearScreen(void);
 void Screen_EnterFullScreen(void);
 void Screen_ReturnFromFullScreen(void);
-void Screen_UngrabMouse(void);
+bool Screen_UngrabMouse(void);
 void Screen_GrabMouseIfNecessary(void);
 void Screen_ModeChanged(bool bForceChange);
 bool Screen_Draw(bool bForceFlip);

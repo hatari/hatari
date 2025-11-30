@@ -808,10 +808,14 @@ void Screen_ReturnFromFullScreen(void)
 }
 
 
-void Screen_UngrabMouse(void)
+bool Screen_UngrabMouse(void)
 {
+	bool old_grab = bGrabMouse;
+
 	SDL_SetWindowRelativeMouseMode(sdlWindow, false);
 	bGrabMouse = false;
+
+	return old_grab;
 }
 
 
