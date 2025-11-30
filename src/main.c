@@ -432,12 +432,6 @@ int main(int argc, char *argv[])
 	Win_OpenCon();
 #endif
 
-#if HAVE_SETENV
-	/* Needed on maemo but useful also with normal X11 window managers for
-	 * window grouping when you have multiple Hatari SDL windows open */
-	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
-#endif
-
 	/* Init emulator system */
 	Main_Init();
 

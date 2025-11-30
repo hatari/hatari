@@ -643,6 +643,10 @@ void Screen_Init(void)
 #else
 	SDL_DisplayMode dm;
 
+	/* Needed on maemo but useful also with normal X11 window managers for
+	 * window grouping when you have multiple Hatari SDL windows open */
+	SDL_setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
+
 	/* Get information about desktop resolution */
 	if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
 	{
