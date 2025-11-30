@@ -469,6 +469,59 @@ void Statusbar_Init(SDL_Surface *surf)
 }
 
 
+/**
+ * Set TOS etc information and initial help message
+ */
+void Statusbar_InitialSetup(void)
+{
+	struct {
+		const int id;
+		bool mod;
+		char *name;
+	} keys[] = {
+		{ SHORTCUT_OPTIONS, false, NULL },
+		{ SHORTCUT_MOUSEGRAB, false, NULL }
+	};
+	const char *name;
+	bool named;
+	SDL_Keycode key;
+	int i;
+
+	named = false;
+	for (i = 0; i < ARRAY_SIZE(keys); i++)
+	{
+		key = ConfigureParams.Shortcut.withoutModifier[keys[i].id];
+		if (!key)
+		{
+			key = ConfigureParams.Shortcut.withModifier[keys[i].id];
+			if (!key)
+				continue;
+			keys[i].mod = true;
+		}
+		name = SDL_GetKeyName(key);
+		if (!name)
+			continue;
+		keys[i].name = Str_ToUpper(strdup(name));
+		named = true;
+	}
+	if (named)
+	{
+		char message[60];
+		snprintf(message, sizeof(message), "Press %s%s for Options, %s%s for mouse grab toggle",
+			 keys[0].mod ? "AltGr+": "", keys[0].name,
+			 keys[1].mod ? "AltGr+": "", keys[1].name);
+		for (i = 0; i < ARRAY_SIZE(keys); i++)
+		{
+			if (keys[i].name)
+				free(keys[i].name);
+		}
+		Statusbar_AddMessage(message, 5000);
+	}
+	/* update information loaded by Main_Init() */
+	Statusbar_UpdateInfo();
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Queue new statusbar message 'msg' to be shown for 'msecs' milliseconds

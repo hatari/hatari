@@ -23,7 +23,7 @@ typedef enum {
 	MAX_LED_STATE
 } drive_led_t;
 
-
+extern void Statusbar_InitialSetup(void);
 extern int Statusbar_SetHeight(int ScreenWidth, int ScreenHeight);
 extern int Statusbar_GetHeightForSize(int width, int height);
 extern int Statusbar_GetHeight(void);
