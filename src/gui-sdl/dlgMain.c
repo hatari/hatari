@@ -87,7 +87,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		return false;
 
 	Screen_GetMouseState(&nOldMouseX, &nOldMouseY);
-	bOldMouseVisibility = Main_ShowCursor(true);
+	bOldMouseVisibility = Screen_ShowCursor(true);
 
 	SDLGui_CenterDlg(maindlg);
 
@@ -128,7 +128,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			{
 				/* Memory snapshot has been loaded - leave GUI immediately */
 				*bLoadedSnapshot = true;
-				Main_ShowCursor(bOldMouseVisibility);
+				Screen_ShowCursor(bOldMouseVisibility);
 				GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 				return true;
 			}
@@ -178,7 +178,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 	if (maindlg[MAINDLG_RESET].state & SG_SELECTED)
 		*bReset = true;
 
-	Main_ShowCursor(bOldMouseVisibility);
+	Screen_ShowCursor(bOldMouseVisibility);
 	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	return (retbut == MAINDLG_OK);

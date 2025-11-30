@@ -176,45 +176,6 @@ void Main_SetQuitValue(int exitval)
 }
 
 
-/* ----------------------------------------------------------------------- */
-/**
- * Set mouse cursor visibility and return if it was visible before.
- */
-bool Main_ShowCursor(bool show)
-{
-	bool bOldVisibility;
-
-#if ENABLE_SDL3
-	bOldVisibility = SDL_CursorVisible();
-	if (bOldVisibility != show)
-	{
-		if (show)
-		{
-			SDL_ShowCursor();
-		}
-		else
-		{
-			SDL_HideCursor();
-		}
-	}
-#else
-	bOldVisibility = SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
-	if (bOldVisibility != show)
-	{
-		if (show)
-		{
-			SDL_ShowCursor(SDL_ENABLE);
-		}
-		else
-		{
-			SDL_ShowCursor(SDL_DISABLE);
-		}
-	}
-#endif
-	return bOldVisibility;
-}
-
-
 /**
  * Initialise emulation for some hardware components
  * It is required to init those parts before parsing the parameters

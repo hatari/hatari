@@ -39,5 +39,6 @@ int Screen_GetUISocket(void);
 void Screen_SetTitle(const char *title);
 void Screen_MinimizeWindow(void);
 uint32_t Screen_GetMouseState(int *mx, int *my);
+bool Screen_ShowCursor(bool show);
 
 #endif  /* ifndef HATARI_SCREEN_H */

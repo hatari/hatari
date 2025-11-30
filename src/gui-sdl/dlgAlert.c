@@ -163,12 +163,12 @@ static bool DlgAlert_ShowDlg(const char *text)
 	bWasEmuActive = Main_PauseEmulation(true);
 
 	Screen_GetMouseState(&nOldMouseX, &nOldMouseY);
-	bOldMouseVisibility = Main_ShowCursor(true);
+	bOldMouseVisibility = Screen_ShowCursor(true);
 
 	i = SDLGui_DoDialog(alertdlg);
 
 	Screen_UpdateRect(sdlscrn, 0,0, 0,0);
-	Main_ShowCursor(bOldMouseVisibility);
+	Screen_ShowCursor(bOldMouseVisibility);
 	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	if (bWasEmuActive)

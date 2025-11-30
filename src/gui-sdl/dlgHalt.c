@@ -59,7 +59,7 @@ static void do_quit(int exitval)
  */
 void Dialog_HaltDlg(void)
 {
-	bool show = Main_ShowCursor(true);
+	bool show = Screen_ShowCursor(true);
 
 	Screen_UngrabMouse();
 
@@ -97,6 +97,6 @@ void Dialog_HaltDlg(void)
 		/* GUI errors */
 		do_quit(1);
 	}
-	Main_ShowCursor(show);
+	Screen_ShowCursor(show);
 	Screen_GrabMouseIfNecessary();
 }

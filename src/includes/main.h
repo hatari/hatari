@@ -62,7 +62,6 @@ extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(int exitval);
 extern void Main_SetQuitValue(int exitval);
-extern bool Main_ShowCursor(bool show);
 extern void Main_ErrorExit(const char *msg1, const char *msg2, int errval);
 
 #endif /* ifndef HATARI_MAIN_H */

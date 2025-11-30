@@ -685,7 +685,7 @@ void Screen_Init(void)
 	}
 
 	/* Configure some SDL stuff: */
-	Main_ShowCursor(false);
+	Screen_ShowCursor(false);
 	Screen_SetTitle(NULL);
 }
 
@@ -993,4 +993,42 @@ uint32_t Screen_GetMouseState(int *mx, int *my)
 	ret = SDL_GetMouseState(mx, my);
 #endif
 	return ret;
+}
+
+
+/**
+ * Set mouse cursor visibility and return if it was visible before.
+ */
+bool Screen_ShowCursor(bool show)
+{
+	bool bOldVisibility;
+
+#if ENABLE_SDL3
+	bOldVisibility = SDL_CursorVisible();
+	if (bOldVisibility != show)
+	{
+		if (show)
+		{
+			SDL_ShowCursor();
+		}
+		else
+		{
+			SDL_HideCursor();
+		}
+	}
+#else
+	bOldVisibility = SDL_ShowCursor(SDL_QUERY) == SDL_ENABLE;
+	if (bOldVisibility != show)
+	{
+		if (show)
+		{
+			SDL_ShowCursor(SDL_ENABLE);
+		}
+		else
+		{
+			SDL_ShowCursor(SDL_DISABLE);
+		}
+	}
+#endif
+	return bOldVisibility;
 }
