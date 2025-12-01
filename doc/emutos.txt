@@ -1587,6 +1587,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Stercus Accidit (060, by Fit)
 - Stocasto (by NoCrew)
   - Works also with v1.0, but then DSP 3D objects are missing
+- Taedium Vitae (by Dune)
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
