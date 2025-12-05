@@ -43,13 +43,17 @@ prog_dir="$basedir/../cycles"
 # debugger script starting the breakpoint chain for profiling actions
 start_ini="profile.ini"
 
-# program and its (named) TEXT symbols
+# program + its TEXT symbols + debugger files => testdir
 cp "$prog_dir/"cyccheck.* "$basedir/"*.ini "$testdir"
 
-# "cd" so that rest of debugger files can be found
+# add "cd" to first debugger file so that rest of them can be found
 echo "cd $testdir -f" > "$testdir/$start_ini"
 cat "$basedir/$start_ini" >> "$testdir/$start_ini"
 
+# Fake TOS jumps directly to program code, it does not call
+# GEMDOS HD Pexec().  Therefore this requires additional
+# breakpoint chaining for program startup instead of just:
+#   --symload exec --parse prg:<script>
 HOME="$testdir" $hatari --log-level fatal --fast-forward on --sound off \
 	--parse "$testdir/$start_ini" --tos none "$@" "$testdir/cyccheck.prg" \
 	>> "$testdir/log.txt" 2>&1
