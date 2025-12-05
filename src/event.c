@@ -13,7 +13,7 @@ const char Event_fileid[] = "Hatari event.c";
 #include "main.h"
 #include "avi_record.h"
 #include "configuration.h"
-#include "debugui.h"
+#include "debug_priv.h"
 #include "event.h"
 #include "log.h"
 #include "timing.h"
@@ -123,7 +123,7 @@ static void Event_PerformActions(event_actions_t *act)
 	/* parse debugger commands? */
 	if (act->parseFile) {
 		LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Debugger file: '%s'\n", act->parseFile);
-		DebugUI_AddParseFile(act->parseFile);
+		DebugUI_ParseFile(act->parseFile, true, true);
 	}
 
 	/* change log level? */
