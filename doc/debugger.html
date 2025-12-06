@@ -48,11 +48,11 @@ analyzing code that runs in the emulated system.
 </p>
 
 <p>
-On Unix (Linux / macOS) debugger uses Hatari's parent console window, so
-make sure you run Hatari from the command line when you want to use
-the debugger.  On Windows you need to use "-W" option to get console
-window.  You can add an icon to your desktop that does it.  On Linux
-it should do something like this (replace "xterm" with your favorite
+On Unix (Linux / macOS) debugger uses Hatari's parent console window,
+so run Hatari from the command line to use the debugger. On Windows
+"-W" option is needed for the console window.  You can add a shortcut
+/ icon on your desktop that does it.  On Linux such shortcut would
+execute something like this (replace "xterm" with your favorite
 terminal program):
 </p>
 <pre>
@@ -71,7 +71,7 @@ Note that when debugger scripts are run, current directory is set to
 the currently running script's directory i.e. all file operations are
 relative to it.  After script finishes, earlier current directory is
 restored.  To set current directory from a setup script, e.g. for
-scripts run at breakpoints, you need to give '-f' option for the
+scripts run at breakpoints, '-f' option needs to be give for the
 'cd' command.
 </p>
 
@@ -79,13 +79,13 @@ scripts run at breakpoints, you need to give '-f' option for the
 <h3>Invoking the debugger</h3>
 
 <p>
-You can invoke the debugger manually by pressing the
-<span class="key">AltGr + Pause</span> key combination.
+Debugger can be invoked with the <span class="key">AltGr + Pause</span>
+key combination.
 </p>
 
 <p>
-With the "-D" command line option, you can toggle whether m68k
-exceptions will also invoke the debugger.  Which exceptions cause
+Command line "-D" option can be used to toggle whether m68k
+exceptions will invoke the debugger.  Which exceptions cause
 this, can be controlled with the "--debug-except" option.
 </p>
 
@@ -236,7 +236,7 @@ pressing TAB will (for most commands) show all the available subcommands.
 </p>
 
 <p>
-If you want to give numbers in other number bases
+To give numbers in other number bases
 than the default/selected one, they need to be prefixed with a
 character indicating this.  For decimals this prefix is "#" (#15),
 for hexadecimals "$" ($F), and for binary values it is "%" (%1111).
@@ -244,8 +244,8 @@ for hexadecimals "$" ($F), and for binary values it is "%" (%1111).
 
 <p>
 By default debugger expects all numbers without a prefix to be
-decimals, but you can change the default number base with the "setopt"
-command, just give it the desired default number base (bin/dec/hex).
+decimals, but the default number base can be changed with the "setopt"
+command, by giving it the desired default number base (bin/dec/hex).
 <em>When using the hexadecimal number base, remember still to prefix
 hexadecimal numbers with '$' if they could be confused with register
 names (a0-7, d0-7)!</em>  Otherwise results from expressions and
@@ -256,7 +256,7 @@ conditional breakpoints can be unexpected.
 <h4>Calculations and immediate evaluation</h4>
 
 <p>
-Instead of a number, you can also use an arithmetic expression, by
+Instead of a number, one can also use an arithmetic expression, by
 surrounding it with quotes ("").  An expression can contain
 calculations with CPU and DSP registers, symbols and Hatari variables
 in addition to numbers. For example to give a sum of A0 and D0
@@ -266,8 +266,8 @@ register values to a command, use "a0+d0".
 <p>
 Also within arithmetic expressions, parenthesis are used to indicate
 indirect addressing, <em>not</em> to change the order of precedence.
-Unlike with conditional breakpoint expressions (explained below), you
-cannot give size for the indirect addressing, a long value is always
+Unlike with conditional breakpoint expressions (explained below),
+size cannot be given with the indirect addressing, a long value is always
 read from the RAM address given within parenthesis.  For example to
 get a long value pointed by stack pointer + 2, use "(a7+2)".
 </p>
@@ -332,14 +332,14 @@ want to store emulator output for more detailed inspection later.</p>
 
 <p>With 3 first options defaulting to "stderr".</p>
 
-<p>If you want to catch all of them, it is better just to redirect
+<p>To catch all of them, it is better just to redirect
 all "stdout" and "stderr" output from Hatari to a file:</p>
 <pre>
 hatari --parse debugger.ini --trace os_base 2&gt;&amp;1 | tee out.log
 </pre>
 
 <p>("2&gt;&amp;1" redirects stderr to stdout for piping, and "tee"
-command both saves and shows the output, so that you can still see
+command both saves and shows the output, so that one can still see
 the saved output in more or less real-time.)</p>
 
 <p>[1] E.g. VT52 console redirection to Hatari standard output is enabled
@@ -349,9 +349,9 @@ with "os_base" and "os_all" trace settings and "--conout 2" option.</p>
 <h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
 
 <p>
-In the beginning, probably the most interesting commands are "m" and "d"
-for dumping and disassembling memory regions.  You can use "dm" and "dd"
-commands to do the same for the DSP.
+In the beginning, probably the most interesting commands are "m" and
+"d" for dumping and disassembling memory regions.  To do the same for
+the DSP, use "dm" and "dd" commands.
 </p>
 <pre>
 &gt; help memdump
@@ -381,25 +381,25 @@ $00aa7e : 4ed0                                 jmp       (a0)
 
 <p>
 Both commands accept in addition to numeric addresses also register
-and symbol names, like in above example.  If you don't specify an
-address, the commands continue showing from an address that comes
-after the previously shown data.
+and symbol names, like in above example.  If address is not specified,
+commands continue showing from the next address after the previously
+shown data.
 </p>
 
 <p>
 "disasm" command default address will be reset to program counter (PC)
-address every time you re-enter the debugger.  If history is enabled
+address every time debugger is re-entered.  If history is enabled
 and it includes addresses just before PC, disassembly will instead
 start from a slightly earlier address to give more context.
 </p>
 
 <p>
-Use "setopt --disasm help" if you want to set options controlling
-the disassembly output.
+Use "setopt --disasm help" to see options controlling the disassembly
+output.
 </p>
 
 <p>
-You can use the "info" command to see state of specific sets of HW
+Use the "info" command to see state of specific sets of HW
 registers (e.g. "info videl") and Atari OS structures (e.g. "info gemdos").
 </p>
 
@@ -444,14 +444,14 @@ changes in real-time output.</p>
 <h4>Selecting what information is shown on entering the debugger</h4>
 
 <p>
-By using the "lock" command, you can ask Hatari to show specific
-information whenever you enter the debugger, e.g. due to a breakpoint.
+By using the "lock" command, one can ask Hatari to show specific
+information whenever debugger is entered, e.g. due to a breakpoint.
 For example to see disassembly from current PC address, use "lock
 disasm".
 </p>
 
 <p>
-With the "regaddr" subcommand, you see disassembly or memory
+"regaddr" subcommand shows disassembly or memory
 dump of an address pointed by a given register ("lock regaddr disasm
 a0"). Of the DSP registers, only Rx ones are valid for this
 subcommand.
@@ -460,7 +460,7 @@ subcommand.
 <p>
 "file" subcommand can be used to get (arbitrary number of) commands
 parsed and executed from a given debugger input file whenever debugger
-is entered.  With this you can output any information you need:
+is entered.  With this one can output any needed information:
 </p>
 <pre>
 lock file debugger.ini
@@ -686,7 +686,7 @@ a some_symbol
 
 <p>
 Note that address breakpoints are just wrappers for conditional
-breakpoints so you need to use "b" command to remove or list them.
+breakpoints so "b" command is needed to list or remove them.
 </p>
 
 <p>
@@ -710,10 +710,10 @@ lists currently active breakpoints.
 </pre>
 
 <p>
-Unless you give breakpoint one of the pre-defined subcommands ('all',
-'help'), index for a breakpoint to remove or no arguments (to list
-breakpoints), the arguments are interpreted as a new breakpoint
-definition.
+Unless "breakpoint" command is given one of the pre-defined
+subcommands ('all', 'help'), an index for a breakpoint to remove, or
+no arguments (to list breakpoints), its arguments are interpreted as a
+new breakpoint definition.
 </p>
 
 <p>
@@ -726,8 +726,8 @@ conditions need to be true for a breakpoint to trigger.
 <h4 id="Breakpoint_options">Breakpoint options</h4>
 
 <p>
-Normally when a breakpoint is triggered, emulation is stopped and you
-get to the debugger. Breakpoint options can be used to affect what
+Normally when a breakpoint is triggered, emulation is stopped and
+debugger invoked. Breakpoint options can be used to affect what
 happens when a breakpoint is triggered.  These options are given after
 the conditions, and are prefixed with a (space and) ':' character.
 </p>
@@ -744,11 +744,11 @@ a $1234 :2
 <dt><em>file &lt;file&gt;</em></dt>
 <dd>
 Execute debugger commands from given &lt;file&gt; when this breakpoint
-is hit.  With this you have complete control over what information is
-show when the debugger is hit, you can even chain breakpoints (as
+is hit.  This provides complete control over what information is
+show when the debugger is hit, one can even chain breakpoints (as
 explained in
 <a href="#Chaining_breakpoints">Chaining breakpoints</a> later on).
-Use this when "info" and "lock" options are not enough.
+This should be used when "info" and "lock" options are not enough.
 </dd>
 
 <dt><em>info &lt;name&gt;</em></dt>
@@ -764,11 +764,11 @@ enables trace option.
 
 <dt><em>lock</em></dt>
 <dd>
-Show the same information on breakpoint hit as you see when entering
+Show the same information on breakpoint hit as what is shown when entering
 the debugger (see the "lock" command in
 <a href="#Inspecting_emulation_state">Inspecting emulation state</a>
-above).  This enables also trace option as you would anyway see this
-information if debugger would be entered.
+above).  This enables also trace option as one would anyway see this
+information when entering debugger.
 </dd>
 
 <dt><em>noinit</em></dt>
@@ -784,10 +784,10 @@ command during <a href="#Profiling">profiling</a>.  See
 
 <dt><em>once</em></dt>
 <dd>
-Delete the breakpoint when it is hit, i.e. trigger it only once. It may
-be useful if you just want to get a specific address. Or if you're on
-an instruction that jumps back to a start of the loop and you want to
-finish the loop, you could use:
+Delete the breakpoint when it is hit, i.e. trigger it only once.
+Useful when just wanting to reach a specific address. Or when on an
+instruction that jumps back to a start of the loop, and one wants to
+finish the loop, following could use:
 <pre>
 b pc &gt; "pc" :once
 continue
@@ -816,10 +816,12 @@ changes (explained below).
 </dl>
 
 <p>
-Note: you can give multiple options for conditional breakpoints, but
-for address breakpoints you can give only <em>one</em> option (one that
-has no argument). Arguments to "file", "info" and "print" options are
-terminated by the next option (to ':' character), or end of input.
+Arguments to "file", "info" and "print" options are terminated by the
+next option (to ':' character), or end of input.
+</p>
+<p>
+Note: while multiple options can be given for conditional breakpoints,
+address breakpoints accept only <em>one</em> (with no argument).
 </p>
 
 
@@ -865,7 +867,7 @@ b (a0) = "d0"
 </pre>
 
 <p>
-If you're interested only on certain bits in the value, you can use
+When interested only on certain bits in the value, one can use
 '&amp;' and a numeric mask on either side of comparison operator to
 mask the corresponding value, like this:
 <pre>
@@ -887,7 +889,7 @@ b d0 &gt; $20  &amp;&amp;  d0 &lt; $40  &amp;&amp;  d0 ! $30
 As a convenience, if the both sides of the comparison are exactly the
 same (i.e. condition is redundant as it is always either true or
 false), the <em>right side</em> of the comparison is replaced with
-its current value.  This way you can give something like this:
+its current value.  With that, one can give something like this:
 </p>
 <pre>
 b pc &gt; "pc"
@@ -938,10 +940,10 @@ multiple ones of which <strong>none</strong> are modified by Hatari,
 only by emulated code, this is not a problem, they get triggered as
 expected.
 <br>
-However, if you have a breakpoint that tracks multiple I/O registers
-where some of them are updated by Hatari, for example to check that
-other Blitter registers aren't updated while control register
-indicates Blitter to be active (busy), things don't work as expected!
+However, a breakpoint that tracks multiple I/O registers where some of
+them are updated by Hatari (for example one checking that other Blitter
+registers aren't updated while control register indicates Blitter to
+be active/busy), will not work as expected!
 </li>
 </ul>
 
@@ -975,12 +977,12 @@ b GemdosOpcode = 0x4B &amp;&amp; OsCallParam = 0x0
 <pre>
 b  pc = TEXT :once
 </pre>
-Note1: It is better to trigger this breakpoint only once, because if
-you would leave it on, during (re)boot you would get a warning for
-every instruction (until TOS sets a valid basepage).
+Note1: Set this breakpoint only after boot reaches desktop, and
+trigger it only once.  Otherwise during (re)boot there would be a
+warning for every instruction (until TOS sets a valid basepage).
 <br />
-Note2: you cannot use an <em>address</em> breakpoint for this because
-variable values are evaluated at run-time only for conditional
+Note2: <em>address</em> breakpoint cannot be used for this because
+Hatari variable values are evaluated at run-time only for conditional
 breakpoints.
 </li>
 <li>To view current program DATA and BSS segment contents,
@@ -990,10 +992,10 @@ m  DATA
 m  BSS
 </pre>
 </li>
-<li>If you want to stop at a specific cycle within a frame (that is,
+<li>To stop at a specific cycle within a frame (that is,
     PC relative to the current VBL/HBL in cycles), set breakpoints to
     specific "VBL", "FrameCycles", "HBL" and "LineCycles" variable
-    values.  If you want, for example, to break after 20 HBLs, use:
+    values.  For example, to break after 20 HBLs, use:
 <pre>
 b  HBL = "HBL+20"
 </pre>
@@ -1024,7 +1026,7 @@ debugger and breakpoint actions so that after one breakpoint is hit,
 another one is set.
 </p>
 
-<p>For example if you have these input files:</p>
+<p>For example, with these input files:</p>
 <ul>
 <li>"pexec.ini":
 <pre>
@@ -1082,7 +1084,7 @@ hatari --parse pexec.ini /path/to/your/program.tos
 <ul>
 <li>Because debugger input files cannot "continue"
 emulation, ":trace" option needs to be used for the breakpoint(s)
-if you want emulation to continue after the breakpoint action(s).</li>
+when emulation should continue after the breakpoint action(s).</li>
 <li>In simpler breakpoint chain (like above), where new breakpoint
 just replaces the previous one, ":once" option tells debugger that
 breakpoint isn't needed after it is hit.
@@ -1091,7 +1093,7 @@ breakpoint isn't needed after it is hit.
 
 <p>
 Hint: It is better to test each input file separately before testing
-the whole chain.  Besides the ":file" breakpoint option, you can test
+the whole chain.  Besides the ":file" breakpoint option, one can test
 these debugger input files also with the debugger "file" command,
 "file" option for the "lock" command, and with the Hatari "--parse"
 command line option.
@@ -1101,22 +1103,22 @@ command line option.
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
-you can continue the emulation with the "c" command. You can continue
+emulation can continued with the "c" command. One can continue
 for a given number of CPU instructions (or DSP instructions when "dc"
-is used), or you can continue forever (until a non-tracing breakpoint
-triggers) if you omit the instruction count.
+is used), or continue forever (until a non-tracing breakpoint
+triggers) if the nstruction count is omitted.
 </p>
 
 <p>
-If you want to continue just to the next instruction, use "s" (step)
-command to continue for exactly one instruction, or "n" (next), if you
-want to skip subroutine + exception calls and DBCC branching backwards
-(i.e. loops).  "ds" and "dn" commands do the same for DSP (except that
-"dn" doesn't skip loops).
+To continue just to the next instruction, use "s" (step) command to
+execute just one instruction, or "n" (next), to skip subroutine +
+exception calls and DBCC branching backwards (i.e. loops).  "ds" and
+"dn" commands do the same for DSP (except that "dn" doesn't skip
+loops).
 </p>
 
 <p>
-You can also continue with the "n" until instruction of certain
+One can also continue with the "n" until instruction of certain
 type is encountered, by giving it the instruction type:
 <ul>
 <li>"branch" matches branch instructions:<br>
@@ -1170,17 +1172,17 @@ tracing to work. By default it is.)
 </p>
 
 <p>
-If you want e.g. to continue with real-time disassembling, you can
-enable it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at
-the debugger prompt before continuing.
+For example, to continue with real-time disassembling, that can be
+enabled with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at
+the debugger prompt, before continuing.
 </p>
 <p>
-Disable tracing with "trace none" when you enter the debugger again.
-"trace help" (or TAB) can be used to list all the (over 40) supported
+Disable tracing with "trace none" when entering the debugger again.
+"trace help" (or TAB) can be used to list all the (about 70) supported
 traceable things, from HW events to OS functions.
 </p>
 <p>
-At run-time you can enable and disable trace flags individually by
+At run-time trace flags can be enabled and disabled individually by
 starting the trace flags with -/+, like this:
 </p>
 <pre>
@@ -1207,7 +1209,7 @@ would be too complicated).
 </li>
 <li>
 Tracing options can be set even from a program within the emulation,
-if you enable the (deprecated) "--bios-intercept" option and call
+by enabling the (deprecated) "--bios-intercept" option and calling
 XBios 255 from the program with a suitable trace options string.
 </li>
 <li>
@@ -1216,8 +1218,8 @@ it cannot be changed from within the debugger (or emulation).
 </li>
 </ul>
 <p>
-If there isn't a trace option for something you would like to track,
-you may be able to use tracing breakpoints, explained above.
+If there isn't a trace option for something one would like to track,
+it should be possible do that with tracing breakpoints, as explained above.
 For example, following tracks Line-A calls:
 </p>
 <pre>
@@ -1263,7 +1265,7 @@ Profiling is used by first enabling the profiler (use "dp" for DSP):
 Profiling enabled.
 </pre>
 <p>
-And profiling will start once you continue the emulation:
+And profiling will start once emulation is continued:
 </p>
 <pre>
 &gt; c
@@ -1272,9 +1274,9 @@ Allocated CPU profile buffer (27 MB).
 </pre>
 
 <p>
-When you get back to the debugger, the collected profiling information
-is processed and a summary of in which parts of memory the execution
-happened, and how long it took, is shown:
+At debugger invocation, the collected profiling information is
+processed, a backtrace and a summary of in which parts of memory the
+execution happened, and how long it took, are shown:
 </p>
 <pre>
 Allocated CPU profile address buffer (57 KB).
@@ -1307,7 +1309,7 @@ point, one will see profiler backtrace for the crash.</p>
 <h4>Investigating the profile data</h4>
 
 <p>
-When you are back in debugger, you can inspect the collected profile data:
+When back in the debugger, the collected profile data can be inspected:
 </p>
 <pre>
 &gt; h profile
@@ -1330,11 +1332,12 @@ Usage:  profile &lt;subcommand&gt; [parameter]
 		- save &lt;file&gt;
 		- loops &lt;file&gt; [CPU limit] [DSP limit]
 
-	'on' &uml; 'off' enable and disable profiling.  Data is collected
-	until debugger is entered again at which point you get profiling
-	statistics ('stats') summary.
 
-	Then you can ask for list of the PC addresses, sorted either by
+	'on' &uml; 'off' enable and disable profiling.  Data is collected
+	until debugger is entered again, at which point profiling
+	statistics ('stats') summary is shown.
+
+	Most active PC addresses can be queried, sorted either by
 	execution 'counts', used 'cycles', i-cache misses or d-cache hits.
 	First can be limited just to named addresses with 'symbols'.
 	Optional count will limit how many items will be shown.
@@ -1343,8 +1346,8 @@ Usage:  profile &lt;subcommand&gt; [parameter]
 
 	'addresses' lists the profiled addresses in order, with the
 	instructions (currently) residing at them.  By default this
-	starts from the first executed instruction, or you can
-	specify the starting address.
+	starts from the first executed instruction, or from the
+	specified start address.
 
 	'callers' shows (raw) caller information for addresses which
 	had symbol(s) associated with them.  'stack' shows the current
@@ -1396,13 +1399,13 @@ Disassembled 8 (of active 14240) CPU addresses.
 <p>
 Unlike normal disassembly, "profile addresses" command shows only
 memory addresses which instructions were executed during profiling.
-You get cache hit/miss information only when using cycle-accurate
+Cache hit/miss information is provided only when using cycle-accurate
 680x0 emulation.
 <p>
-If you have loaded symbol information, symbol names are shown above
-the corresponding addresses.  With the "profile symbols" command you
-get a list of how many times the code execution passed through the
-defined symbol addresses.
+With symbol information loaded, symbol names are shown above the
+corresponding addresses. And "profile symbols" command provides a list
+of how many times the code execution passed through the defined symbol
+addresses.
 </p>
 
 
@@ -1427,7 +1430,7 @@ Hatari emulation options, is following:</p>
 <h4>Caller information</h4>
 
 <p>
-If you have loaded symbols (see <a href="#Debug_symbols">Debug symbols</a>)
+With symbols loaded (see <a href="#Debug_symbols">Debug symbols</a>)
 before continuing emulation/profiling, additional caller information
 will be collected for all the code symbol addresses which are called
 as subroutines.  This information includes callstack, call counts,
@@ -1466,7 +1469,7 @@ option to show backtraces during caller profiling.)</p>
 
 <p>Note: rest of this subsection is about caller information format
 which is mainly of interest for people writing profiling
-post-processing tools.  Come back here if you think there's
+post-processing tools.  Come back here if there's
 some problem with callgraphs produced by those tools.</p>
 
 <p>Other information collected during profiling is shown with
@@ -1488,10 +1491,10 @@ following command:</p>
 </pre>
 
 <p>
-For example, if you don't know all the places from which a certain
+For example, when one doesn't know all the places from which a certain
 function is called, or in what context a certain interrupt handler can
-be called during the period you are profiling, profile caller
-information will tell you:
+be called during the period being profiled, profile caller
+information will tell that:
 </p>
 <pre>
 callee: caller: calls: calltype:
@@ -1530,7 +1533,7 @@ profiler cannot determine when exceptions are being handled:</p>
 <li>If there are exception(s) during a subroutine call, costs for
     the exception handling will also be accounted for that subroutine.
     This shouldn't be a problem unless those costs are very large,
-    i.e. check how much CPU your exception handlers take.</li>
+    i.e. check how much CPU those exception handlers take.</li>
 <li>Indicated exception handler call type can be incorrect.</li>
 <li>Profiled code doing return address related stack manipulations
     confuses call tracking and produces incorrect results (profiler
@@ -1554,11 +1557,11 @@ profiler cannot determine when exceptions are being handled:</p>
 </pre>
 
 <p>With the saved profile disassembly (and optional caller information)
-you can more easily investigate what your program did during
+one can more easily investigate what the program did during
 profiling, search symbols &amp; addresses in it, and compare the
-results to profiles you have saved from earlier versions of your code.</p>
+results to profiles saved from earlier versions of the code.</p>
 
-<p>You may even create your own post-processing tools for
+<p>One could even create own post-processing tools for
 investigating the profiling data more closely, e.g. to
 <a href="http://www.atari-forum.com/viewtopic.php?f=68&amp;t=24561&amp;start=75#p226505">find
 CPU/DSP communication bottlenecks</a>.</p>
@@ -1583,25 +1586,25 @@ installed by Hatari, to:</p>
 
 <h4>Providing symbols for the post-processor</h4>
 
-<p>When the data is post-processed, you should always provide
+<p>When the data is post-processed, one should <em>always</em> provide
 the post-processor symbols for the profile code!  Relying just on the
 symbol in the profile data can cause costs to be assigned to wrong
 symbol, if symbol's code wasn't called through symbol's own address,
 but by jumping inside its code.</p>
 
-<p>If your code is in fixed location, you should tell
+<p>If code is at a fixed location, one should tell
 post-processor to handle symbol addresses as absolute (-a):</p>
 <pre>
 $ hatari_profile.py <b>-a</b> etos1024k.sym emutos-profile.txt
 </pre>
 
-<p>Normal programs are relocated and you should instead give
+<p>Normal programs are relocated and one should instead give
 the symbols as TEXT (code) section relative ones (-r):</p>
 <pre>
 $ hatari_profile.py <b>-r</b> program.sym program-profile.txt
 </pre>
 
-<p>If symbols are included to your binary, first they need to be
+<p>If symbols are included to the binary, first they need to be
 extracted to <a href="#Debug_symbols">the ASCII format</a>
 understood by the post-processor:</p>
 <pre>
@@ -1610,10 +1613,10 @@ $ gst2ascii -b -a -d program.prg &gt; program.sym
 <p>(Options given to "gst2ascii" filter out symbols for other
 things than what are in the program code section.)
 
-<p>If there are some extra symbols that you don't want to see
+<p>If there are some extra symbols that one does not want to see
 separately in profiles, because they aren't real functions,
-but e.g. loop labels, you can either remove them manually
-from the ASCII *.sym file, or filter them out with grep:
+but e.g. loop labels, one can either remove them manually
+from the ASCII *.sym file, or filter them out with "grep":
 </p>
 <pre>
 $ gst2ascii -b -a -d program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
@@ -1690,7 +1693,7 @@ Instruction cache misses:
 [...]
 </pre>
 
-<p>If you want to see also symbol addresses and what is per call
+<p>To see also symbol addresses and what is per call
 cost, add -i option:</p>
 <pre>
 $ hatari_profile.py -st <b>-i</b> -r program.sym program-profile.txt
@@ -1718,8 +1721,8 @@ Instruction cache misses:
 <p>(For cycles the "per call" information is in seconds, not as
 a cost count.)</p>
 
-<p>If your profile file contains caller information, you should
-add -p option to see it, as that will also help in detecting symbol
+<p>If profile file contains caller information, "-p" option should
+be added to see it, as that will also help in detecting symbol
 issues (see <a href="#Interpreting_the_numbers">Interpreting
 the numbers</a>):</p>
 <pre>
@@ -1773,13 +1776,13 @@ accounted for all the <em>addresses</em> that were in profile data file
 <em>between the indicated symbol's address and the address of the next
 symbol</em> (= "between-symbols" cost).</p>
 
-<p><strong>NOTE:</strong> If your symbols file does not contain addresses
+<p><strong>NOTE:</strong> If symbols file does not contain addresses
 for all the relevant symbols, results from this can be misleading;
 instruction costs get assigned to <em>whatever</em> symbol's address
-happened to precede those instructions.  And you do not see which
-caller is causing it from caller info or callgraphs either, as entry
-point for that time sink missing a symbol means calls to it had not
-been tracked by profiler...</p>
+happened to precede those instructions.  One does not see which caller
+is causing it from the caller info or callgraphs either, as missing a
+symbol for an entry point for such a time sink, means that calls to it
+had not been tracked by profiler...</p>
 
 <p>The next two percentages (and cost counts) are total cost of calls
 to given subroutine, based on profiler runtime branch tracking (see
@@ -1808,9 +1811,9 @@ can differ, are following:</p>
     is (slightly) larger than "between-symbols" cost.</li>
 </ul>
 
-<p>In the first case, you should check saved profile disassembly to
+<p>In the first case, one should check saved profile disassembly to
 find out whether there are missing symbols for executed function entry
-points. You can notice function entry points as address gaps and/or
+points. One can notice function entry points as address gaps and/or
 instructions retrieving arguments from stack. Exit points can be seen
 from RTS instructions.</p>
 
@@ -1826,9 +1829,9 @@ costs.  One should be able to see from the profile disassembly which
 of the above cases is cause for the discrepancy in the values.</p>
 
 <p><strong>NOTE:</strong> Before starting to do any serious
-optimizations based on profile information, you should <em>always</em>
+optimizations based on profile information, one should <em>always</em>
 verify from profile disassembly where exactly the costs are in a
-function, to make sure your optimization efforts can actually have
+function, to make sure optimization efforts actually <em>can</em> have
 an impact on performance.</p>
 
 
@@ -1913,56 +1916,56 @@ If profile is for larger and more varied amount of code (e.g. program startup),
 the resulting callgraph can be so huge that it not really readable anymore.
 </p>
 
-<p>If your code has interrupt handlers, they can get called
+<p>When code includes interrupt handlers, they can get called
 at any point, which can show in callgraph as "explicit" calls
 from the interrupted functions.  To get rid of such incorrect
-calls, give interrupt handler names to --ignore-to option:</p>
+calls, give interrupt handler names to "--ignore-to" option:</p>
 <pre>
 $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym program-profile.txt
 </pre>
 
 <p>In large callgraph most of the functions aren't really interesting,
-because their contribution to the cost is insignificant. You can
-remove large number of them with --no-leafs and --no-intermediate
+because their contribution to the cost is insignificant. One can
+remove large number of them with "--no-leafs" and "--no-intermediate"
 options, those options act <em>only</em> on nodes which costs are below
 given threshold.  Leaf nodes are ones which don't have any parents
 and/or children. Intermediate ones have only single parent and
 children (node calling itself is not taken into account).
 
-<p>Threshold for this is given with the --limit (-l) option.  With
+<p>Threshold for this is given with the "--limit" (-l) option.  With
 that it typically makes also sense to change the node emphasis
 threshold with --emph-limit (-e) option:</p>
 <pre>
 $ hatari_profile.py -p -g <b>-l 0.5 -e 2.0</b> -r program.sym program-profile.txt
 </pre>
 
-<p>If you are not interested in from how many different addresses
-a given function calls another function, use --compact option.  If you
-still see multiple calls between two nodes with it, the reason is that
-they happened through different call paths which were removed from
-the callgraph after --compact option was applied:</p>
+<p>When not interested from how many different addresses
+a given function calls another function, use "--compact" option.  If
+multiple calls between two nodes are still present with it, the reason
+is them happening through different call paths which were removed
+from the callgraph after "--compact" option was applied:</p>
 <pre>
 $ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compact</b> -r program.sym program-profile.txt
 </pre>
 
-<p>If even this doesn't help, you can remove all nodes below
-the given cost threshold limit with --no-limited option, but this
-often doesn't leave much of a call hierarchy.  Instead you may
+<p>If even this doesn't help, all nodes below the given cost threshold
+limit can be removed with the "--no-limited" option, but this
+often does not leave much of a call hierarchy.  Instead you may
 consider removing all nodes except for subroutine call ones, with the
---only-subroutines option.</p>
+"--only-subroutines" option.</p>
 
-<p>If you have trouble locating nodes you are specially interested
-about, you can either color them differently with the --mark option,
-or exclude everything else from the callgraph except those nodes and
-their immediate callers &amp; callees, with the --only option:</p>
+<p>When having trouble locating nodes of special interest, one can
+either color them differently with the "--mark" option, or exclude
+everything else from the callgraph except those nodes and their
+immediate callers &amp; callees, with the "--only" option:</p>
 <pre>
 $ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profile.txt
 </pre>
 
-<p>Last option for reading the callgraph is using -k option to
-export the data for use in (Linux) Kcachegrind UI. Kcachegrind generates
-callgraphs on the fly, and just for the area around the function
-you selected, so navigating in callgraph may be easier.  It also
+<p>Last option for reading the callgraph is using "-k" option to
+export the data for use in (Linux) Kcachegrind UI. Kcachegrind
+generates callgraphs on the fly, and just for the area around the
+selected function, so navigating in callgraph may be easier.  It also
 shows the related profile disassembly, which can make verifying
 matters easier:</p>
 <pre>
@@ -2165,8 +2168,8 @@ GEMDOS 0x3D Fopen("TEST.TXT", read-only)
 
 <dt><em>Seeing code leading to a breakpoint</em></dt>
 <dd>To see CPU instructions executed before debugger was entered,
-you need to enable history tracking <em>before</em> it. Whenever
-debugger is entered, you can then request given number (here 16) of
+history tracking needs to be enabled <em>before</em> it. Whenever
+debugger is entered, one can then request given number (here 16) of
 past PC addresses and their (current) instructions to be shown:
 <pre>
 history  cpu
@@ -2208,13 +2211,13 @@ m  "a7-64"-a7
 
 <dt><em>Seeing specific information each time debugger is entered</em></dt>
 <dd>To see above information whenever some breakpoint is hit,
-you enter debugger manually etc, write that command to e.g.
+debugger is entered manually etc, write that command to e.g.
 <span class="file">stack.ini</span> file and then use:
 <pre>
 lock  file stack.ini
 </pre>
 Please see also <a href="#Chaining_breakpoints">Chaining breakpoints</a>
-section for more examples on what you can do with the debugger input files.
+section for more examples on what can be done with the debugger input files.
 </dd>
 
 <dt><em>Adding cycle information to disassembly</em></dt>
@@ -2224,7 +2227,7 @@ profile  on
 c
 [after a while, use AltGr+Pause to get back to debugger]
 d
-[or if you want to see just the executed instructions]
+[or when wanting to see just the executed instructions]
 profile addresses
 </pre>
 Please see <a href="#Profiling">Profiling</a> section for more info.
@@ -2265,7 +2268,7 @@ callstack information (with some limitations).
 
 <dt><em>Seeing call backtraces whenever given function is called</em></dt>
 <dd>Enable profiling, load symbols for the program and set breakpoint
-for the function you are interested about, in the following way:
+for that function, in the following way:
 <pre>
 profile  on
 symbols  prg
@@ -2306,11 +2309,10 @@ debugger uses libreadline to handle this.
 
 <h4>Hatari building</h4>
 <p>
-If you are building Hatari yourself, please make sure that you have
-the GNU readline development files installed (on Debian / Ubuntu these
-come from the "libreadline*-dev" packages). Otherwise the name
-completion and other features don't get enabled when you configure
-Hatari.
+When building Hatari, please make sure to have the GNU readline
+development files installed (on Debian / Ubuntu these come from the
+"libreadline*-dev" packages). Otherwise TAB completion and other
+nice features do not get enabled when Hatari is configured.
 </p>
 
 
