@@ -84,6 +84,9 @@ Other changes:
 - Automated test for verifying profiling & breakpoint chaining
   functionality and "uae" + "ext" disassembly engines output
 
+Documentation:
+- (Very) obsolete French manual page removed
+
 
  Version 2.6.1 (2025-08-15)
  --------------------------
