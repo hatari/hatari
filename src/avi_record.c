@@ -1431,17 +1431,12 @@ bool	Avi_AreWeRecording ( void )
 static int compression_level = 9;
 
 /**
- * Set recording level from given string
- * return true for valid, false for invalid value
+ * Set recording level to given value
+ * return true for valid, assert for invalid value
  */
-bool Avi_SetCompressionLevel(const char *str)
+bool Avi_SetCompressionLevel(int level)
 {
-	char *end;
-	long level = strtol(str, &end, 10);
-	if (*end)
-		return false;
-	if (level < 0 || level > 9)
-		return false;
+	assert(level >= 0 && level <= 9);
 	compression_level = level;
 	return true;
 }

@@ -174,13 +174,11 @@ static int Joy_GetFireButtons(int nStJoyId)
  * Set joystick cursor emulation for given port.  This assumes that
  * if the same keys have been defined for "cursor key emulation" in
  * other ports, the emulation for them has been switched off. Returns
- * 1 if the port number was OK, zero for error.
+ * true if the port number was OK, asserts otherwise.
  */
 bool Joy_SetCursorEmulation(int port)
 {
-	if (port < 0 || port >= JOYSTICK_COUNT) {
-		return false;
-	}
+	assert(port >= 0 && port < JOYSTICK_COUNT);
 	ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
 	return true;
 }

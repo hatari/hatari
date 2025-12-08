@@ -39,6 +39,7 @@ bool Console_SetDevice(int dev)
 	if (dev < 0 || dev > 7) {
 		return false;
 	}
+	Log_Printf(LOG_DEBUG, "Xcounout device %d vector redirection enabled.\n", dev);
 	if (con_dev == CONOUT_DEVICE_NONE) {
 		ConOutDevices++;
 	}

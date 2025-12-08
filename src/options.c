@@ -292,9 +292,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_RESIZABLE,    NULL, "--resizable",
 	  "<bool>", "Allow window resizing" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
+	  "<int>", "Skip <int> frames for every shown one (0-64, 0=off, >4=auto)" },
 	{ OPT_SLOWDOWN, NULL, "--slowdown",
-	  "<x>", "VBL wait time multiplier (1-30, default 1)" },
+	  "<int>", "VBL wait time multiplier (1-30, default 1)" },
 	{ OPT_MOUSE_WARP, NULL, "--mousewarp",
 	  "<bool>", "Center host mouse on reset & resolution changes" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
@@ -302,9 +302,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DRIVE_LED,   NULL, "--drive-led",
 	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
 	{ OPT_MAXWIDTH, NULL, "--max-width",
-	  "<x>", "Maximum Hatari screen width before scaling" },
+	  "<int>", "Maximum Hatari screen width before scaling (320-)" },
 	{ OPT_MAXHEIGHT, NULL, "--max-height",
-	  "<x>", "Maximum Hatari screen height before scaling" },
+	  "<int>", "Maximum Hatari screen height before scaling (200-)" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Hatari screen/window scaling factor (1.0 - 8.0)" },
 	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
@@ -314,7 +314,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_SPEC512, NULL, "--spec512",
-	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
+	  "<int>", "Spec512 palette threshold (0-512, 0=disable)" },
 	{ OPT_VIDEO_TIMING,   NULL, "--video-timing",
 	  "<x>", "Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random, default ws3)" },
 
@@ -330,11 +330,11 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VDI,	NULL, "--vdi",
 	  "<bool>", "Whether to use VDI screen mode" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  "<x>", "VDI mode bit-depth (x = 1/2/4/8)" },
+	  "<int>", "VDI mode bit-depth (1/2/4/8)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
-	  "<w>", "VDI mode width (320 < w <= 2048)" },
+	  "<int>", "VDI mode width (320-2048)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
-	  "<h>", "VDI mode height (200 < h <= 1280)" },
+	  "<int>", "VDI mode height (160-1280)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Screen capture" },
 	{ OPT_SCREEN_CROP, NULL, "--crop",
@@ -344,9 +344,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_AVIRECORD_VCODEC, NULL, "--avi-vcodec",
 	  "<x>", "Select AVI video codec (x = bmp/png)" },
 	{ OPT_AVI_PNG_LEVEL, NULL, "--png-level",
-	  "<x>", "Select AVI PNG compression level (x = 0-9)" },
+	  "<int>", "Select AVI PNG compression level (0-9)" },
 	{ OPT_AVIRECORD_FPS, NULL, "--avi-fps",
-	  "<x>", "Force AVI frame rate (x = 50/60/71/...)" },
+	  "<int>", "Force AVI frame rate (1-100, 50/60/71/...)" },
 	{ OPT_AVIRECORD_FILE, NULL, "--avi-file",
 	  "<file>", "Use <file> to record AVI" },
 	{ OPT_SCRSHOT_DIR, NULL, "--screenshot-dir",
@@ -356,7 +356,7 @@ static const opt_t HatariOptions[] = {
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
-	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
+	  "<int>", "Emulate joystick with cursor keys in given port (0-5)" },
 	/* these have to be exactly the same as I'm relying compiler giving
 	 * them the same same string pointer when strings are identical
 	 * (Opt_ShowHelpSection() skips successive options with same help
@@ -408,9 +408,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DRIVEB, NULL, "--drive-b",
 	  "<bool>", "Enable/disable drive B (default is on)" },
 	{ OPT_DRIVEA_HEADS, NULL, "--drive-a-heads",
-	  "<x>", "Set number of heads for drive A (1=single sided, 2=double sided)" },
+	  "<int>", "Set number of heads for drive A (1=single sided, 2=double sided)" },
 	{ OPT_DRIVEB_HEADS, NULL, "--drive-b-heads",
-	  "<x>", "Set number of heads for drive B (1=single sided, 2=double sided)" },
+	  "<int>", "Set number of heads for drive B (1=single sided, 2=double sided)" },
 	{ OPT_DISKA, NULL, "--disk-a",
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
@@ -448,9 +448,9 @@ static const opt_t HatariOptions[] = {
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
-	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB ; else size in KiB)" },
+	  "<int>", "ST RAM size (0-14 MiB, 0 = 512KiB ; else size in KiB)" },
 	{ OPT_TT_RAM,   NULL, "--ttram",
-	  "<x>", "TT RAM size (x = size in MiB from 0 to 1024, in steps of 4)" },
+	  "<int>", "TT RAM size (0-1024 MiB, in steps of 4)" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 
@@ -466,7 +466,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
-	  "<x>", "Set the CPU clock (x = 8/16/32)" },
+	  "<int>", "Set the CPU clock (8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use (more compatible) prefetch mode for CPU" },
 	{ OPT_CPU_DATA_CACHE, NULL, "--data-cache",
@@ -492,7 +492,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_RTC_YEAR,   NULL, "--rtc-year",
-	  "<x>", "Set initial year for RTC (0, 1980 <= x < 2080)" },
+	  "<int>", "Set initial year for RTC (0/1980-2079, 0=use host)" },
 	{ OPT_TIMERD,    NULL, "--timer-d",
 	  "<bool>", "Patch Timer-D (about doubles ST emulation speed)" },
 	{ OPT_FASTBOOT, NULL, "--fast-boot",
@@ -502,9 +502,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MICROPHONE,   NULL, "--mic",
 	  "<bool>", "Enable/disable (Falcon only) microphone" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
+	  "<x>", "Sound frequency (off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
-	  "<x>", "Sound buffer size in ms (x=0/10-100, 0=SDL default)" },
+	  "<int>", "Sound buffer size in ms (0/10-100, 0=SDL default)" },
 	{ OPT_SOUNDSYNC,   NULL, "--sound-sync",
 	  "<bool>", "Sound synchronized emulation (on|off, off=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
@@ -525,7 +525,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  "<bool>", "Enable/disable XBIOS command parsing support" },
 	{ OPT_CONOUT,   NULL, "--conout",
-	  "<device>", "Show console output (0-7, 2=VT-52 terminal)" },
+	  "<int>", "Catch console device output (0-7, 2=VT-52 terminal)" },
 	{ OPT_DISASM,   NULL, "--disasm",
 	  "<x>", "Set disassembly options (help/uae/ext/<bitmask>)" },
 	{ OPT_MEMCONV,   NULL, "--memconv",
@@ -555,7 +555,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ALERTLEVEL, NULL, "--alert-level",
 	  "<x>", "Show dialog for log messages above given level" },
 	{ OPT_RUNVBLS, NULL, "--run-vbls",
-	  "<x>", "Exit after x VBLs" },
+	  "<int>", "Exit after <int> VBLs (1-)" },
 	{ OPT_BENCHMARK, NULL, "--benchmark",
 	  NULL, "Start in benchmark mode (use with --run-vbls)" },
 
@@ -777,6 +777,35 @@ int Opt_ValueAlignMinMax(int value, int align, int min, int max)
 	return (value/align)*align;
 }
 
+/**
+ * If <conf> given, set it to parsed (decimal) integer value.
+ * Rounds value up to next <align>, for non-zero <align>.
+ * Return false if parsing failed or value was out of specified
+ * <min>-<max> range, otherwise return true
+ */
+static bool Opt_Int(const char *arg, opt_id_t optid, int *conf, int min, int max, int align)
+{
+	char *endptr;
+	int value;
+
+	errno = 0;
+	value = strtol(arg, &endptr, 10);
+
+	if (errno != 0)
+		Opt_ShowError(optid, arg, strerror(errno));
+	else if (endptr == arg || *endptr != '\0')
+		Opt_ShowError(optid, arg, "not an integer");
+	else if (value < min || value > max)
+		Opt_ShowError(optid, arg, "<int> out of range");
+	else
+	{
+		if (align > 1)
+			value = ((value+align-1)/align)*align;
+		*conf = value;
+		return true;
+	}
+	return false;
+}
 
 /**
  * If 'conf' given, set it:
@@ -968,18 +997,6 @@ static opt_id_t Opt_WhichOption(int argc, const char * const argv[], int *idx)
 			{
 				Opt_ShowError(opt->id, NULL, "Missing argument");
 				return OPT_ERROR;
-			}
-			/* early check for bools */
-			if (strcmp(opt->arg, "<bool>") == 0)
-			{
-				const char *value = argv[argi];
-
-				/* skip event prefix for all bools */
-				Event_GetPrefixActions(&value);
-				if (!Opt_Bool(value, opt->id, NULL))
-				{
-					return OPT_ERROR;
-				}
 			}
 			*idx = argi;
 		}
@@ -1181,9 +1198,8 @@ static bool Opt_HandleArgument(const char *path)
  */
 bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 {
-	/* variables used only by a single option */
-	int ncpu, skips, planes, cpuclock, threshold, memsize;
-	int dev, port, freq, drive, year, level;
+	/* variables used only by a 1-2 options */
+	int drive, level, port;
 
 	/* common variables */
 	const char *errstr, *str, *opt, *arg;
@@ -1316,28 +1332,28 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 
 		case OPT_FRAMESKIPS:
 			event = Event_GetPrefixActions(&arg);
-			skips = atoi(arg);
-			if (skips < 0)
+			if (!Opt_Int(arg, OPT_FRAMESKIPS, &val, 0, 64, 0))
 			{
-				return Opt_ShowError(OPT_FRAMESKIPS, arg,
-						     "Invalid frame skip value");
+				return false;
 			}
-			else if (skips > 8)
+			if (val > 8)
 			{
-				Log_Printf(LOG_WARN, "Extravagant frame skip value %d!\n", skips);
+				Log_Printf(LOG_WARN, "Extravagant frame skip value %d!\n", val);
 			}
 			if (event)
 			{
-				event->frameSkips = skips;
+				event->frameSkips = val;
 				break;
 			}
-			Log_Printf(LOG_DEBUG, "Frame skip = %d.\n", skips);
-			ConfigureParams.Screen.nFrameSkips = skips;
+			ConfigureParams.Screen.nFrameSkips = val;
 			break;
 
 		case OPT_SLOWDOWN:
 			event = Event_GetPrefixActions(&arg);
-			val = atoi(arg);
+			if (!Opt_Int(arg, OPT_SLOWDOWN, &val, 1, 30, 0))
+			{
+				return false;
+			}
 			if (event)
 			{
 				event->slowDown = val;
@@ -1348,7 +1364,6 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			{
 				return Opt_ShowError(OPT_SLOWDOWN, arg, errstr);
 			}
-			Log_Printf(LOG_DEBUG, "Slow down host VBL wait by factor of %d.\n", val);
 			break;
 
 		case OPT_MOUSE_WARP:
@@ -1373,14 +1388,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_SPEC512:
-			threshold = atoi(arg);
-			if (threshold < 0 || threshold > 512)
-			{
-				return Opt_ShowError(OPT_SPEC512, arg,
-						     "Invalid palette writes per line threshold for Spec512");
-			}
-			Log_Printf(LOG_DEBUG, "Spec512 threshold = %d palette writes per line.\n", threshold);
-			ConfigureParams.Screen.nSpec512Threshold = threshold;
+			ok = Opt_Int(arg, OPT_SLOWDOWN, &ConfigureParams.Screen.nSpec512Threshold, 0, 512, 0);
 			break;
 
 		case OPT_ZOOM:
@@ -1424,11 +1432,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_MAXWIDTH:
-			ConfigureParams.Screen.nMaxWidth = atoi(arg);
+			ok = Opt_Int(arg, OPT_MAXWIDTH, &ConfigureParams.Screen.nMaxWidth, 320, INT_MAX, 0);
 			break;
 
 		case OPT_MAXHEIGHT:
-			ConfigureParams.Screen.nMaxHeight = atoi(arg);
+			ok = Opt_Int(arg, OPT_MAXHEIGHT, &ConfigureParams.Screen.nMaxHeight, 200, INT_MAX, 0);
 			break;
 
 		case OPT_FORCE_MAX:
@@ -1482,21 +1490,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 		}
 
 		case OPT_AVI_PNG_LEVEL:
-			if (!Avi_SetCompressionLevel(arg))
+			if (!Opt_Int(arg, OPT_AVI_PNG_LEVEL, &val, 0, 9, 0))
 			{
-				return Opt_ShowError(OPT_AVI_PNG_LEVEL, arg, "Invalid compression level");
+				return false;
 			}
+			Avi_SetCompressionLevel(val);
 			break;
 
 		case OPT_AVIRECORD_FPS:
-			val = atoi(arg);
-			if (val < 0 || val > 100)
-			{
-				return Opt_ShowError(OPT_AVIRECORD_FPS, arg,
-						     "Invalid frame rate for avi recording");
-			}
-			Log_Printf(LOG_DEBUG, "AVI recording FPS = %d.\n", val);
-			ConfigureParams.Video.AviRecordFps = val;
+			ok = Opt_Int(arg, OPT_AVIRECORD_FPS, &ConfigureParams.Video.AviRecordFps, 1, 100, 0);
 			break;
 
 		case OPT_AVIRECORD_FILE:
@@ -1535,8 +1537,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_VDI_PLANES:
-			planes = atoi(arg);
-			switch(planes)
+			if (!Opt_Int(arg, OPT_VDI_PLANES, &val, 1, 8, 0))
+			{
+				return false;
+			}
+			switch(val)
 			{
 			 case 1:
 				ConfigureParams.Screen.nVdiColors = GEMCOLOR_2;
@@ -1558,24 +1563,24 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_VDI_WIDTH:
-			ConfigureParams.Screen.nVdiWidth = atoi(arg);
+			ok = Opt_Int(arg, OPT_VDI_WIDTH, &ConfigureParams.Screen.nVdiWidth, 320, 2048, 16);
 			ConfigureParams.Screen.bUseExtVdiResolutions = true;
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_VDI_HEIGHT:
-			ConfigureParams.Screen.nVdiHeight = atoi(arg);
+			ok = Opt_Int(arg, OPT_VDI_HEIGHT, &ConfigureParams.Screen.nVdiHeight, 160, 1280, 8);
 			ConfigureParams.Screen.bUseExtVdiResolutions = true;
 			bLoadAutoSave = false;
 			break;
 
 			/* devices options */
 		case OPT_JOYSTICK:
-			if (strlen(arg) != 1 ||
-			    !Joy_SetCursorEmulation(arg[0] - '0'))
+			if(!Opt_Int(arg, OPT_JOYSTICK, &val, 0, JOYSTICK_COUNT-1, 0))
 			{
-				return Opt_ShowError(OPT_JOYSTICK, arg, "Invalid joystick port");
+				return false;
 			}
+			Joy_SetCursorEmulation(val);
 			break;
 
 		case OPT_JOYSTICK0:
@@ -1681,21 +1686,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_DRIVEA_HEADS:
-			val = atoi(arg);
-			if(val != 1 && val != 2)
-			{
-				return Opt_ShowError(OPT_DRIVEA_HEADS, arg, "Invalid number of heads");
-			}
-			ConfigureParams.DiskImage.DriveA_NumberOfHeads = val;
+			ok = Opt_Int(arg, OPT_DRIVEA_HEADS, &ConfigureParams.DiskImage.DriveA_NumberOfHeads, 1, 2, 0);
 			break;
 
 		case OPT_DRIVEB_HEADS:
-			val = atoi(arg);
-			if(val != 1 && val != 2)
-			{
-				return Opt_ShowError(OPT_DRIVEB_HEADS, arg, "Invalid number of heads");
-			}
-			ConfigureParams.DiskImage.DriveB_NumberOfHeads = val;
+			ok = Opt_Int(arg, OPT_DRIVEB_HEADS, &ConfigureParams.DiskImage.DriveB_NumberOfHeads, 1, 2, 0);
 			break;
 
 		case OPT_DISKA:
@@ -1896,19 +1891,22 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 
 			/* Memory options */
 		case OPT_MEMSIZE:
-			memsize = atoi(arg);
-			memsize = STMemory_RAM_Validate_Size_KB ( memsize );
-			if (memsize < 0)
+			if (!Opt_Int(arg, OPT_MEMSIZE, &val, 0, 1024, 0))
+			{
+				return false;
+			}
+			val = STMemory_RAM_Validate_Size_KB ( val );
+			if (val < 0)
 			{
 				return Opt_ShowError(OPT_MEMSIZE, arg, "Invalid memory size");
 			}
-			ConfigureParams.Memory.STRamSize_KB = memsize;
+			ConfigureParams.Memory.STRamSize_KB = val;
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_TT_RAM:
-			memsize = atoi(arg);
-			ConfigureParams.Memory.TTRamSize_KB = Opt_ValueAlignMinMax(memsize+3, 4, 0, 1024) * 1024;
+			ok = Opt_Int(arg, OPT_TT_RAM, &val, 0, 1024, 4);
+			ConfigureParams.Memory.TTRamSize_KB = val * 1024;
 			bLoadAutoSave = false;
 			break;
 
@@ -1950,24 +1948,30 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			/* CPU options */
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
-			ncpu = atoi(arg);
-			if(ncpu < 0 || ncpu == 5 || ncpu > 6)
+			if (!Opt_Int(arg, OPT_CPULEVEL, &val, 0, 6, 0))
+			{
+				return false;
+			}
+			if(val == 5)
 			{
 				return Opt_ShowError(OPT_CPULEVEL, arg, "Invalid CPU level");
 			}
-			if ( ncpu == 6 )			/* Special case for 68060, nCpuLevel should be 5 */
-				ncpu = 5;
-			ConfigureParams.System.nCpuLevel = ncpu;
+			if (val == 6)	/* Special case for 68060, nCpuLevel should be 5 */
+				val = 5;
+			ConfigureParams.System.nCpuLevel = val;
 			bLoadAutoSave = false;
 			break;
 
 		case OPT_CPUCLOCK:
-			cpuclock = atoi(arg);
-			if(cpuclock != 8 && cpuclock != 16 && cpuclock != 32)
+			if (!Opt_Int(arg, OPT_CPUCLOCK, &val, 8, 32, 0))
+			{
+				return false;
+			}
+			if(val != 8 && val != 16 && val != 32)
 			{
 				return Opt_ShowError(OPT_CPUCLOCK, arg, "Invalid CPU clock");
 			}
-			Configuration_ChangeCpuFreq ( cpuclock );
+			Configuration_ChangeCpuFreq(val);
 			bLoadAutoSave = false;
 			break;
 
@@ -2126,12 +2130,15 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 		}
 
 		case OPT_RTC_YEAR:
-			year = atoi(arg);
-			if(year && (year < 1980 || year >= 2080))
+			if (!Opt_Int(arg, OPT_RTC_YEAR, &val, 0, 2079, 0))
+			{
+				return false;
+			}
+			if(val && val < 1980)
 			{
 				return Opt_ShowError(OPT_RTC_YEAR, arg, "Invalid RTC year");
 			}
-			ConfigureParams.System.nRtcYear = year;
+			ConfigureParams.System.nRtcYear = val;
 			break;
 
 			/* sound options */
@@ -2157,12 +2164,11 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			}
 			else
 			{
-				freq = atoi(arg);
-				if (freq < 6000 || freq > 50066)
+				if (!Opt_Int(arg, OPT_SOUND, &val, 6000, 50066, 0))
 				{
-					return Opt_ShowError(OPT_SOUND, arg, "Unsupported sound frequency");
+					return false;
 				}
-				ConfigureParams.Sound.nPlaybackFreq = freq;
+				ConfigureParams.Sound.nPlaybackFreq = val;
 				ConfigureParams.Sound.bEnableSound = true;
 			}
 			Log_Printf(LOG_DEBUG, "Sound %s, frequency = %d.\n",
@@ -2171,13 +2177,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_SOUNDBUFFERSIZE:
-			val = atoi(arg);
-			if (val == 0)			/* use default setting for SDL */
-				;
-			else if (val < 10 || val > 100)
-				{
-					return Opt_ShowError(OPT_SOUNDBUFFERSIZE, arg, "Unsupported sound buffer size");
-				}
+			if (!Opt_Int(arg, OPT_SOUNDBUFFERSIZE, &val, 0, 100, 0))
+			{
+				return false;
+			}
+			if (val && val < 10)
+			{
+				return Opt_ShowError(OPT_SOUNDBUFFERSIZE, arg, "Unsupported sound buffer size");
+			}
 			Log_Printf(LOG_DEBUG, "SDL sound buffer size = %d ms.\n", val);
 			ConfigureParams.Sound.SdlAudioBufferSize = val;
 			break;
@@ -2301,12 +2308,14 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			break;
 
 		case OPT_CONOUT:
-			dev = atoi(arg);
-			if (!Console_SetDevice(dev))
+			if (!Opt_Int(arg, OPT_CONOUT, &val, 0, 7, 0))
+			{
+				return false;
+			}
+			if (!Console_SetDevice(val))
 			{
 				return Opt_ShowError(OPT_CONOUT, arg, "Invalid console device vector number");
 			}
-			Log_Printf(LOG_DEBUG, "Xcounout device %d vector redirection enabled.\n", dev);
 			break;
 
 		case OPT_MEMCONV:
@@ -2426,7 +2435,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 
 		case OPT_RUNVBLS:
 			event = Event_GetPrefixActions(&arg);
-			val = atoi(arg);
+			if (!Opt_Int(arg, OPT_RUNVBLS, &val, 1, INT_MAX, 0))
+			{
+				return false;
+			}
 			if (event)
 			{
 				event->runVBLs = val;
