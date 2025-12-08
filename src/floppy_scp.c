@@ -613,6 +613,9 @@ static int scp_next_flux (struct fd_stream *s)
 				val = scss->total_ticks - scss->acc_ticks;
 				scss->acc_ticks = -val;
 			}
+
+			LOG_TRACE ( TRACE_FDC , "fdc scp set next dump_rev=%d\n" ,rev );
+
 			scss->index_pos = scss->index_off[rev];
 			if (rev == 0)
 				scss->dat_idx = 0;

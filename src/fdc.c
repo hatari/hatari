@@ -556,6 +556,11 @@ typedef struct {
 
 	int		IndexPulse_Mode;			/* How to update index pulse counter */
 	uint64_t	IndexPulse_Time;			/* CyclesGlobalClockCounter value last time we had an index pulse with motor ON */
+
+	/* Used by FDC_LoadTrack_MFM to prepare data when loading a new track/side */
+	int		Loaded_Track;				/* Track nbr or -1 */
+	int		Loaded_Side;				/* Side nbr or -1 */
+
 } FDC_DRIVE_STRUCT;
 
 
@@ -998,6 +1003,8 @@ void FDC_Reset ( bool bCold )
 		FDC_DRIVES[ i ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC_DRIVES[ i ].IndexPulse_Time = 0;	/* Current IP's locations are lost after a reset (motor is now OFF) */
 		FDC_Drive_Set_DC_signal ( i , 0 );
+		FDC_DRIVES[ i ].Loaded_Track = -1;
+		FDC_DRIVES[ i ].Loaded_Side = -1;
 	}
 
 	FDC_DMA.Status = 1;				/* no DMA error and SectorCount=0 */
@@ -1460,6 +1467,8 @@ void	FDC_InsertFloppy ( int Drive )
 			FDC_IndexPulse_Init ( Drive );			/* init the index pulse's position */
 		else
 			FDC_DRIVES[ Drive ].IndexPulse_Time = 0;	/* Index pulse's position not known yet */
+		FDC_DRIVES[ Drive ].Loaded_Track = -1;
+		FDC_DRIVES[ Drive ].Loaded_Side = -1;
 
 		/* Update floppy's density for this drive */
 		FDC_UpdateFloppyDensity ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
@@ -1481,6 +1490,8 @@ void	FDC_EjectFloppy ( int Drive )
 		FDC_DRIVES[ Drive ].DiskInserted = false;
 		FDC_DRIVES[ Drive ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_TIMER;
 		FDC_DRIVES[ Drive ].IndexPulse_Time = 0;		/* Stop counting index pulses on an empty drive */
+		FDC_DRIVES[ Drive ].Loaded_Track = -1;
+		FDC_DRIVES[ Drive ].Loaded_Side = -1;
 
 		/* Set the Disk Change signal to "ejected" */
 		FDC_Drive_Set_DC_signal ( Drive , FDC_DC_SIGNAL_EJECTED );
@@ -5545,6 +5556,19 @@ static int flux_next_bit(struct fd_stream *s)
 int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 {
 	int		res;
+
+	/* Don't call 'fd_stream_select_track' if already done for Track/Side */
+	/* (if not we will restart with rev=0 instead of using all the image's revs) */
+	if ( ( Track == FDC_DRIVES[ Drive ].Loaded_Track ) && ( Side == FDC_DRIVES[ Drive ].Loaded_Side ) )
+	{
+		LOG_TRACE ( TRACE_FDC , "fdc loadtrack mfm track=%d side=%d already loaded\n" , Track , Side );
+		return 0;
+	}
+
+	LOG_TRACE ( TRACE_FDC , "fdc loadtrack mfm track=%d side=%d\n" , Track , Side );
+
+	FDC_DRIVES[ Drive ].Loaded_Track = Track;
+	FDC_DRIVES[ Drive ].Loaded_Side = Side;
 
 	res = fd_stream_select_track ( &(SCP_State.SCP_Stream[ Drive ].s) , Track*2+Side );
 	if ( res )
