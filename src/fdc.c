@@ -485,7 +485,9 @@ typedef struct {
 	/* AM detector */
 	uint16_t	AM_Detector_Mode;
 	uint16_t	AM_Detector_Status;
-	bool		Bit_Is_Data;
+	uint16_t	AM_Detector_Status_Delayed;
+	bool		Bit_Is_Data;				/* True if latest MFM bit is data, false if it's clock */
+	uint8_t		Data_Bit;				/* Value of the latest data bit */
 	bool		Enable_CRC;
 	uint16_t	CRC;
 	uint16_t	Prev_Sync;
@@ -5593,6 +5595,7 @@ static void	FDC_AM_Detector_Reset ( void )
 	FDC.Sync_A1_Count = 0;
 	FDC.Enable_CRC = false;
 	FDC.FD_Latency_prev = 0;
+	FDC.AM_Detector_Status_Delayed = 0;
 }
 
 
@@ -5623,7 +5626,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 {
 	int			bit;
 	bool			Copy_DSR_DR;
-	Uint16			Sync;
+	uint16_t		Sync;
 	uint32_t		nr_index_prev;
 
 	/* Reset some status before processing a new bit */
@@ -5761,9 +5764,164 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 
 
 
+static int	FDC_MFM_Process_Bit_delay_clock_v2 ( struct fd_stream *s , bool Skip_Bit )
+{
+	int			bit;
+	uint16_t		Sync;
+	uint32_t		nr_index_prev;
+
+
+	/* Reset some status before processing a new bit */
+	FDC.AM_Detector_Status &= ~( FDC_AM_DET_STATUS_SYNC_A1 | FDC_AM_DET_STATUS_SYNC_C2 | FDC_AM_DET_STATUS_DR_READY
+		| FDC_AM_DET_STATUS_SYNC_A1_X3 | FDC_AM_DET_STATUS_INDEX_PULSE );
+
+	/* Get a new MFM bit from the flux (clock or data) and check if we got an index pulse at the same time */
+	nr_index_prev = s->nr_index;
+	bit = fd_stream_next_bit ( s );
+	if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "bit %d %s %0x\n" , bit , FDC.Bit_Is_Data ? "data" : "clck" , s->word  );
+
+	if ( ( nr_index_prev > 0 ) && ( nr_index_prev != s->nr_index ) )
+		FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_INDEX_PULSE;
+
+	if ( bit == -1 )				/* End of all revolutions for this track */
+		return -1;				/* (this should not happen) */
+
+	/* Stop processing now if we want to skip a bit */
+	if ( Skip_Bit )
+		return bit;
+
+	/* If the bit is a data bit, we update DSR and CRC (if enabled) */
+	if ( FDC.Bit_Is_Data )
+		FDC.Data_Bit = bit;
+
+	/* AM Detector : check for Sync and copy or flush DSR when needed */
+	if ( FDC.AM_Detector_Mode != FDC_AM_DET_MODE_OFF )
+	{
+		FDC.Bits_Since_Prev_Sync++;
+
+		Sync = 0;
+		if ( (uint16_t)s->word == 0x4489 )		/* 0xA1 */
+		{
+			if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync 4489/a1 %02x %d\n" , FDC.DSR , FDC.DSR_count  );
+			Sync = 0x4489;
+			FDC.AM_Detector_Status_Delayed |= FDC_AM_DET_STATUS_SYNC_A1;
+		}
+		else if ( (uint16_t)s->word == 0x5224 )		/* 0xC2 */
+		{
+			if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync 5224/c2 %02x %d\n" , FDC.DSR , FDC.DSR_count  );
+			Sync = 0x5224;
+			FDC.AM_Detector_Status_Delayed |= FDC_AM_DET_STATUS_SYNC_C2;
+		}
+
+		if ( Sync )
+		{
+			/* If SYNC is detected, last read bit was a data bit and next one will be a clock bit */
+			/* Important : this means that a bit that was considered as a clock bit can become */
+			/* a data bit when the SYNC is detected and DSR bit 0 must be updated */
+			FDC.Bit_Is_Data = true;
+			FDC.Data_Bit = bit;
+
+			if ( FDC.Bits_Since_Prev_Sync < 16 )			/* Overlapping sync */
+			{
+				if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync %04x sync_bit_prev=%d overlaps sync_prev %04x drop dsr %02x %d\n" , Sync , FDC.Bits_Since_Prev_Sync, FDC.Prev_Sync , FDC.DSR , FDC.DSR_count );
+				FDC.DSR_count = -1;				/* Discard current content of DSR */
+			}
+
+			/* Copy bit to DSR and force a flush of DSR to DR (only if DSR has at least 1 bit) */
+			/* This will be done when the next bit is processed (it will be a clock bit) */
+			else if ( FDC.DSR_count == 0 )
+			{
+				if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "sync %04x with empty dsr drop dsr %02x %d\n" , Sync , FDC.DSR , FDC.DSR_count );
+				FDC.DSR_count = -1;				/* Discard current content of DSR */
+			}
+
+			else							/* FDC.DSR_count > 0 */
+				FDC.DSR_count = 7;				/* Next data bit will force a copy of DSR */
+
+			/* Sync = 0x4489 enables the CRC and presets CRC to 0xCDB4 (see below) */
+			if ( Sync == 0x4489 )
+			{
+				/* Count consecutive 4489/A1 for address mark detector */
+				if ( ( FDC.Prev_Sync == 0x4489 ) && ( FDC.Bits_Since_Prev_Sync == 16 ) )
+					FDC.Sync_A1_Count++;
+				else
+					FDC.Sync_A1_Count = 1;
+			}
+
+			FDC.Prev_Sync = Sync;
+			FDC.Bits_Since_Prev_Sync = 0;
+
+			/* When 3 4489/A1 are found we can look for an address mark (ID or DATA) */
+			/* To do so, Sync detector must be turned off to read the next bytes from the flux */
+			/* It's only during "Read Track" command that Sync detector remains always ON */
+			if ( FDC.Sync_A1_Count == 3 )
+			{
+				FDC.Sync_A1_Count = 0;
+				FDC.AM_Detector_Status_Delayed |= FDC_AM_DET_STATUS_SYNC_A1_X3;
+				/* Turn off sync detector for next bits ? */
+				if ( FDC.AM_Detector_Mode == FDC_AM_DET_MODE_AUTO_OFF )
+					FDC.AM_Detector_Mode = FDC_AM_DET_MODE_OFF;
+			}
+		}
+	}
+
+	/* Data bit is not processed immediately but during the next "clock bit" */
+	/* If DSR is full it will be copied on the next "clock" bit */
+	/* This means DSR is copied after a delay of 1 MFM bit, this is necessary */
+	/* to allow the latest data bit to be inserted as bit 0 into DSR when a SYNC is detected */
+	/* as seen on a real WD1772 */
+	if ( !FDC.Bit_Is_Data )					/* Current bit is a clock bit */
+	{
+		FDC.AM_Detector_Status |= FDC.AM_Detector_Status_Delayed;
+		FDC.AM_Detector_Status_Delayed = 0;
+
+		if ( FDC.DSR_count == -1 )			/* Overlapping sync or empty DSR after sync */
+			FDC.DSR_count = 0;			/* Discard current DSR */
+
+		else
+		{
+			FDC.DSR = FDC.DSR<<1 | FDC.Data_Bit;	/* Add data bit */
+			FDC.DSR_count++;
+
+			if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_SYNC_A1 )
+			{
+				FDC.Enable_CRC = true;
+				FDC.CRC = 0xCDB4;		/* reset CRC */
+			}
+			else if ( FDC.Enable_CRC )
+			{
+				if ( FDC.Data_Bit )
+					FDC.CRC ^= 0x8000;
+				if ( FDC.CRC & 0x8000 )
+					FDC.CRC = ( FDC.CRC << 1 ) ^ 0x1021;
+				else
+					FDC.CRC = FDC.CRC << 1;
+			}
+			if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "dsr %02x %d %x\n" , FDC.DSR , FDC.DSR_count , FDC.CRC  );
+
+			if ( FDC.DSR_count == 8 )			/* 8 bits = 1 byte is complete (or SYNC was received) */
+			{
+				if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "copy dsr_dr %02x %d\n" , FDC.DSR , FDC.DSR_count  );
+				FDC.DR = FDC.DSR;
+				FDC.DSR_count = 0;
+				FDC.AM_Detector_Status |= FDC_AM_DET_STATUS_DR_READY;
+
+				FDC.FD_DR_time = s->latency - FDC.FD_Latency_prev;
+				FDC.FD_Latency_prev = s->latency;
+			}
+		}
+	}
+
+	FDC.Bit_Is_Data = !FDC.Bit_Is_Data;			/* toggle between data or clock bit */
+	return bit;
+}
+
+
+
 static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 {
-	return FDC_MFM_Process_Bit_delay_clock ( s , Skip_Bit );
+//	return FDC_MFM_Process_Bit_delay_clock ( s , Skip_Bit );
+	return FDC_MFM_Process_Bit_delay_clock_v2 ( s , Skip_Bit );
 }
 
 
