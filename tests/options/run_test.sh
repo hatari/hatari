@@ -111,6 +111,73 @@ echo "Check <bool> options, all in one go..."
 test_options 0 "$bool_opts"
 
 
+# all hatari <int> options, each set to:
+# - <min> & <max>, if <min>-<max> range specified
+# - <min>, if only open <min>- range specified
+# - last <int>, if no range specified
+int_opts=$($hatari --help | awk '
+/--[^<]*<int>.*[0-9]+-[0-9]+/ {
+	match($0, "[0-9]+-[0-9]+");
+	range=substr($0, RSTART, RLENGTH);
+	match(range, "^[0-9]+");
+	min=substr(range, RSTART, RLENGTH);
+	match(range, "[0-9]+$");
+	max=substr(range, RSTART, RLENGTH);
+	printf("%s|%s|%s|%s|", $1, min, $1, max);
+	next;
+}
+/--[^<]*<int>.*[0-9]+-/ {
+	match($0, "[0-9]+-");
+	range=substr($0, RSTART, RLENGTH);
+	match(range, "^[0-9]+");
+	min=substr(range, RSTART, RLENGTH);
+	printf("%s|%s|", $1, min);
+	next;
+}
+/--[^<]*<int>.*[0-9]+/ {
+	match($0, "[0-9]+[^0-9]*$");
+	last=substr($0, RSTART, RLENGTH);
+	match(last, "^[0-9]+");
+	value=substr(last, RSTART, RLENGTH);
+	printf("%s|%s|", $1, value);
+	next;
+}
+')
+
+echo
+echo "Check valid values for <int> options, all in one go..."
+test_options 0 "$int_opts"
+
+
+# all hatari <int> options, each set to:
+# - <max>+1, if <min>-<max> range specified
+# - <min>-1, if only open <min>- range specified
+# Negative tests need to be done one-by-one,
+# to verify that each one actually fails.
+int_fail_opts=$($hatari --help | awk '
+/--[^<]*<int>.*[0-9]+-[0-9]+/ {
+	match($0, "[0-9]+-[0-9]+");
+	range=substr($0, RSTART, RLENGTH);
+	match(range, "[0-9]+$");
+	max=substr(range, RSTART, RLENGTH);
+	printf("%s|%s\n", $1, max+1);
+	next;
+}
+/--[^<]*<int>.*[0-9]+-/ {
+	match($0, "[0-9]+-");
+	range=substr($0, RSTART, RLENGTH);
+	match(range, "^[0-9]+");
+	min=substr(range, RSTART, RLENGTH);
+	printf("%s|%s\n", $1, min-1);
+	next;
+}
+')
+
+echo
+echo "Check expected <int> option failures..."
+test_options 1 "$int_fail_opts"
+
+
 # All Hatari <dir> + <file> options, using (existing)
 # <testdir>, or <empty> file under it.
 # Skip options that won't work with these (or together).
