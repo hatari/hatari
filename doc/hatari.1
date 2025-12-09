@@ -8,7 +8,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2025-11-23" "Hatari" ""
+.TH "HATARI" "1" "2025-12-09" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -147,11 +147,11 @@ Allow window resizing
 .B \-\-borders <bool>
 Show ST/STE/Falcon screen borders (for low/med resolution overscan demos)
 .TP
-.B \-\-frameskips <x>
-Skip <x> frames after each displayed frame to accelerate emulation
+.B \-\-frameskips <int>
+Skip <int> frames after each displayed frame to accelerate emulation
 (0=disabled, >4 uses automatic frameskip with given value as maximum)
 .TP
-.B \-\-slowdown <x>
+.B \-\-slowdown <int>
 Slow down emulation by factor of x (used as multiplier for VBL wait time)
 .TP
 .B \-\-mousewarp <bool>
@@ -164,10 +164,10 @@ Show statusbar (with floppy leds etc etc)
 .B \-\-drive\-led <bool>
 Show overlay drive led when statusbar isn't shown
 .TP
-.B \-\-max\-width <x>
+.B \-\-max\-width <int>
 Preferred / maximum Hatari screen width
 .TP
-.B \-\-max\-height <x>
+.B \-\-max\-height <int>
 Preferred / maximum Hatari screen height.
 .IP
 Maximum width and height options are part of Hatari's Atari monitor
@@ -215,10 +215,10 @@ Run emulation without displaying video (audio only)
 
 .SS "ST/STE specific display options"
 .TP
-.B \-\-spec512 <x>
+.B \-\-spec512 <int>
 Hatari uses this threshold to decide when to render a screen with
 the slower but more accurate Spectrum512 screen conversion functions
-(0 <= x <= 512, 0=disable)
+(0-512, 0=disable)
 .TP
 .B \-\-video\-timing <x>
 Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
@@ -257,14 +257,14 @@ to skip the detection at boot). Original TOS desktops use wrong window
 size in 2-plane (4 color) VDI mode when screen height >= 400 pixels.
 Because of these issues, using EmuTOS is recommended for VDI mode
 .TP
-.B \-\-vdi\-planes <x>
-Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
+.B \-\-vdi\-planes <int>
+Use extended VDI resolution with bit depth <int> (1/2/4/8)
 .TP
-.B \-\-vdi\-width <w>
-Use extended VDI resolution with width <w> (320 < w <= 2048)
+.B \-\-vdi\-width <int>
+Use extended VDI resolution with width <int> (320-2048)
 .TP
-.B \-\-vdi\-height <h>
-Use extended VDI resolution with height <h> (160 < h <= 1280)
+.B \-\-vdi\-height <int>
+Use extended VDI resolution with height <int> (160-1280)
 .PP
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
@@ -295,15 +295,15 @@ Select AVI video codec (x = bmp/png).  PNG compression can
 be \fImuch\fP slower than using the uncompressed BMP format,
 but uncompressed video content takes huge amount of space.
 .TP
-.B \-\-png\-level <x>
-Select PNG compression level for AVI video (x = 0-9).
+.B \-\-png\-level <int>
+Select PNG compression level <int> (0-9) for AVI video.
 Both compression efficiency and speed depend on the compressed
 screen content. Highest compression level (9) can be \fIreally\fP
 slow with some content. Levels 3-6 should compress nearly as well
 with clearly smaller CPU overhead.
 .TP
-.B \-\-avi\-fps <x>
-Force AVI frame rate (x = 50/60/71/...)
+.B \-\-avi\-fps <int>
+Force AVI frame rate <int> (1-100, 50/60/71/...)
 .TP
 .B \-\-avi\-file <file>
 Use <file> to record AVI
@@ -373,10 +373,10 @@ Enable/disable drive A (default is on)
 .B \-\-drive\-b <bool>
 Enable/disable drive B (default is on)
 .TP
-.B \-\-drive\-a\-heads <x>
+.B \-\-drive\-a\-heads <int>
 Set number of heads for drive A (1=single sided, 2=double sided)
 .TP
-.B \-\-drive\-b\-heads <x>
+.B \-\-drive\-b\-heads <int>
 Set number of heads for drive B (1=single sided, 2=double sided)
 .TP
 .B \-\-disk\-a <file>
@@ -464,13 +464,13 @@ If just option is given, it is applied to IDE 0
 .B \-\-memstate <file>
 Load memory snap-shot <file>
 .TP
-.B \-s, \-\-memsize <x>
+.B \-s, \-\-memsize <int>
 Set amount of emulated ST RAM, x = 1 to 14 MiB, or 0 for 512 KiB.
 Other values are considered as a size in KiB.  While Hatari allows
 14 MiB for all machine types, on real HW, ST/STE can have up to 4 MiB,
 MegaSTE/TT up to 10 MiB, and Falcon up to 14 MiB RAM.
 .TP
-.B \-\-ttram <x>
+.B \-\-ttram <int>
 Set amount of emulated TT RAM, x = 0 to 1024 MiB (in 4MiB steps)
 
 .SS "ROM options"
@@ -491,7 +491,7 @@ extended VDI resolution are disabled)
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
 .TP
-.B \-\-cpuclock <x>
+.B \-\-cpuclock <int>
 Set the CPU clock (8, 16 or 32 Mhz)
 .TP
 .B \-\-compatible <bool>
@@ -528,11 +528,11 @@ Enable blitter emulation (ST only)
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP
-.B \-\-rtc\-year <x>
+.B \-\-rtc\-year <int>
 With the default value 0, RTC date and time are taken from the host.
 If application does not handle current dates, this can be used to
-change RTC year to a more compatible one.  See also "\-\-gemdos\-time"
-option.
+change RTC year to a more compatible one (1980-2079).
+See also "\-\-gemdos\-time" option.
 .TP
 .B \-\-timer\-d <bool>
 Patch redundantly high Timer\-D frequency set by TOS.  This can
@@ -557,7 +557,7 @@ DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
 (11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
 supports.
 .TP
-.B \-\-sound\-buffer\-size <x>
+.B \-\-sound\-buffer\-size <int>
 SDL's sound buffer size: 10-100, or 0 to use default buffer size.
 By default Hatari uses an SDL buffer size of 1024 samples, which
 gives approximately 20-30 ms of sound depending on the chosen sound
@@ -624,10 +624,10 @@ control APIs (\-\-natfeats, \-\-cmd\-fifo, hconsole) instead of XBios
 11 and 255.
 .TP
 .B \-\-conout <device>
-Enable console (xconout vector functions) output redirection for given
-<device> to host terminal.  Device 2 is for the (CON:) VT52 console,
-which vector function catches also EmuTOS panic messages and MiNT
-console output, not just normal BIOS console output.
+Enable console (xconout vector function) output redirection to host
+terminal for given <device>.  Device 2 is for the (CON:) VT52 console,
+which provides also EmuTOS panic messages and MiNT console output to
+host terminal, not just normal BIOS console output.
 .TP
 .B \-\-memconv <bool>
 Instead of showing non-ASCII (8-bit) Atari characters as dots in the
@@ -683,8 +683,8 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 .B \-\-alert\-level <x>
 Show dialog for log messages above given level
 .TP
-.B \-\-run\-vbls <x>
-Exit after X VBLs.  Used with "\-\-benchmark" mode
+.B \-\-run\-vbls <int>
+Exit after <int> VBLs (1-).  Used with "\-\-benchmark" mode
 .TP
 .B \-\-benchmark
 Start in benchmark mode (use with \-\-run\-vbls). Same as \-\-fast\-forward
@@ -701,6 +701,9 @@ Option argument type values:
 .B <bool>
 Disable option with "n", "no", "off", "false", or "0" value.
 Enable with "y", "yes", "on", "true" or "1" value.
+.TP
+.B <int>
+Decimal value.
 .TP
 .B <file>
 Device options accept also special "stdout" and "stderr" file names

@@ -669,12 +669,12 @@ mode</p>
 <p class="paramdesc">Show ST/STE/Falcon screen borders
 (for low/med resolution overscan demos)</p>
 <p class="parameter">--frameskips
-&lt;x&gt;</p>
-<p class="paramdesc">Skip &lt;x&gt; frames after each
+&lt;int&gt;</p>
+<p class="paramdesc">Skip &lt;int&gt; frames after each
 displayed frame to accelerate emulation (0=disabled, &gt;4 uses
 automatic frameskip with given value as maximum)</p>
-<p class="parameter">--slowdown &lt;x&gt;</p>
-<p class="paramdesc">Slow down emulation by factor of x
+<p class="parameter">--slowdown &lt;int&gt;</p>
+<p class="paramdesc">Slow down emulation by given factor
 (used as multiplier for VBL wait time)</p>
 <p class="parameter">--statusbar
 &lt;bool&gt;</p>
@@ -684,9 +684,9 @@ etc)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
-<p class="parameter">--max-width &lt;x&gt;</p>
+<p class="parameter">--max-width &lt;int&gt;</p>
 <p class="paramdesc">Preferred / maximum Hatari screen width</p>
-<p class="parameter">--max-height &lt;x&gt;</p>
+<p class="parameter">--max-height &lt;int&gt;</p>
 <p class="paramdesc">Preferred / maximum Hatari screen height.
 </p><p class="paramdesc">
 Maximum width and height options are part of Hatari's Atari monitor
@@ -733,11 +733,10 @@ resolutions frequently.
 
 <h3>ST/STE specific display options</h3>
 <p class="parameter">--spec512
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
 when to render a screen with the slower but more accurate
-Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
-0=disable)</p>
+Spectrum512 screen conversion functions (0-512, 0=disable)</p>
 <p class="parameter">--video-timing
 &lt;x&gt;</p>
 <p class="paramdesc">Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
@@ -780,17 +779,17 @@ size in 2-plane (4 color) VDI mode when screen height &gt;= 400 pixels.
 Because of these issues, using EmuTOS is recommended for VDI mode
 </p>
 <p class="parameter">--vdi-planes
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with bit
-depth &lt;x&gt; (x = 1, 2 or 4)</p>
+depth &lt;int&gt; (1/2/4/8)</p>
 <p class="parameter">--vdi-width
-&lt;w&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with width
-&lt;w&gt; (320 &lt; w &lt;= 2048)</p>
+&lt;int&gt; (320-2048)</p>
 <p class="parameter">--vdi-height
-&lt;h&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
-&lt;h&gt; (160 &lt; h &lt;= 1280)</p>
+&lt;int&gt; (160-1280)</p>
 <p>
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
@@ -823,14 +822,14 @@ automatically stop when emulation resolution changes.</p>
 <p class="paramdesc">Select AVI video codec (x = bmp/png).
 PNG compression can be <em>much</em> slower than using the uncompressed BMP
 format, but uncompressed video content takes huge amount of space.</p>
-<p class="parameter">--png-level &lt;x&gt;</p>
-<p class="paramdesc">Select PNG compression level for AVI video (x = 0-9).
+<p class="parameter">--png-level &lt;int&gt;</p>
+<p class="paramdesc">Select PNG compression level (0-9) for AVI video.
 Both compression efficiency and speed depend on the compressed
 screen content. Highest compression level (9) can be <em>really</em>
 slow with some content. Levels 3-6 should compress nearly as well
 with clearly smaller CPU overhead.</p>
-<p class="parameter">--avi-fps &lt;x&gt;</p>
-<p class="paramdesc">Force AVI frame rate (x = 50/60/71/...)</p>
+<p class="parameter">--avi-fps &lt;int&gt;</p>
+<p class="paramdesc">Force AVI frame rate (1-100, 50/60/71/...)</p>
 <p class="parameter">--avi-file &lt;file&gt;</p>
 <p class="paramdesc">Use &lt;file&gt; to record AVI</p>
 <p class="parameter">--screenshot-dir &lt;dir&gt;</p>
@@ -896,10 +895,10 @@ to &lt;file&gt;</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable drive B (default is on)</p>
 <p class="parameter">--drive-a-heads
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set number of heads for drive A (1=single sided, 2=double sided)</p>
 <p class="parameter">--drive-b-heads
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set number of heads for drive B (1=single sided, 2=double sided)</p>
 <p class="parameter">--disk-a
 &lt;file&gt;</p>
@@ -989,15 +988,15 @@ IDE 0</p>
 --memstate &lt;file&gt;</p>
 <p class="paramdesc">Load memory snap-shot &lt;file&gt;</p>
 <p class="parameter">-s, --memsize
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB. Other values are considered as a size in KiB.
 While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
 have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM.</p>
 <p class="parameter">--ttram
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
-mode), x = 0 to 1024 MiB (in 4MiB steps)</p>
+mode), 0-1024 MiB (in 4MiB steps)</p>
 
 <h3>ROM options</h3>
 <p class="parameter">-t,
@@ -1020,7 +1019,7 @@ disabled)</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
 1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
 <p class="parameter">--cpuclock
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set the CPU clock (8, 16 or 32 MHz)</p>
 <p class="parameter">--compatible
 &lt;bool&gt;</p>
@@ -1047,11 +1046,11 @@ megaste, tt or falcon)</p>
 <p class="parameter">--blitter
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable blitter emulation (ST only)</p>
-<p class="parameter">--rtc-year &lt;x&gt;</p>
+<p class="parameter">--rtc-year &lt;int&gt;</p>
 <p class="paramdesc">With the default value 0, RTC date and time are
 taken from the host. If application does not handle current dates,
-this can be used to change RTC year to a more compatible one.  See
-also "--gemdos-time" option.
+this can be used to change RTC year to a more compatible one (1980-2079).
+See also "--gemdos-time" option.
 </p>
 <p class="parameter">--dsp &lt;x&gt;</p>
 <p class="paramdesc">Falcon DSP emulation (x = none, dummy
@@ -1082,7 +1081,7 @@ matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
 250033, 50066 Hz) or your sound card frequencies (11025, 22050,
 44100 or 6000...48000 Hz). Check what your sound card supports.</p>
 <p class="parameter">--sound-buffer-size
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
 or 0 to use default buffer size. By default Hatari uses an SDL
 buffer size of 1024 samples, which gives approximately 20-30 ms
@@ -1199,8 +1198,9 @@ socket. Hatari outputs help for unrecognized commands and subcommands
 <p class="paramdesc">Show dialog for log messages above
 given level</p>
 <p class="parameter">--run-vbls
-&lt;x&gt;</p>
-<p class="paramdesc">Exit after X VBLs. Used with --benchmark mode</p>
+&lt;int&gt;</p>
+<p class="paramdesc">Exit after given number of (1-) VBLs.
+Used with --benchmark mode</p>
 <p class="parameter">--benchmark</p>
 <p class="paramdesc">Start in benchmark mode (use with --run-vbls).
 Same as --fast-forward mode, except it cannot be disabled at run-time,

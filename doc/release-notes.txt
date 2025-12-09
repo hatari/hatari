@@ -40,6 +40,8 @@ Emulator improvements:
     E.g. to fast-forward until program starts (from GEMDOS HD),
     use: "--fast-forward boot:on --fast-forward prg:off"
   - New "--symload" option for specifying when program symbols are loaded
+  - Hatari exits with return value 1 on option errors
+  - Stricter validation of integer option values
 - SDL GUI:
   - Fix: allow exit from text edit mode when using just joystick
   - Fix: do not show recording in progress, if starting it failed
@@ -80,9 +82,10 @@ Emulator improvements:
     Atari chars in memory output from the debugger commands, and
     for "--conout" output
 
-Other changes:
-- Automated test for verifying profiling & breakpoint chaining
-  functionality and "uae" + "ext" disassembly engines output
+Testing additions:
+- Test for verifying parsing of all Hatari options
+- Test for verifying profiling & breakpoint chaining functionality,
+  and output from the "uae" + "ext" disassembly engines
 
 Documentation:
 - (Very) obsolete French manual page removed
