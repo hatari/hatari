@@ -8,7 +8,7 @@ build-minimal:
  - CFLAGS="-D_FORTIFY_SOURCE=3"
    ./configure --disable-dsp --enable-debug --disable-tracing --enable-werror
  - make -j$(nproc)
- - ctest -j$(nproc)
+ - ctest -j$(nproc) || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 build-32bit:
  script:
@@ -22,7 +22,7 @@ build-32bit:
    ./configure --enable-debug
  - make -j$(nproc)
  - file src/hatari | grep 32.bit
- - ctest -j$(nproc)
+ - ctest -j$(nproc) || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 build-mingw:
   image: fedora:41
