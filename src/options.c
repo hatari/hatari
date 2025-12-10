@@ -105,6 +105,7 @@ typedef enum {
 	OPT_MAXWIDTH,
 	OPT_MAXHEIGHT,
 	OPT_ZOOM,
+	OPT_VSYNC,
 	OPT_DISABLE_VIDEO,
 
 	OPT_BORDERS,		/* ST/STE display options */
@@ -307,6 +308,8 @@ static const opt_t HatariOptions[] = {
 	  "<int>", "Maximum Hatari screen height before scaling (200-)" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Hatari screen/window scaling factor (1.0 - 8.0)" },
+	{ OPT_VSYNC,   NULL, "--vsync",
+	  "<bool>", "Limit screen updates to host monitor refresh rate" },
 	{ OPT_DISABLE_VIDEO,   NULL, "--disable-video",
 	  "<bool>", "Run emulation without displaying video (audio only)" },
 
@@ -1376,6 +1379,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 
 		case OPT_DRIVE_LED:
 			ok = Opt_Bool(arg, OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
+			break;
+
+		case OPT_VSYNC:
+			ok = Opt_Bool(arg, OPT_VSYNC, &ConfigureParams.Screen.bUseVsync);
 			break;
 
 		case OPT_DISABLE_VIDEO:

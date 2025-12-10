@@ -40,6 +40,7 @@ Emulator improvements:
     E.g. to fast-forward until program starts (from GEMDOS HD),
     use: "--fast-forward boot:on --fast-forward prg:off"
   - New "--symload" option for specifying when program symbols are loaded
+  - New "--vsync" option to enable screen update vsyncing
   - Hatari exits with return value 1 on option errors
   - Stricter validation of integer option values
 - SDL GUI:
