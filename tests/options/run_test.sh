@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-	echo "Usage: $0 <hatari> [--skip-negative]"
+	echo "Usage: $0 <hatari> [--skip-negative] [--minimal]"
 	exit 1
 fi
 
@@ -12,14 +12,21 @@ if [ ! -x "$hatbin" ]; then
 fi
 shift
 
-if [ "$1" = "--skip-negative" ]; then
-	echo "SKIP negative tests (where expected exit value != 0)."
-	skip_negative="true"
+skip_negative="false"
+minimal="false"
+
+while true; do
+	if [ "$1" = "--skip-negative" ]; then
+		echo "SKIP negative tests (where expected exit value != 0)."
+		skip_negative="true"
+	elif [ "$1" = "--minimal" ]; then
+		echo "SKIP options not supported by minimal Hatari builds."
+		minimal="true"
+	else
+		break
+	fi
 	shift
-else
-	echo "Do all tests, both positive & (more time consuming) negative ones."
-	skip_negative="false"
-fi
+done
 
 hatari="$hatbin $*"
 
@@ -244,12 +251,16 @@ other_opts="
 --sound|6000|--sound-buffer-size|0|--ym-mixing|table|--sound|off|\
 --debug-except|all|--debug-except|bus,chk,dsp|--debug-except|none|\
 --symload|exec|--symload|debugger|--symload|off|--lilo|anything-goes|\
---disasm|ext|--disasm|0x1f|--disasm|uae|--disasm|0|\
+--disasm|0|--disasm|uae|--disasm|0x1f|\
 --log-level|debug|--alert-level|fatal|--log-level|error|--alert-level|info|\
 "
 
-# TODO: add to $other_opts when CMake configured with ENABLE_TRACING
-#trace_opts="--trace|none|--trace|os_base,-gemdos,+xbios,+aes|--trace|none|"
+if [ $minimal = "false" ]; then
+	other_opts="${other_opts}\
+--trace|os_base,-gemdos,+xbios,+aes|--trace|none|\
+--disasm|ext|\
+"
+fi
 
 echo
 echo "Check options taking other arg types, all in one go..."
@@ -258,6 +269,7 @@ test_options 0 "$other_opts"
 
 # Negative tests need to be done one-by-one,
 # to verify that each one actually fails.
+# Options unsupported by minimal version are fine here.
 fail_opts="
 --none
 --country|none|
