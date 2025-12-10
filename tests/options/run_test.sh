@@ -1,15 +1,28 @@
 #!/bin/sh
 
 if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-	echo "Usage: $0 <hatari>"
+	echo "Usage: $0 <hatari> [--skip-negative]"
 	exit 1
 fi
 
-hatari=$1
-if [ ! -x "$hatari" ]; then
+hatbin=$1
+if [ ! -x "$hatbin" ]; then
 	echo "First parameter must point to valid hatari executable."
 	exit 1
 fi
+shift
+
+if [ "$1" = "--skip-negative" ]; then
+	echo "SKIP negative tests (where expected exit value != 0)."
+	skip_negative="true"
+	shift
+else
+	echo "Do all tests, both positive & (more time consuming) negative ones."
+	skip_negative="false"
+fi
+
+hatari="$hatbin $*"
+
 
 testdir=$(mktemp -d)
 log="$testdir/out.txt"
@@ -63,6 +76,11 @@ exit0="--version"
 test_options ()
 {
 	expected=$1
+	if [ $expected -ne 0 ] && [ $skip_negative = "true" ]; then
+		# skip expected failures testing
+		echo "- SKIPPED"
+		return
+	fi
 	for option in $2; do
 		if [ -z "$option" ]; then
 			continue
@@ -96,19 +114,14 @@ for i in boot:ON inf:OFF prg:ON TRUE FALSE true false 1 0; do
 	printf "|--fast-forward|%s|" $i
 done)
 
-echo
-echo "Check event prefixes + <bool> value alternatives..."
-test_options 0 "$bool_vals"
-
-
-# all hatari <bool> options, each set on+off+on
+# all hatari <bool> options, each set on+off
 bool_opts=$($hatari --help | awk '
-/--[^<]*<bool>/ { printf("%s|on|%s|off|%s|on|", $1, $1, $1) }
+/--[^<]*<bool>/ { printf("%s|on|%s|off|", $1, $1) }
 ')
 
 echo
 echo "Check <bool> options, all in one go..."
-test_options 0 "$bool_opts"
+test_options 0 "$bool_vals$bool_opts"
 
 
 # all hatari <int> options, each set to:
@@ -212,31 +225,32 @@ echo "Check expected <dir> / <file> option fails, when path does not exist..."
 test_options 1 "$file_fail_opts"
 
 
-# Valid values for options with other than bool/dir/file arg types:
-# $ hatari --help |\
-#   grep -v -e '<bool>' -e '<dir>' -e '<file>' |\
-#   grep ' --[-a-z0-9]* <'
-# Note: test function converts '|' chars to spaces.
+# Valid values for options with other than bool/int/dir/file arg types:
+# $ hatari --help | grep ' --[^<]*<' |\
+#   grep -vE ' --[^<]*<(bool|int|dir|file)>'
+# TODO: test more values for each option?
 other_opts="
---country|us|--layout|uk|--language|de|--rtc-year|2025|
---monitor|tv|--tos-res|low|--video-timing|random|--zoom|2|--avi-vcodec|bmp|
---joy0|real|--joy1|keys|--joy2|none|--joy3|real|--joy4|keys|--joy5|none|
---protect-floppy|on|--protect-hd|off|--gemdos-drive|C|--gemdos-drive|skip|
---scsi|1=$empty|--acsi|0=$empty|--scsi-ver|0=1|--scsi-ver|1=2|
---ide-swap|off|--ide-swap|0=on|--ide-swap|1=auto|
---fpu|68881|--fpu|68882|--fpu|internal|
---machine|st|--machine|megaste|--machine|tt|--machine|falcon|--dsp|off|
---sound|50066|--sound-buffer-size|100|--ym-mixing|model|
---sound|6000|--sound-buffer-size|0|--ym-mixing|table|--sound|off|
---debug-except|all|--debug-except|bus,chk,dsp|--debug-except|none|
---symload|exec|--symload|debugger|--symload|off|--lilo|anything-goes|
---trace|none|--trace|os_base,-gemdos,+xbios,+aes|--trace|none|
---disasm|uae|--disasm|ext|--disasm|0x7f|--disasm|0|
---log-level|debug|--alert-level|fatal|--log-level|error|--alert-level|info|
+--country|us|--layout|uk|--language|de|\
+--monitor|tv|--tos-res|low|--zoom|2|--video-timing|random|\
+--avi-vcodec|bmp|--screenshot-format|ximg|\
+--joy0|real|--joy1|keys|--joy2|none|--joy3|real|--joy4|keys|--joy5|none|\
+--protect-floppy|on|--protect-hd|off|\
+--gemdos-case|lower|--gemdos-time|atari|--gemdos-drive|skip|\
+--acsi|0=$empty|--scsi|1=$empty|--scsi-ver|0=1|--scsi-ver|1=2|\
+--ide-swap|off|--ide-swap|0=on|--ide-swap|1=auto|\
+--fpu|68881|--fpu|68882|--fpu|internal|--cpulevel|3|\
+--machine|st|--machine|megaste|--machine|tt|--machine|falcon|--dsp|emu|\
+--sound|50066|--sound-buffer-size|100|--ym-mixing|model|\
+--sound|6000|--sound-buffer-size|0|--ym-mixing|table|--sound|off|\
+--debug-except|all|--debug-except|bus,chk,dsp|--debug-except|none|\
+--symload|exec|--symload|debugger|--symload|off|--lilo|anything-goes|\
+--disasm|uae|--disasm|ext|--disasm|0x7f|--disasm|0|\
+--trace|none|--trace|os_base,-gemdos,+xbios,+aes|--trace|none|\
+--log-level|debug|--alert-level|fatal|--log-level|error|--alert-level|info|\
 "
 
 echo
-echo "Check options taking other arg types, few at the time..."
+echo "Check options taking other arg types, all in one go..."
 test_options 0 "$other_opts"
 
 
@@ -245,15 +259,18 @@ test_options 0 "$other_opts"
 fail_opts="
 --none
 --country|none|
+--layout|none|
+--language|none|
 --monitor|none|
 --tos-res|superhigh|
 --zoom|0|
---video-timing|none|
 --vdi|none|
 --vdi|foo:bar|
+--video-timing|none|
 --avi-vcodec|none|
 --screenshot-format|none|
 --joy8|off|
+--disk-a|$empty|--disk-b|$empty|
 --protect-floppy|none|
 --protect-hd|none|
 --gemdos-case|gray|
@@ -261,6 +278,9 @@ fail_opts="
 --gemdos-drive|A|
 --acsi|0=$missing|
 --scsi|1=$missing|
+--scsi-ver|0=0|
+--ide-swap|2=off|
+--cpulevel|8|
 --fpu|imaginary|
 --machine|none|
 --dsp|missing|

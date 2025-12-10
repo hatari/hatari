@@ -87,8 +87,9 @@ natfeats/
    example code for different compilers / assemblers on how to use it
 
 options/
-- "make test" verifies that Hatari options parsing succeeds and fails
-   when expected, for all options
+- "make test" verifies that Hatari options parsing succeeds when
+  expected, for all options ("run_test.sh" can be called directly
+  to check also that option parsing fails when expected)
 
 profile/
 - "make test" test for debugger profile features and related
