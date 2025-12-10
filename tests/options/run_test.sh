@@ -76,7 +76,7 @@ exit0="--version"
 test_options ()
 {
 	expected=$1
-	if [ $expected -ne 0 ] && [ $skip_negative = "true" ]; then
+	if [ "$expected" -ne 0 ] && [ "$skip_negative" = "true" ]; then
 		# skip expected failures testing
 		echo "- SKIPPED"
 		return
@@ -239,15 +239,17 @@ other_opts="
 --acsi|0=$empty|--scsi|1=$empty|--scsi-ver|0=1|--scsi-ver|1=2|\
 --ide-swap|off|--ide-swap|0=on|--ide-swap|1=auto|\
 --fpu|68881|--fpu|68882|--fpu|internal|--cpulevel|3|\
---machine|st|--machine|megaste|--machine|tt|--machine|falcon|--dsp|emu|\
+--machine|st|--machine|megaste|--machine|tt|--machine|falcon|--dsp|dummy|\
 --sound|50066|--sound-buffer-size|100|--ym-mixing|model|\
 --sound|6000|--sound-buffer-size|0|--ym-mixing|table|--sound|off|\
 --debug-except|all|--debug-except|bus,chk,dsp|--debug-except|none|\
 --symload|exec|--symload|debugger|--symload|off|--lilo|anything-goes|\
---disasm|uae|--disasm|ext|--disasm|0x7f|--disasm|0|\
---trace|none|--trace|os_base,-gemdos,+xbios,+aes|--trace|none|\
+--disasm|ext|--disasm|0x1f|--disasm|uae|--disasm|0|\
 --log-level|debug|--alert-level|fatal|--log-level|error|--alert-level|info|\
 "
+
+# TODO: add to $other_opts when CMake configured with ENABLE_TRACING
+#trace_opts="--trace|none|--trace|os_base,-gemdos,+xbios,+aes|--trace|none|"
 
 echo
 echo "Check options taking other arg types, all in one go..."
