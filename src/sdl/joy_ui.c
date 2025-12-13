@@ -195,7 +195,7 @@ void JoyUI_SetDefaultKeys(int stjoy_id)
 		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeOption = SDLK_o;
 		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodePause = SDLK_p;
 		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeHash = SDLK_HASH;
-		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeStar = SDLK_PLUS;
+		ConfigureParams.Joysticks.Joy[stjoy_id].nKeyCodeStar = SDLK_k;
 	}
 }
 
