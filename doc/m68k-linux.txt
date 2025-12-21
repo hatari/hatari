@@ -40,6 +40,9 @@ still building latest SW package versions for m68k, in ports:
 But m68k gcc is available also on other distributions, along with
 tools for building the images (from packages in Debian ports).
 
+(For older than indicated Linux versions, use an earlier version of
+the supplied Linux config, and please check known issues list first.)
+
 
 1.1 Notation
 ------------
@@ -129,16 +132,17 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel sources:
-     $ release=v6.17
+     $ release=v6.18
      $ repo=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    Either just the latest release (= faster):
      $ git clone --depth 1 --branch $release $repo
+     $ cd linux
    Or whole Git repo (which you can easily update with "git pull" later):
      $ git clone $repo
+     $ cd linux
      $ git checkout $release
 
 3. Apply Linux issue workaround patches:
-   $ cd linux
    $ git am /path/to/hatari/tools/linux/000*.patch
 
 4. Get Hatari compatible configuration:
@@ -302,8 +306,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.17
-Symbols = System.map-v6.17
+Kernel = vmlinux-v6.18
+Symbols = System.map-v6.18
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -696,18 +700,17 @@ $ aranym-mmu -l linux.config
 - Atari TT boot freezes with constant "unexpected interrupt from 112"
   messages, due to Linux SCU register setup regression.
 
-  Workaround: use >=6.11 kernel, or kernel patch:
+  Workaround: use >=6.11 Linux kernel, or kernel patch:
   https://github.com/torvalds/linux/commit/f70065a9fd988983b2c693631b801f25a615fc04
 
-- Hatari prefetch was earlier working incorrectly on bus errors.  This
-  caused user-space program crashes if either (or both) cycle-exact or
-  prefetch emulation is enabled for 030 (with MMU).
+- Older Hatari version prefetch emulation was incorrect for bus
+  errors.  This caused user-space program crashes if either (or both)
+  cycle-exact or prefetch emulation is enabled for 030 (with MMU).
 
   This problem was very visible with the tools included to statically
   linked Busybox, but those issues cannot be reproduced any more.
 
-  Fix: Use latest Hatari Git version, commit 06fc93b021c38 (Oct 20 2024),
-  or newer.
+  Fix: Use Hatari >=2.6 version.
 
 - Kernel versions 6.16-6.17 include regression to lock alignment checks
   that can cause kernel warnings and (eventually) a non-working console.
@@ -720,7 +723,8 @@ $ aranym-mmu -l linux.config
 ----------------------------
 
 - Kernel does not recognize ACSI drives at all, although kernel
-  reports finding Atari ACSI HW:
+  reports finding Atari ACSI HW (and HD drivers for Atari TOS
+  work fine in Hatari):
 ------------------------------------------------------------
 Atari hardware found: TT_SHIFTER ST_MFP TT_MFP TT_SCSI_DMA TT_SCSI YM2149 PCM SCC_DMA SCC MICROWIRE TT_CLK FDC_SPEED ACSI
 ...
