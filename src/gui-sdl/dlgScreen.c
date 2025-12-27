@@ -91,8 +91,7 @@ static SGOBJ monitordlg[] =
 #define DLGSCRN_SKIP2       11
 #define DLGSCRN_SKIP3       12
 #define DLGSCRN_SKIP4       13
-#define DLGSCRN_KEEP_RES_ST 16
-#define DLGSCRN_KEEP_RES    17
+#define DLGSCRN_KEEP_RES    14
 #define DLGSCRN_MAX_WLESS   19
 #define DLGSCRN_MAX_WTEXT   20
 #define DLGSCRN_MAX_WMORE   21
@@ -130,10 +129,16 @@ static SGOBJ windowdlg[] =
 	{ SGRADIOBUT, 0, 0, 21,7,  3,1, "_2" },
 	{ SGRADIOBUT, 0, 0, 21,8,  3,1, "_4" },
 	{ SGRADIOBUT, 0, 0, 21,9,  6,1, "_Auto" },
+#if ENABLE_SDL3
+	{ SGTEXT,     0, 0, 35,3, 14,1, "" },
+	{ SGTEXT,     0, 0, 35,4, 10,1, "" },
+	{ SGTEXT,     0, 0, 35,5, 13,1, "" },
+#else
+	{ SGCHECKBOX, 0, 0, 33,3, 14,1, "_Keep desktop" },
 	{ SGTEXT,     0, 0, 35,4, 10,1, "resolution" },
 	{ SGTEXT,     0, 0, 35,5, 13,1, "in fullscreen" },
+#endif
 	{ SGTEXT,     0, 0, 33,2,  1,1, "" },
-	{ SGCHECKBOX, 0, 0, 33,3, 14,1, "_Keep desktop" },
 	{ SGTEXT,     0, 0, 33,7, 15,1, "Max zoomed win:" },
 	{ SGBUTTON,   0, 0, 35,8,  1,1, "\x04", SG_SHORTCUT_LEFT },
 	{ SGEDITFIELD,SG_EXIT, 0, 37,8, NUM_FIELD_LEN,1, sMaxWidth },
