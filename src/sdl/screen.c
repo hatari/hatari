@@ -452,10 +452,7 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 
 	Screen_FreeSDL2Resources();
-	if (sdlWindow &&
-	    ((bInFullScreen && !ConfigureParams.Screen.bKeepResolution) ||
-	     bForceChange
-	    ))
+	if (sdlWindow && bInFullScreen && !ConfigureParams.Screen.bKeepResolution)
 	{
 		SDL_DestroyWindow(sdlWindow);
 		sdlWindow = NULL;
@@ -487,7 +484,8 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 			SDL_SetWindowFullscreen(sdlWindow, bInFullScreen);
 			SDL_SyncWindow(sdlWindow);
 #else
-			SDL_SetWindowFullscreen(sdlWindow, sdlVideoFlags);
+			int mask = SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP;
+			SDL_SetWindowFullscreen(sdlWindow, sdlVideoFlags & mask);
 #endif
 		}
 		else if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MAXIMIZED) == 0)
