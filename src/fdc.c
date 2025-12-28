@@ -6655,14 +6655,17 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 		{
 			bit = FDC_MFM_Process_Bit ( s , InitialShift > 0 );
 
-//fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
 			if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
 			{
 				IndexPulse = true;
 				Rev++;
+				if ( Rev == IndexToRead )		/* enough indexes dumped */
+					EndTrack = true;
+				break;					/* Don't wait for DR */
 			}
 
-			if ( ( bit == -1 ) || ( Rev == IndexToRead ) )	/* end of all revolutions for this track or enough indexes dumped */
+			if ( bit == -1 )				/* end of all revolutions for this track */
 			{
 				EndTrack = true;
 				break;
@@ -6675,9 +6678,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			}
 		}
 		while ( ! ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_DR_READY ) );
-
-		if ( EndTrack )
-			break;
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "DR %02x\n" , FDC.DR );
 
 		nb++;
 
@@ -6735,6 +6736,8 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 			Column = 0;
 		}
 
+		if ( EndTrack )
+			break;
 	}
 
 	fprintf ( stdout , "\n" );
