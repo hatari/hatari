@@ -1060,6 +1060,7 @@ void Configuration_Load(const char *psFileName)
 		Log_Printf(LOG_DEBUG, "Configuration file %s not found.\n", psFileName);
 		return;
 	}
+	Log_Printf(LOG_DEBUG, "Loading configuration from: %s\n", psFileName);
 
 	/* Try to load information from old config files */
 	nOldMachineType = -1;
