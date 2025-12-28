@@ -848,7 +848,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Video.AviRecordFps = 0;			/* automatic FPS */
 	File_MakePathBuf(ConfigureParams.Video.AviRecordFile,
 	                 sizeof(ConfigureParams.Video.AviRecordFile),
-	                 psWorkingDir, "hatari", "avi");
+	                 Configuration_GetScreenShotDir(),
+			 "hatari", "avi");
 
 	/* Initialize the configuration file name */
 	if (File_MakePathBuf(sConfigFileName, sizeof(sConfigFileName),

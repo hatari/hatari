@@ -82,6 +82,8 @@ Emulator improvements:
   - Add "--memconv" option to enable locale conversion for non-ASCII
     Atari chars in memory output from the debugger commands, and
     for "--conout" output
+Mac:
+- AVI recordings & screenshots default to same dir like on other OSes
 
 Testing additions:
 - Test for verifying parsing of all Hatari options
