@@ -607,7 +607,10 @@ languages), country code selects also TOS language.
 </p><p class="paramdesc">
 Alternatively, one can use "tos-lang-change" tool from EmuTOS project
 to modify country code in the ROM image file itself. That works
-also for TOS v4</p>
+also for TOS v4.
+</p><p class="paramdesc">
+Note: NVRAM settings take precedence, so for machines with NVRAM, you
+should use --layout and --language instead</p>
 <p class="parameter">--layout &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM keyboard layout value.
 Set NVRAM keyboard layout value. While both TT and Falcon machines
