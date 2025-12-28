@@ -2477,6 +2477,90 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 }
 
 /**
+ * parse Hatari command line options for setting up logging / tracing
+ * before Hatari is properly initialized. Returns false for
+ * unrecognized options and invalid trace / log settings.
+ */
+bool Opt_InitLogging(int argc, const char * const argv[])
+{
+	const char *errstr, *arg;
+	bool ok = true;
+	opt_id_t optid;
+	int i, level;
+
+	for(i = 1; i < argc; i++)
+	{
+		/* end of options? */
+		if (argv[i][0] != '-')
+			return true;
+
+		/* WhichOption() checks also that there is an argument,
+		 * for options that need one, so we don't need to check
+		 * that below.  It also increments it automatically.
+		 */
+		optid = Opt_WhichOption(argc, argv, &i);
+		arg = argv[i];
+
+		switch(optid)
+		{
+		case OPT_TRACE:
+			(void)Event_GetPrefixActions(&arg);
+			errstr = Log_CheckTraceOptions(arg);
+			if (errstr)
+			{
+				if (!errstr[0])
+				{
+					/* silent parsing termination? */
+					return false;
+				}
+				return Opt_ShowError(OPT_TRACE, arg, errstr);
+			}
+			Log_SetTraceOptions(arg);
+			break;
+
+		case OPT_TRACEFILE:
+			ok = Opt_StrCpy(OPT_TRACEFILE, CHECK_NONE, ConfigureParams.Log.sTraceFileName,
+					arg, sizeof(ConfigureParams.Log.sTraceFileName),
+					NULL);
+			break;
+
+		case OPT_LOGFILE:
+			ok = Opt_StrCpy(OPT_LOGFILE, CHECK_NONE, ConfigureParams.Log.sLogFileName,
+					arg, sizeof(ConfigureParams.Log.sLogFileName),
+					NULL);
+			break;
+
+		case OPT_LOGLEVEL:
+			(void)Event_GetPrefixActions(&arg);
+			level = Log_ParseOptions(arg);
+			if (level == LOG_NONE)
+			{
+				return Opt_ShowError(OPT_LOGLEVEL, arg, "Unknown log level!");
+			}
+			ConfigureParams.Log.nTextLogLevel = level;
+			Log_SetLevels();
+			break;
+
+		case OPT_ERROR:
+			/* unknown option or missing option parameter */
+			return false;
+
+		default:
+			continue;
+		}
+
+		if (!ok)
+		{
+			/* Opt_*() check function failed */
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
+/**
  * Readline match callback for option name completion.
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.

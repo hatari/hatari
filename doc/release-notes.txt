@@ -33,6 +33,7 @@ Emulation improvements:
 
 Emulator improvements:
 - CLI options:
+  - Fix: delayed --log-level / --trace options effect on Hatari init
   - Both "" and "none" can be used to disable devices that are enabled
     by providing a <file> or <dir name> (revert v2.6.1 API change)
   - "event" prefixes support for a subset of options (listed in manual).

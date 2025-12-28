@@ -409,6 +409,12 @@ int main(int argc, char *argv[])
 	/* Initialize directory strings */
 	Paths_Init(argv[0]);
 
+	/* few options need to be parsed for logging / tracing
+	 * from the early initializations to work as expected
+	 */
+	if (!Opt_InitLogging(argc, (const char * const *)argv))
+		Main_ErrorExit(NULL, NULL, 1);
+
 	/* Init some HW components before parsing the configuration / parameters */
 	Main_Init_HW();
 
@@ -425,6 +431,7 @@ int main(int argc, char *argv[])
 		Control_RemoveFifo();
 		Main_ErrorExit(NULL, NULL, exitval);
 	}
+
 	/* monitor type option might require "reset" -> true */
 	Configuration_Apply(true);
 
@@ -450,8 +457,10 @@ int main(int argc, char *argv[])
 	M68000_Start();                 /* Start emulation */
 
 	Control_RemoveFifo();
+
 	/* cleanly close the AVI file, if needed */
 	Avi_StopRecording_WithMsg();
+
 	/* Un-init emulation system */
 	Main_UnInit();
 
