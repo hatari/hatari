@@ -63,13 +63,12 @@ static void SDLCALL Microphone_SDL3Callback(void *userdata, SDL_AudioStream *str
 	if (additional_amount > 0)
 	{
 		Uint8 *data;
-		/* TODO: This is likely not quite right yet... */
-		if (additional_amount > FRAMES_PER_BUFFER * 4)
-			additional_amount = FRAMES_PER_BUFFER * 4;
 		data = SDL_stack_alloc(Uint8, additional_amount);
 		if (data)
 		{
 			SDL_GetAudioStreamData(stream, data, additional_amount);
+			if (additional_amount > FRAMES_PER_BUFFER * 4)
+				additional_amount = FRAMES_PER_BUFFER * 4;
 			Microphone_Callback(userdata, data, additional_amount);
 			SDL_stack_free(data);
 		}
@@ -99,9 +98,13 @@ bool Microphone_Start(int sampleRate)
 	}
 
 #if ENABLE_SDL3
+	char fpb_str[8];
+	snprintf(fpb_str, sizeof(fpb_str), "%u", FRAMES_PER_BUFFER);
+	SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, fpb_str);
 	mic_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_RECORDING,
 	                                       &req, Microphone_SDL3Callback,
 	                                       NULL);
+	SDL_ResetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES);
 	if (!mic_stream)
 	{
 		Log_Printf(LOG_ERROR, "Microphone: SDL_OpenAudioDevice failed.\n");
