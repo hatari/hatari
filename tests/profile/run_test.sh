@@ -38,13 +38,13 @@ export SDL_VIDEODRIVER=dummy
 export SDL_AUDIODRIVER=dummy
 
 # location for test binary + symbols, that works with fake TOS & exits after a while
-prog_dir="$basedir/../cycles"
+prog_dir="$basedir/../cpu"
 
 # debugger script starting the breakpoint chain for profiling actions
 start_ini="profile.ini"
 
 # program + its TEXT symbols + debugger files => testdir
-cp "$prog_dir/"cyccheck.* "$basedir/"*.ini "$testdir"
+cp "$prog_dir"/int_test.* "$basedir"/*.ini "$testdir"
 
 # add "cd" to first debugger file so that rest of them can be found
 echo "cd $testdir -f" > "$testdir/$start_ini"
@@ -55,7 +55,7 @@ cat "$basedir/$start_ini" >> "$testdir/$start_ini"
 # breakpoint chaining for program startup instead of just:
 #   --symload exec --parse prg:<script>
 HOME="$testdir" $hatari --log-level fatal --fast-forward on --sound off \
-	--parse "$testdir/$start_ini" --tos none "$@" "$testdir/cyccheck.prg" \
+	--parse "$testdir/$start_ini" --tos none "$@" "$testdir/int_test.tos" \
 	>> "$testdir/log.txt" 2>&1
 exitstat=$?
 if [ $exitstat -ne 0 ]; then
