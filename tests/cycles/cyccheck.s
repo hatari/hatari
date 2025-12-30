@@ -1,7 +1,5 @@
 ; Check CPU cycles. Note that this test only runs in 8 MHz ST color modes!
 
-	opt	x+
-
 	clr.w   -(sp)
 	pea     filename
 	move.w  #$3C,-(sp)
@@ -250,9 +248,9 @@ run_test:
 	move.w  #$0765,$ffff8240.w
 	move.b  #2,$ffff820a.w
 
-loop:
 	move.l	$70,old_vbl
 	move.l	#vblhandler,$70
+loop:
 	move.w	#0,got_vbl
 	stop	#$2300		; Wait for VBL
 	tst.w	got_vbl
