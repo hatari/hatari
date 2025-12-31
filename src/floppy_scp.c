@@ -55,9 +55,9 @@ SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 static bool	SCP_Insert_internal ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
 
-static int	scp_select_track (struct fd_stream *s, unsigned int tracknr);
-static void	scp_reset (struct fd_stream *s);
-static int	scp_next_flux (struct fd_stream *s);
+static int	scp_select_track (struct mfm_stream *s, unsigned int tracknr);
+static void	scp_reset (struct mfm_stream *s);
+static int	scp_next_flux (struct mfm_stream *s);
 
 
 
@@ -286,14 +286,14 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 
 	/* Init the flux decoder for an SCP stream + reset all variables */
 
-	fd_stream_setup ( &(FD_STREAMS[ Drive ]) , 300 , 300 );
+	mfm_stream_setup ( &(MFM_STREAMS[ Drive ]) , 300 , 300 );
 
-	FD_STREAMS[ Drive ].type.select_track = scp_select_track;
-	FD_STREAMS[ Drive ].type.reset = scp_reset;
-	FD_STREAMS[ Drive ].type.next_flux = scp_next_flux;
-	FD_STREAMS[ Drive ].type.flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
+	MFM_STREAMS[ Drive ].type.select_track = scp_select_track;
+	MFM_STREAMS[ Drive ].type.reset = scp_reset;
+	MFM_STREAMS[ Drive ].type.next_flux = scp_next_flux;
+	MFM_STREAMS[ Drive ].type.flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
 
-	fd_stream_reset ( &(FD_STREAMS[ Drive ]) );
+	mfm_stream_reset ( &(MFM_STREAMS[ Drive ]) );
 
 	SCP_State.SCP_Stream[ Drive ].Drive = Drive;
 	SCP_State.SCP_Stream[ Drive ].track = -1;		/* no track loaded */
@@ -324,9 +324,9 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 
 
 
-struct fd_stream	*SCP_Get_Fd_Stream ( uint8_t Drive )
+struct mfm_stream	*SCP_Get_Fd_Stream ( uint8_t Drive )
 {
-	return &(FD_STREAMS[ Drive ]);
+	return &(MFM_STREAMS[ Drive ]);
 }
 
 
@@ -532,7 +532,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
  * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities  
  */
 
-static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
+static int scp_select_track (struct mfm_stream *s, unsigned int tracknr)
 {
 	struct scp_stream *scss = s->type.flux_struct_param;
 	unsigned int rev;
@@ -586,7 +586,7 @@ static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
 }
 
 
-static void scp_reset (struct fd_stream *s)
+static void scp_reset (struct mfm_stream *s)
 {
 	struct scp_stream *scss = s->type.flux_struct_param;
 
@@ -597,7 +597,7 @@ static void scp_reset (struct fd_stream *s)
 }
 
 
-static int scp_next_flux (struct fd_stream *s)
+static int scp_next_flux (struct mfm_stream *s)
 {
 	struct scp_stream *scss = s->type.flux_struct_param;
 	uint32_t val = 0, t;
@@ -647,7 +647,7 @@ static int scp_next_flux (struct fd_stream *s)
 	* trigger weak-bit variations. */
 	if (scss->revs == 1)
 	{
-		int32_t jitter = fd_stream_rnd16(&s->prng_seed) & 3;
+		int32_t jitter = mfm_stream_rnd16(&s->prng_seed) & 3;
 		if ((scss->jitter >= 4) || (scss->jitter <= -4))
 		{
 			/* Already accumulated significant jitter; adjust for it. */
@@ -672,7 +672,7 @@ static int scp_next_flux (struct fd_stream *s)
 
 	/* If we are replaying a single revolution then randomly ignore 
 	* very short pulses (<1us). */
-	if ((scss->revs == 1) && (val < 1000) && (fd_stream_rnd16(&s->prng_seed) & 1))
+	if ((scss->revs == 1) && (val < 1000) && (mfm_stream_rnd16(&s->prng_seed) & 1))
 	{
 		scss->jitter += val;
 		val = 0;

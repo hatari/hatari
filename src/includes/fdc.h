@@ -136,12 +136,12 @@ extern void	FDC_DensityMode_ReadWord ( void );
  * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities
  */
 
-struct fd_stream {
-	struct fd_stream_type {
-	int	(*select_track)(struct fd_stream *, unsigned int tracknr);
-	void	(*reset)(struct fd_stream *);
-	int	(*next_flux)(struct fd_stream *);
-	void	*flux_struct_param;			/* pointer to "struct scp_stream" or similar */
+struct mfm_stream {
+	struct mfm_stream_type {
+		int	(*select_track)(struct mfm_stream *, unsigned int tracknr);
+		void	(*reset)(struct mfm_stream *);
+		int	(*next_flux)(struct mfm_stream *);
+		void	*flux_struct_param;			/* pointer to "struct scp_stream" or similar */
 	} type;
 
 	/* Accumulated read latency in nanosecs. Can be reset by the caller. */
@@ -183,16 +183,16 @@ struct fd_stream {
 };
 
 
-uint16_t fd_stream_rnd16 ( uint32_t *p_seed );
-void	fd_stream_setup ( struct fd_stream *s , unsigned int drive_rpm, unsigned int data_rpm );
-int	fd_stream_select_track ( struct fd_stream *s , unsigned int tracknr );
-void	fd_stream_reset ( struct fd_stream *s );
-void	fd_stream_next_index ( struct fd_stream *s );
-int	fd_stream_next_bit ( struct fd_stream *s );
-int	fd_stream_next_bits ( struct fd_stream *s , unsigned int bits );
-int	fd_stream_next_bytes ( struct fd_stream *s , void *p , unsigned int bytes );
+uint16_t mfm_stream_rnd16 ( uint32_t *p_seed );
+void	mfm_stream_setup ( struct mfm_stream *s , unsigned int drive_rpm, unsigned int data_rpm );
+int	mfm_stream_select_track ( struct mfm_stream *s , unsigned int tracknr );
+void	mfm_stream_reset ( struct mfm_stream *s );
+void	mfm_stream_next_index ( struct mfm_stream *s );
+int	mfm_stream_next_bit ( struct mfm_stream *s );
+int	mfm_stream_next_bits ( struct mfm_stream *s , unsigned int bits );
+int	mfm_stream_next_bytes ( struct mfm_stream *s , void *p , unsigned int bytes );
 
-extern	struct fd_stream		FD_STREAMS[ MAX_FLOPPYDRIVES ];
+extern	struct mfm_stream		MFM_STREAMS[ MAX_FLOPPYDRIVES ];
 
 
 /*
@@ -200,7 +200,7 @@ extern	struct fd_stream		FD_STREAMS[ MAX_FLOPPYDRIVES ];
  */
 
 
-void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift );
+void	MFM_Stream_DumpTrack ( struct mfm_stream *s , int InitialShift );
 
 
 

@@ -588,8 +588,7 @@ static FDC_DMA_STRUCT		FDC_DMA;			/* All variables related to the DMA transfer *
 static FDC_DRIVE_STRUCT		FDC_DRIVES[ MAX_FLOPPYDRIVES ];	/* A: and B: */
 static FDC_BUFFER_STRUCT	FDC_BUFFER;			/* Buffer of Timing/Byte to transfer with the FDC */
 
-struct fd_stream		FD_STREAMS[ MAX_FLOPPYDRIVES ];
-struct fd_stream_type		FD_STREAMS_TYPE[ MAX_FLOPPYDRIVES ];
+struct mfm_stream		MFM_STREAMS[ MAX_FLOPPYDRIVES ];
 
 static uint8_t DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace used to transfer bytes between floppy and DMA */
 								/* It should be large enough to contain a whole track */
@@ -677,9 +676,9 @@ static uint8_t	FDC_WriteTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side 
 
 static int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side );
 static void	FDC_AM_Detector_Reset ( void );
-static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit );
-static int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns );
-static int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex );
+static int	FDC_MFM_Process_Bit ( struct mfm_stream *s , bool Skip_Bit );
+static int	FDC_MFM_Process_MultiBits ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns );
+static int	FDC_MFM_Process_MultiBits_Index ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex );
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
 static uint8_t	FDC_NextSectorID_TR_MFM ( void );
 static uint8_t	FDC_NextSectorID_SR_MFM ( void );
@@ -5366,17 +5365,17 @@ void FDC_DensityMode_ReadWord ( void )
 #define max_int(x,y)	(((x) > (y)) ? (x) : (y))
 
 
-static int	flux_next_bit ( struct fd_stream *s );
+static int	mfm_flux_next_bit ( struct mfm_stream *s );
 
 
-uint16_t fd_stream_rnd16(uint32_t *p_seed)
+uint16_t mfm_stream_rnd16(uint32_t *p_seed)
 {
     *p_seed = *p_seed * 1103515245 + 12345;
     return *p_seed >> 16;
 }
 
 
-void fd_stream_setup(struct fd_stream *s, unsigned int drive_rpm, unsigned int data_rpm)
+void mfm_stream_setup(struct mfm_stream *s, unsigned int drive_rpm, unsigned int data_rpm)
 {
 	memset(s, 0, sizeof(*s));
 	s->pll_period_adj_pct = DEFAULT_PERIOD_ADJ_PCT;
@@ -5386,7 +5385,7 @@ void fd_stream_setup(struct fd_stream *s, unsigned int drive_rpm, unsigned int d
 }
 
 
-int fd_stream_select_track(struct fd_stream *s, unsigned int tracknr)
+int mfm_stream_select_track(struct mfm_stream *s, unsigned int tracknr)
 {
 	int rc;
 
@@ -5401,12 +5400,12 @@ int fd_stream_select_track(struct fd_stream *s, unsigned int tracknr)
 //	s->max_revolutions = max_int(s->max_revolutions, 4);
 	s->max_revolutions = ~0u;
 
-	fd_stream_reset(s);
+	mfm_stream_reset(s);
 	return 0;
 }
 
 
-static void _fd_stream_reset(struct fd_stream *s)
+static void _mfm_stream_reset(struct mfm_stream *s)
 {
 	/* Flux-based streams */
 	s->flux = 0;
@@ -5426,41 +5425,41 @@ static void _fd_stream_reset(struct fd_stream *s)
 }
 
 
-void fd_stream_reset(struct fd_stream *s)
+void mfm_stream_reset(struct mfm_stream *s)
 {
 	/* Reset the PLL clock, then allow 100 bit times for PLL lock. */
 	s->clock = s->clock_centre;
-	_fd_stream_reset(s);
+	_mfm_stream_reset(s);
 
 #if 0	// [NP] Don't adjust the PLL with the first 100 bits ; not needed for Hatari
-	fd_stream_next_bits(s, 100);
+	mfm_stream_next_bits(s, 100);
 
 	/* Now reset everything except the PLL clock. */
-	_fd_stream_reset(s);
+	_mfm_stream_reset(s);
 
 	if (s->nr_index == 0)
-	    fd_stream_next_index(s);
+	    mfm_stream_next_index(s);
 #endif
 }
 
 
-void fd_stream_next_index(struct fd_stream *s)
+void mfm_stream_next_index(struct mfm_stream *s)
 {
 	do {
-	    if (fd_stream_next_bit(s) == -1)
+	    if (mfm_stream_next_bit(s) == -1)
 		break;
 	} while (s->index_offset_bc != 0);
 }
 
 
-int fd_stream_next_bit(struct fd_stream *s)
+int mfm_stream_next_bit(struct mfm_stream *s)
 {
 	uint64_t lat = s->latency;
 	int b;
 	if (s->nr_index > s->max_revolutions)
 	    return -1;
 	s->index_offset_bc++;
-	if ((b = flux_next_bit(s)) == -1)
+	if ((b = mfm_flux_next_bit(s)) == -1)
 	    return -1;
 	lat = s->latency - lat;
 	s->index_offset_ns += lat;
@@ -5478,24 +5477,24 @@ int fd_stream_next_bit(struct fd_stream *s)
 }
 
 
-int fd_stream_next_bits(struct fd_stream *s, unsigned int bits)
+int mfm_stream_next_bits(struct mfm_stream *s, unsigned int bits)
 {
 	unsigned int i;
 	for (i = 0; i < bits; i++)
-		if (fd_stream_next_bit(s) == -1)
+		if (mfm_stream_next_bit(s) == -1)
 			return -1;
 	return 0;
 }
 
 
-int fd_stream_next_bytes(struct fd_stream *s, void *p, unsigned int bytes)
+int mfm_stream_next_bytes(struct mfm_stream *s, void *p, unsigned int bytes)
 {
 	unsigned int i;
 	unsigned char *dat = p;
 
 	for (i = 0; i < bytes; i++)
 	{
-		if (fd_stream_next_bits(s, 8) == -1)
+		if (mfm_stream_next_bits(s, 8) == -1)
 			return -1;
 		dat[i] = (uint8_t)s->word;
 	}
@@ -5504,7 +5503,7 @@ int fd_stream_next_bytes(struct fd_stream *s, void *p, unsigned int bytes)
 }
 
 
-static int flux_next_bit(struct fd_stream *s)
+static int mfm_flux_next_bit(struct mfm_stream *s)
 {
 	int new_flux;
 
@@ -5560,7 +5559,7 @@ int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 {
 	int		res;
 
-	/* Don't call 'fd_stream_select_track' if already done for Track/Side */
+	/* Don't call 'mfm_stream_select_track' if already done for Track/Side */
 	/* (if not we will restart with rev=0 instead of using all the image's revs) */
 	if ( ( Track == FDC_DRIVES[ Drive ].Loaded_Track ) && ( Side == FDC_DRIVES[ Drive ].Loaded_Side ) )
 	{
@@ -5573,7 +5572,7 @@ int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 	FDC_DRIVES[ Drive ].Loaded_Track = Track;
 	FDC_DRIVES[ Drive ].Loaded_Side = Side;
 
-	res = fd_stream_select_track ( &(SCP_State.SCP_Stream[ Drive ].s) , Track*2+Side );
+	res = mfm_stream_select_track ( &(MFM_STREAMS[ Drive ]) , Track*2+Side );
 	if ( res )
 		return -1;			// TODO set error code for FDC
 
@@ -5581,7 +5580,7 @@ int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 	FDC_AM_Detector_Reset ();
 
 	/* Uncomment next line to dump the track's content */
-//	FD_Stream_DumpTrack ( &(FD_STREAMS[ Drive ]) , 0 );
+//	MFM_Stream_DumpTrack ( &(MFM_STREAMS[ Drive ]) , 0 );
 
 	return 0;
 }
@@ -5623,7 +5622,7 @@ static void	FDC_AM_Detector_Reset ( void )
  *   into DSR bit 0 (this means the meaning of the latest read bit can "change" from clock to data)
  */
 
-static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit )
+static int	FDC_MFM_Process_Bit_delay_clock ( struct mfm_stream *s , bool Skip_Bit )
 {
 	int			bit;
 	bool			Copy_DSR_DR;
@@ -5638,7 +5637,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 
 	/* Get a new MFM bit from the flux (clock or data) and check if we got an index pulse at the same time */
 	nr_index_prev = s->nr_index;
-	bit = fd_stream_next_bit ( s );
+	bit = mfm_stream_next_bit ( s );
 	if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "bit %d %s %0x\n" , bit , FDC.Bit_Is_Data ? "data" : "clck" , s->word  );
 
 	if ( ( nr_index_prev > 0 ) && ( nr_index_prev != s->nr_index ) )
@@ -5765,7 +5764,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct fd_stream *s , bool Skip_Bit
 
 
 
-static int	FDC_MFM_Process_Bit_delay_clock_v2 ( struct fd_stream *s , bool Skip_Bit )
+static int	FDC_MFM_Process_Bit_delay_clock_v2 ( struct mfm_stream *s , bool Skip_Bit )
 {
 	int			bit;
 	uint16_t		Sync;
@@ -5778,7 +5777,7 @@ static int	FDC_MFM_Process_Bit_delay_clock_v2 ( struct fd_stream *s , bool Skip_
 
 	/* Get a new MFM bit from the flux (clock or data) and check if we got an index pulse at the same time */
 	nr_index_prev = s->nr_index;
-	bit = fd_stream_next_bit ( s );
+	bit = mfm_stream_next_bit ( s );
 	if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "bit %d %s %0x\n" , bit , FDC.Bit_Is_Data ? "data" : "clck" , s->word  );
 
 	if ( ( nr_index_prev > 0 ) && ( nr_index_prev != s->nr_index ) )
@@ -5919,7 +5918,7 @@ static int	FDC_MFM_Process_Bit_delay_clock_v2 ( struct fd_stream *s , bool Skip_
 
 
 
-static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
+static int	FDC_MFM_Process_Bit ( struct mfm_stream *s , bool Skip_Bit )
 {
 //	return FDC_MFM_Process_Bit_delay_clock ( s , Skip_Bit );
 	return FDC_MFM_Process_Bit_delay_clock_v2 ( s , Skip_Bit );
@@ -5927,7 +5926,7 @@ static int	FDC_MFM_Process_Bit ( struct fd_stream *s , bool Skip_Bit )
 
 
 
-static int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns )
+static int	FDC_MFM_Process_MultiBits ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns )
 {
 	int	bit;
 
@@ -5954,7 +5953,7 @@ static int	FDC_MFM_Process_MultiBits ( struct fd_stream *s , uint16_t AM_Detecto
 
 
 
-static int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex )
+static int	FDC_MFM_Process_MultiBits_Index ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex )
 {
 	int	bit;
 
@@ -5995,7 +5994,7 @@ static int	FDC_MFM_Process_MultiBits_Index ( struct fd_stream *s , uint16_t AM_D
 
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
-	struct fd_stream *s;
+	struct mfm_stream *s;
 	uint64_t	Time_ns;
 	uint16_t	StatusMask;
 	int		Res;
@@ -6145,7 +6144,7 @@ static uint8_t	FDC_NextSectorID_CRC_OK_MFM ( void )
  */
 static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sector , uint8_t Side , int *pSectorSize )
 {
-	struct fd_stream *s;
+	struct mfm_stream *s;
 	uint64_t	Time_ns;
 	uint16_t	StatusMask;
 	int		Res;
@@ -6283,7 +6282,7 @@ static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sec
  */
 static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side )
 {
-	struct fd_stream *s;
+	struct mfm_stream *s;
 	uint64_t	Time_ns;
 	uint16_t	StatusMask;
 	int		Res;
@@ -6358,16 +6357,16 @@ static uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side
  * for each byte
  */
 
-void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift );
-void	FD_Stream_DumpTrack_new ( struct fd_stream *s , int InitialShift );
-void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bool UseAnsiColor );
+void	MFM_Stream_DumpTrack_test_overlap ( struct mfm_stream *s , int InitialShift );
+void	MFM_Stream_DumpTrack_new ( struct mfm_stream *s , int InitialShift );
+void	MFM_Stream_DumpTrack_new_color ( struct mfm_stream *s , int InitialShift , bool UseAnsiColor );
 
 
-void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift )
+void	MFM_Stream_DumpTrack ( struct mfm_stream *s , int InitialShift )
 {
-//	FD_Stream_DumpTrack_test_overlap ( s , InitialShift );
-//	FD_Stream_DumpTrack_new_color ( s , InitialShift , false );
-	FD_Stream_DumpTrack_new_color ( s , InitialShift , true );
+//	MFM_Stream_DumpTrack_test_overlap ( s , InitialShift );
+//	MFM_Stream_DumpTrack_new_color ( s , InitialShift , false );
+	MFM_Stream_DumpTrack_new_color ( s , InitialShift , true );
 }
 
 
@@ -6377,7 +6376,7 @@ void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift )
  * This version handles the special case of overlapping syncs (as used in the
  * game Jupiter Masterdrive for example)
  */
-void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
+void	MFM_Stream_DumpTrack_test_overlap ( struct mfm_stream *s , int InitialShift )
 {
 	int	bit;
 	uint8_t	DSR , DR;
@@ -6415,7 +6414,7 @@ void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
 
 	while ( 1 )
 	{
-		bit = fd_stream_next_bit ( s );
+		bit = mfm_stream_next_bit ( s );
 //fprintf ( stdout , "bit %d %d %0x\n" , nb , bit , s->word  );
 		if ( bit == -1 )				/* end of all revolutions for this track */
 			break;
@@ -6599,7 +6598,7 @@ static const char	*PrintColorOff ( int Color )
 }
 
 
-static void	FD_Stream_Dumptrack_PrintIndex ( int Rev )
+static void	MFM_Stream_Dumptrack_PrintIndex ( int Rev )
 {
 	int	Color = FD_DUMP_COLOR_INDEX_PULSE;
 	fprintf ( stdout , "\n%sINDEX rev=%d%s\n" , PRINT_COLOR_ON , Rev , PRINT_COLOR_OFF );
@@ -6607,7 +6606,7 @@ static void	FD_Stream_Dumptrack_PrintIndex ( int Rev )
 
 
 
-void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bool UseAnsiColor )
+void	MFM_Stream_DumpTrack_new_color ( struct mfm_stream *s , int InitialShift , bool UseAnsiColor )
 {
 	int	bit;
 	int	nb;
@@ -6643,7 +6642,7 @@ void	FD_Stream_DumpTrack_new_color ( struct fd_stream *s , int InitialShift , bo
 	/* Dump at least 4 times if the track has less than 4 recorded revolutions */
 	IndexToRead = max_int ( s->RevolutionsNbr , 4 );
 
-	FD_Stream_Dumptrack_PrintIndex ( Rev );
+	MFM_Stream_Dumptrack_PrintIndex ( Rev );
 	fprintf ( stdout , "%04x : " , nb );
 
 	*buf_dr = *buf_asc = *buf_time = *buf_crc = '\0';
@@ -6730,7 +6729,7 @@ if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "DR %02x\n" , FDC.DR );
 			if ( IndexPulse )
 			{
 				IndexPulse = false;
-				FD_Stream_Dumptrack_PrintIndex ( Rev );
+				MFM_Stream_Dumptrack_PrintIndex ( Rev );
 			}
 
 			fprintf ( stdout , "%04x : " , nb );
