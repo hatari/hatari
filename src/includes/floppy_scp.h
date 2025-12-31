@@ -97,7 +97,6 @@ extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_SCP ( uint8_t Drive , uint8_t Trac
  */
 
 struct scp_stream {
-	struct fd_stream s;
 	int Drive;		/* Drive number 0 or 1 used for this stream */
 
 	/* Current track number. */
@@ -131,8 +130,6 @@ typedef struct
 	SCP_MAIN_STRUCT		*ImageStruct[ MAX_FLOPPYDRIVES ];	/* For the SCP disk images */
 
 	struct scp_stream	SCP_Stream[ MAX_FLOPPYDRIVES ];
-	struct fd_stream_type	SCP_Stream_Type[ MAX_FLOPPYDRIVES ];
-
 } SCP_STRUCT;
 
 

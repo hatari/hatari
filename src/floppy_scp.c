@@ -284,14 +284,16 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 		return false;
 	}
 
-	/* Init the flux decoder for an SCP stream */
-	SCP_State.SCP_Stream_Type[ Drive ].select_track = scp_select_track;
-	SCP_State.SCP_Stream_Type[ Drive ].reset = scp_reset;
-	SCP_State.SCP_Stream_Type[ Drive ].next_flux = scp_next_flux;
-	SCP_State.SCP_Stream_Type[ Drive ].flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
+	/* Init the flux decoder for an SCP stream + reset all variables */
 
-	fd_stream_setup ( &(SCP_State.SCP_Stream[ Drive ].s) , &(SCP_State.SCP_Stream_Type[ Drive ]) , 300 , 300 );
-	fd_stream_reset ( &(SCP_State.SCP_Stream[ Drive ].s) );
+	fd_stream_setup ( &(FD_STREAMS[ Drive ]) , 300 , 300 );
+
+	FD_STREAMS[ Drive ].type.select_track = scp_select_track;
+	FD_STREAMS[ Drive ].type.reset = scp_reset;
+	FD_STREAMS[ Drive ].type.next_flux = scp_next_flux;
+	FD_STREAMS[ Drive ].type.flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
+
+	fd_stream_reset ( &(FD_STREAMS[ Drive ]) );
 
 	SCP_State.SCP_Stream[ Drive ].Drive = Drive;
 	SCP_State.SCP_Stream[ Drive ].track = -1;		/* no track loaded */
@@ -324,7 +326,7 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 
 struct fd_stream	*SCP_Get_Fd_Stream ( uint8_t Drive )
 {
-	return &(SCP_State.SCP_Stream[ Drive ].s);
+	return &(FD_STREAMS[ Drive ]);
 }
 
 
@@ -532,7 +534,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 
 static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
 {
-	struct scp_stream *scss = s->type->flux_struct_param;
+	struct scp_stream *scss = s->type.flux_struct_param;
 	unsigned int rev;
 	SCP_TRACK_STRUCT	*pScpTracks;
 	SCP_TRACK_REV_STRUCT	*pScpTrackRevs;
@@ -586,7 +588,7 @@ static int scp_select_track (struct fd_stream *s, unsigned int tracknr)
 
 static void scp_reset (struct fd_stream *s)
 {
-	struct scp_stream *scss = s->type->flux_struct_param;
+	struct scp_stream *scss = s->type.flux_struct_param;
 
 	scss->jitter = 0;
 	scss->dat_idx = 0;
@@ -597,7 +599,7 @@ static void scp_reset (struct fd_stream *s)
 
 static int scp_next_flux (struct fd_stream *s)
 {
-	struct scp_stream *scss = s->type->flux_struct_param;
+	struct scp_stream *scss = s->type.flux_struct_param;
 	uint32_t val = 0, t;
 	unsigned int nr_index_seen = 0;
 

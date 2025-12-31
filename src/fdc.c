@@ -583,10 +583,13 @@ typedef struct {
 } FDC_BUFFER_STRUCT;
 
 
-static FDC_STRUCT	FDC;					/* All variables related to the WD1772 emulation */
-static FDC_DMA_STRUCT	FDC_DMA;				/* All variables related to the DMA transfer */
-static FDC_DRIVE_STRUCT	FDC_DRIVES[ MAX_FLOPPYDRIVES ];		/* A: and B: */
+static FDC_STRUCT		FDC;				/* All variables related to the WD1772 emulation */
+static FDC_DMA_STRUCT		FDC_DMA;			/* All variables related to the DMA transfer */
+static FDC_DRIVE_STRUCT		FDC_DRIVES[ MAX_FLOPPYDRIVES ];	/* A: and B: */
 static FDC_BUFFER_STRUCT	FDC_BUFFER;			/* Buffer of Timing/Byte to transfer with the FDC */
+
+struct fd_stream		FD_STREAMS[ MAX_FLOPPYDRIVES ];
+struct fd_stream_type		FD_STREAMS_TYPE[ MAX_FLOPPYDRIVES ];
 
 static uint8_t DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace used to transfer bytes between floppy and DMA */
 								/* It should be large enough to contain a whole track */
@@ -5373,11 +5376,9 @@ uint16_t fd_stream_rnd16(uint32_t *p_seed)
 }
 
 
-void fd_stream_setup ( struct fd_stream *s , const struct fd_stream_type *st ,
-		       unsigned int drive_rpm , unsigned int data_rpm )
+void fd_stream_setup(struct fd_stream *s, unsigned int drive_rpm, unsigned int data_rpm)
 {
 	memset(s, 0, sizeof(*s));
-	s->type = st;
 	s->pll_period_adj_pct = DEFAULT_PERIOD_ADJ_PCT;
 	s->pll_phase_adj_pct = DEFAULT_PHASE_ADJ_PCT;
 	s->clock = s->clock_centre = CLOCK_CENTRE;
@@ -5390,7 +5391,7 @@ int fd_stream_select_track(struct fd_stream *s, unsigned int tracknr)
 	int rc;
 
 	s->max_revolutions = 0;
-	rc = s->type->select_track(s, tracknr);
+	rc = s->type.select_track(s, tracknr);
 	if (rc)
 	    return rc;
 
@@ -5421,7 +5422,7 @@ static void _fd_stream_reset(struct fd_stream *s)
 	    = (1u<<31)-1; /* bad */
 	s->ns_to_index = INT_MAX;
 
-	s->type->reset(s);
+	s->type.reset(s);
 }
 
 
@@ -5508,7 +5509,7 @@ static int flux_next_bit(struct fd_stream *s)
 	int new_flux;
 
 	while ( s->flux < (s->clock/2) )
-		if (s->type->next_flux(s) != 0)
+		if (s->type.next_flux(s) != 0)
 			return -1;
 
 	s->latency += s->clock;
@@ -5580,7 +5581,7 @@ int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 	FDC_AM_Detector_Reset ();
 
 	/* Uncomment next line to dump the track's content */
-//	FD_Stream_DumpTrack ( &(SCP_State.SCP_Stream[ Drive ].s) , 0 );
+//	FD_Stream_DumpTrack ( &(FD_STREAMS[ Drive ]) , 0 );
 
 	return 0;
 }
@@ -6379,10 +6380,10 @@ void	FD_Stream_DumpTrack ( struct fd_stream *s , int InitialShift )
 void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
 {
 	int	bit;
-	Uint8	DSR , DR;
+	uint8_t	DSR , DR;
 	int	DSR_count;
 	bool	Copy_DSR_DR;
-	Uint16	Sync , Sync_prev;
+	uint16_t Sync , Sync_prev;
 	int	Sync_Dist;
 	int	Data_Delay;
 	int	Data_Skip;
@@ -6393,7 +6394,7 @@ void	FD_Stream_DumpTrack_test_overlap ( struct fd_stream *s , int InitialShift )
 	char	buf_asc[1000];
 	char	buf_time[1000];
 	uint64_t prev_latency;
-	Uint16	Sync_Print;
+	uint16_t Sync_Print;
 
 
 	DSR = 0;

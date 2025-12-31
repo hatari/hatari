@@ -137,7 +137,12 @@ extern void	FDC_DensityMode_ReadWord ( void );
  */
 
 struct fd_stream {
-	const struct fd_stream_type *type;
+	struct fd_stream_type {
+	int	(*select_track)(struct fd_stream *, unsigned int tracknr);
+	void	(*reset)(struct fd_stream *);
+	int	(*next_flux)(struct fd_stream *);
+	void	*flux_struct_param;			/* pointer to "struct scp_stream" or similar */
+	} type;
 
 	/* Accumulated read latency in nanosecs. Can be reset by the caller. */
 	uint64_t latency;
@@ -178,23 +183,17 @@ struct fd_stream {
 };
 
 
-struct fd_stream_type {
-    int		(*select_track)(struct fd_stream *, unsigned int tracknr);
-    void	(*reset)(struct fd_stream *);
-    int		(*next_flux)(struct fd_stream *);
-    void	*flux_struct_param;			/* pointer to "struct scp_stream" */
-};
-
-
 uint16_t fd_stream_rnd16 ( uint32_t *p_seed );
-void	fd_stream_setup ( struct fd_stream *s , const struct fd_stream_type *st,
-			  unsigned int drive_rpm, unsigned int data_rpm);
+void	fd_stream_setup ( struct fd_stream *s , unsigned int drive_rpm, unsigned int data_rpm );
 int	fd_stream_select_track ( struct fd_stream *s , unsigned int tracknr );
 void	fd_stream_reset ( struct fd_stream *s );
 void	fd_stream_next_index ( struct fd_stream *s );
 int	fd_stream_next_bit ( struct fd_stream *s );
 int	fd_stream_next_bits ( struct fd_stream *s , unsigned int bits );
 int	fd_stream_next_bytes ( struct fd_stream *s , void *p , unsigned int bytes );
+
+extern	struct fd_stream		FD_STREAMS[ MAX_FLOPPYDRIVES ];
+
 
 /*
  * Flux to MFM bit decoding - END
