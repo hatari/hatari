@@ -80,8 +80,6 @@ extern bool	SCP_Init ( void );
 extern bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
 extern bool	SCP_Eject ( int Drive );
 
-extern struct mfm_stream	*SCP_Get_Fd_Stream ( uint8_t Drive );
-
 extern SCP_MAIN_STRUCT *SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug );
 
 extern int	FDC_GetBytesPerTrack_SCP ( uint8_t Drive , uint8_t Track , uint8_t Side );

@@ -5999,8 +5999,6 @@ static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHead
 	uint16_t	StatusMask;
 	int		Res;
 
-s = SCP_Get_Fd_Stream ( Drive );
-
 	if ( ( Side == 1 ) && ( NumberOfHeads == 1 ) )			/* Can't read side 1 on a single sided drive */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
@@ -6010,6 +6008,7 @@ s = SCP_Get_Fd_Stream ( Drive );
 	if ( FDC_CanMachineHandleDensity ( Drive ) == false )		/* Can't handle the floppy's density */
 		return FDCEMU_RETURN_NO_DRIVE_FLOPPY;
 
+	s = &(MFM_STREAMS[ Drive ]);
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
 	Time_ns = 0;
@@ -6153,7 +6152,7 @@ static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sect
 	int		i;
 	int		FdcCycles;
 
-s = SCP_Get_Fd_Stream ( Drive );
+	s = &(MFM_STREAMS[ Drive ]);
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_AUTO_OFF;
 	Time_ns = 0;
@@ -6289,7 +6288,7 @@ static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side 
 	int		FdcCycles;
 	int		i = 0;
 
-s = SCP_Get_Fd_Stream ( Drive );
+	s = &(MFM_STREAMS[ Drive ]);
 
 	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
 

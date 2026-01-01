@@ -324,13 +324,6 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 
 
 
-struct mfm_stream	*SCP_Get_Fd_Stream ( uint8_t Drive )
-{
-	return &(MFM_STREAMS[ Drive ]);
-}
-
-
-
 
 /*-----------------------------------------------------------------------*/
 /*
