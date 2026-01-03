@@ -11,14 +11,6 @@ const char Main_fileid[] = "Hatari main.c";
 #include <time.h>
 
 #include "main.h"
-
-#if ENABLE_SDL3
-#define SDL_ENABLE_OLD_NAMES 1
-#include <SDL3/SDL.h>
-#else
-#include <SDL.h>
-#endif
-
 #include "version.h"
 #include "configuration.h"
 #include "control.h"
@@ -43,7 +35,6 @@ const char Main_fileid[] = "Hatari main.c";
 #include "keymap.h"
 #include "log.h"
 #include "m68000.h"
-#include "memorySnapShot.h"
 #include "midi.h"
 #include "ncr5380.h"
 #include "nvram.h"
@@ -54,7 +45,6 @@ const char Main_fileid[] = "Hatari main.c";
 #include "rtc.h"
 #include "scc.h"
 #include "screen.h"
-#include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
 #include "dmaSnd.h"
@@ -67,22 +57,17 @@ const char Main_fileid[] = "Hatari main.c";
 #include "avi_record.h"
 #include "debugui.h"
 #include "clocks_timings.h"
-#include "utils.h"
 
 #include "hatari-glue.h"
 
 #include "falcon/dsp.h"
 #include "falcon/videl.h"
 
-#include "sdl/screen_sdl.h"
-
 #ifdef WIN32
 #include "gui-win/opencon.h"
 #endif
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
-static int nQuitValue;                    /* exit value */
-
 bool bEmulationActive = true;             /* Run emulation when started */
 
 
@@ -138,45 +123,6 @@ bool Main_UnPauseEmulation(void)
 
 
 /**
- * Optionally ask user whether to quit and set bQuitProgram accordingly
- */
-void Main_RequestQuit(int exitval)
-{
-	if (ConfigureParams.Memory.bAutoSave)
-	{
-		bQuitProgram = true;
-		MemorySnapShot_Capture(ConfigureParams.Memory.szAutoSaveFileName, false);
-	}
-	else if (ConfigureParams.Log.bConfirmQuit)
-	{
-		bQuitProgram = false;	/* if set true, dialog exits */
-		bQuitProgram = DlgAlert_Query("All unsaved data will be lost.\nDo you really want to quit?");
-	}
-	else
-	{
-		bQuitProgram = true;
-	}
-
-	if (bQuitProgram)
-	{
-		/* Assure that CPU core shuts down */
-		M68000_SetSpecial(SPCFLAG_BRK);
-	}
-	nQuitValue = exitval;
-}
-
-/**
- * Set exit value and enable quit flag
- */
-void Main_SetQuitValue(int exitval)
-{
-	bQuitProgram = true;
-	M68000_SetSpecial(SPCFLAG_BRK);
-	nQuitValue = exitval;
-}
-
-
-/**
  * Initialise emulation for some hardware components
  * It is required to init those parts before parsing the parameters
  * (for example, we should init FDC before inserting a disk and we
@@ -194,7 +140,7 @@ static void Main_Init_HW(void)
 /**
  * Initialise emulation
  */
-static void Main_Init(void)
+static void Main_InitSubsystems(void)
 {
 	/* Open debug log file */
 	if (!Log_Init())
@@ -202,17 +148,6 @@ static void Main_Init(void)
 		Main_ErrorExit("Logging/tracing initialization failed", NULL, -1);
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
-
-	/* Init SDL's video subsystem. Note: Audio subsystem
-	   will be initialized later (failure not fatal). */
-#if ENABLE_SDL3
-	if (!SDL_Init(SDL_INIT_VIDEO))
-#else
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
-#endif
-	{
-		Main_ErrorExit("Could not initialize the SDL library:", SDL_GetError(), -1);
-	}
 
 	if ( IPF_Init() != true )
 	{
@@ -222,7 +157,6 @@ static void Main_Init(void)
 	ClocksTimings_InitMachine ( ConfigureParams.System.nMachineType );
 	Video_SetTimings ( ConfigureParams.System.nMachineType , ConfigureParams.System.VideoTimingMode );
 
-	SDLGui_Init();
 	Printer_Init();
 	MFP_Init(MFP_Array);
 	RS232_Init();
@@ -262,12 +196,8 @@ static void Main_Init(void)
 	}
 	if (!bTosImageLoaded || bQuitProgram)
 	{
-		if (!bTosImageLoaded)
-		{
-			Main_ErrorExit("Failed to load TOS image", NULL, -2);
-		}
-		SDL_Quit();
-		exit(-2);
+		const char *msg = bTosImageLoaded ? NULL : "Failed to load TOS image";
+		Main_ErrorExit(msg, NULL, -2);
 	}
 
 	IoMem_Init();
@@ -284,7 +214,7 @@ static void Main_Init(void)
 /**
  * Un-Initialise emulation
  */
-static void Main_UnInit(void)
+static void Main_UnInitSubsystems(void)
 {
 	Screen_ReturnFromFullScreen();
 	Floppy_UnInit();
@@ -302,16 +232,12 @@ static void Main_UnInit(void)
 	if (Sound_AreWeRecording())
 		Sound_EndRecording();
 	Audio_UnInit();
-	SDLGui_UnInit();
 	DSP_UnInit();
 	Screen_UnInit();
 	ConvST_UnInit();
 	Exit680x0();
 
 	IPF_Exit();
-
-	/* SDL uninit: */
-	SDL_Quit();
 
 	/* Close debug log file */
 	DebugUI_UnInit();
@@ -353,49 +279,13 @@ static void Main_LoadInitialConfig(void)
 
 
 /**
- * Error exit wrapper, to make sure user sees the error messages
- * also on Windows.
- *
- * If message is given, Windows console is opened to show it,
- * otherwise it's assumed to be already open and relevant
- * messages shown before calling this.
- *
- * User input is waited on Windows, to make sure user sees
- * the message before console closes.
- *
- * Value overrides nQuitValue as process exit/return value.
- */
-void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
-{
-	if (msg1)
-	{
-#ifdef WIN32
-		Win_ForceCon();
-#endif
-		if (msg2)
-			fprintf(stderr, "ERROR: %s\n\t%s\n", msg1, msg2);
-		else
-			fprintf(stderr, "ERROR: %s!\n", msg1);
-	}
-
-	SDL_Quit();
-
-#ifdef WIN32
-	fputs("<press Enter to exit>\n", stderr);
-	(void)fgetc(stdin);
-#endif
-	exit(errval);
-}
-
-/**
  * Main
  * 
  * Note: 'argv' cannot be declared const, MinGW would then fail to link.
  */
-int main(int argc, char *argv[])
+void Main_Init(int argc, char *argv[])
 {
-	/* Generate random seed */
-	Hatari_srand(time(NULL));
+	int exitval;
 
 	/* Setup for string conversions */
 	Str_Init();
@@ -425,7 +315,6 @@ int main(int argc, char *argv[])
 	Main_LoadInitialConfig();
 
 	/* Check for any passed parameters */
-	int exitval;
 	if (!Opt_ParseParameters(argc, (const char * const *)argv, &exitval))
 	{
 		Control_RemoveFifo();
@@ -440,29 +329,23 @@ int main(int argc, char *argv[])
 #endif
 
 	/* Init emulator system */
-	Main_Init();
+	Main_InitSubsystems();
 
 	/* Set initial Statusbar information */
 	Statusbar_InitialSetup();
 	
 	/* Check if Timing_Delay is accurate */
 	Timing_CheckForAccurateDelays();
+}
 
-	/* Immediately start AVI recording ? */
-	if ( AviRecordEnabled )
-		Avi_StartRecording_WithConfig();
 
-	/* Run emulation */
-	Main_UnPauseEmulation();
-	M68000_Start();                 /* Start emulation */
-
+void Main_UnInit(void)
+{
 	Control_RemoveFifo();
 
 	/* cleanly close the AVI file, if needed */
 	Avi_StopRecording_WithMsg();
 
 	/* Un-init emulation system */
-	Main_UnInit();
-
-	return nQuitValue;
+	Main_UnInitSubsystems();
 }

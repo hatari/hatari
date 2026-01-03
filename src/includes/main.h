@@ -58,10 +58,12 @@
 extern bool bQuitProgram;
 extern bool bEmulationActive;
 
-extern bool Main_PauseEmulation(bool visualize);
-extern bool Main_UnPauseEmulation(void);
-extern void Main_RequestQuit(int exitval);
-extern void Main_SetQuitValue(int exitval);
-extern void Main_ErrorExit(const char *msg1, const char *msg2, int errval);
+bool Main_PauseEmulation(bool visualize);
+bool Main_UnPauseEmulation(void);
+void Main_RequestQuit(int exitval);
+void Main_SetQuitValue(int exitval);
+void Main_ErrorExit(const char *msg1, const char *msg2, int errval);
+void Main_Init(int argc, char *argv[]);
+void Main_UnInit(void);
 
 #endif /* ifndef HATARI_MAIN_H */

@@ -32,6 +32,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "options.h"
 #include "screen.h"
 #include "screen_sdl.h"
+#include "sdlgui.h"
 #include "spec512.h"
 #include "statusbar.h"
 #include "statusbar_sdl.h"
@@ -628,8 +629,16 @@ void Screen_Init(void)
 {
 	SDL_Surface *pIconSurf;
 	char sIconFileName[FILENAME_MAX];
+
 #if ENABLE_SDL3
 	const SDL_DisplayMode *dm;
+
+	/* Init SDL's video subsystem. Note: Audio subsystem
+	   will be initialized later (failure not fatal). */
+	if (!SDL_Init(SDL_INIT_VIDEO))
+	{
+		Main_ErrorExit("Could not initialize the SDL library:", SDL_GetError(), -1);
+	}
 
 	/* Get information about desktop resolution */
 	dm = SDL_GetDesktopDisplayMode(1);
@@ -638,8 +647,20 @@ void Screen_Init(void)
 		desktop_width = dm->w;
 		desktop_height = dm->h;
 	}
+	else
+	{
+		Log_Printf(LOG_ERROR, "SDL_GetDesktopDisplayMode failed: %s",
+		           SDL_GetError());
+		desktop_width = 2 * NUM_VISIBLE_LINE_PIXELS;
+		desktop_height = 2 * NUM_VISIBLE_LINES + STATUSBAR_MAX_HEIGHT;
+	}
 #else
 	SDL_DisplayMode dm;
+
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		Main_ErrorExit("Could not initialize the SDL library:", SDL_GetError(), -1);
+	}
 
 	/* Needed on maemo but useful also with normal X11 window managers for
 	 * window grouping when you have multiple Hatari SDL windows open */
@@ -651,7 +672,6 @@ void Screen_Init(void)
 		desktop_width = dm.w;
 		desktop_height = dm.h;
 	}
-#endif
 	else
 	{
 		Log_Printf(LOG_ERROR, "SDL_GetDesktopDisplayMode failed: %s",
@@ -659,6 +679,7 @@ void Screen_Init(void)
 		desktop_width = 2 * NUM_VISIBLE_LINE_PIXELS;
 		desktop_height = 2 * NUM_VISIBLE_LINES + STATUSBAR_MAX_HEIGHT;
 	}
+#endif
 
 	/* If user hasn't set own max zoom size, use desktop size */
 	if (!(ConfigureParams.Screen.nMaxWidth && ConfigureParams.Screen.nMaxHeight))
@@ -689,6 +710,8 @@ void Screen_Init(void)
 	/* Configure some SDL stuff: */
 	Screen_ShowCursor(false);
 	Screen_SetTitle(NULL);
+
+	SDLGui_Init();
 }
 
 
@@ -697,6 +720,8 @@ void Screen_Init(void)
  */
 void Screen_UnInit(void)
 {
+	SDLGui_UnInit();
+
 	Screen_FreeSDL2Resources();
 	if (sdlWindow)
 	{
