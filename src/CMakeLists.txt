@@ -2,21 +2,17 @@
 set(SOURCES
 	acia.c avi_record.c bios.c blitter.c cart.c cfgopts.c
 	clocks_timings.c configuration.c options.c change.c control.c
-	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c event.c fdc.c file.c
+	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c event.c fdc.c
 	floppy.c floppy_ipf.c floppy_stx.c gemdos.c hdc.c ide.c ikbd.c ioMem.c
 	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
 	m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	ncr5380.c paths.c  psg.c printer.c rs232.c reset.c rtc.c
 	scandir.c scc.c scu_vme.c stMemory.c screenSnapShot.c
 	shortcut.c sound.c spec512.c str.c tos.c
-	utils.c vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
+	vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
-if(EMSCRIPTEN)
-	set(SOURCES ${SOURCES} emscripten.js emscripten_shell.html)
-endif()
-
-# Disk image code is shared with the hmsa tool, so we put it into a library:
-add_library(Floppy createBlankImage.c dim.c msa.c st.c zip.c utils.c)
+# Some code is shared with the hmsa tool, so we list this separately:
+set(SOURCES_HMSA createBlankImage.c dim.c file.c msa.c st.c zip.c utils.c)
 
 file(GLOB TOS_IMG_FILE tos.img LIST_DIRECTORIES false)
 
@@ -55,7 +51,7 @@ include_directories(includes debug falcon cpu ${CMAKE_BINARY_DIR})
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
-	set(SOURCES ${SOURCES} unzip.c)
+	set(SOURCES_HMSA ${SOURCES_HMSA} unzip.c)
 endif(ZLIB_FOUND)
 
 if(PNG_FOUND)
@@ -78,11 +74,8 @@ if(Capstone_FOUND)
 	include_directories(${CAPSTONE_INCLUDE_DIR})
 endif(Capstone_FOUND)
 
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/debug
-		 ${CMAKE_CURRENT_BINARY_DIR}/falcon
-		 ${CMAKE_CURRENT_BINARY_DIR}/gui-sdl
-		 ${CMAKE_CURRENT_BINARY_DIR}/cpu
-		 ${CMAKE_CURRENT_BINARY_DIR}/sdl)
+add_library(Core OBJECT ${SOURCES})
+add_library(CoreHmsa OBJECT ${SOURCES_HMSA})
 
 add_subdirectory(cpu)
 add_subdirectory(debug)
@@ -90,9 +83,19 @@ add_subdirectory(falcon)
 add_subdirectory(gui-sdl)
 add_subdirectory(sdl)
 
+set(APP_TARGET_OBJECTS
+		$<TARGET_OBJECTS:Core>
+		$<TARGET_OBJECTS:CoreHmsa>
+		$<TARGET_OBJECTS:Falcon>
+		$<TARGET_OBJECTS:UaeCpu>
+		$<TARGET_OBJECTS:GuiSdl>
+		$<TARGET_OBJECTS:Debug>
+		$<TARGET_OBJECTS:Ui>)
+
 # When building for macOS, add specific sources
 if(ENABLE_OSX_BUNDLE)
-	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS} ${SOURCES} ${GUIOSX_SOURCES})
+	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS}
+	               ${APP_TARGET_OBJECTS} ${GUIOSX_SOURCES})
 	set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set_target_properties(${APP_NAME} PROPERTIES INSTALL_RPATH
@@ -194,11 +197,11 @@ elseif(WIN32)
 	ENABLE_LANGUAGE(RC)
 	set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -Ocoff -o <OBJECT> <SOURCE>")
 	set_source_files_properties(${GUIWIN_RES} PROPERTIES LANGUAGE RC)
-	add_executable(${APP_NAME} ${GUIWIN_RES} ${SOURCES} ${GUIWIN_SOURCES})
+	add_executable(${APP_NAME} ${GUIWIN_RES} ${APP_TARGET_OBJECTS} ${GUIWIN_SOURCES})
 
 #emscripten needs some em-specific linker flags
 elseif(EMSCRIPTEN)
-	add_executable(${APP_NAME} ${SOURCES})
+	add_executable(${APP_NAME} ${APP_TARGET_OBJECTS} emscripten.js emscripten_shell.html)
 	set_target_properties(
 		${APP_NAME}
 		PROPERTIES
@@ -214,7 +217,7 @@ elseif(EMSCRIPTEN)
 	)
 # Other targets, use default sources
 else()
-	add_executable(${APP_NAME} ${SOURCES})
+	add_executable(${APP_NAME} ${APP_TARGET_OBJECTS})
 endif(ENABLE_OSX_BUNDLE)
 
 if(SDL2_OTHER_CFLAGS)
@@ -222,8 +225,7 @@ if(SDL2_OTHER_CFLAGS)
 	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
 endif(SDL2_OTHER_CFLAGS)
 
-target_link_libraries(${APP_NAME} Falcon UaeCpu GuiSdl Floppy Debug Ui
-                      ${SDL2_LIBRARIES})
+target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
 
 if(Math_FOUND AND NOT APPLE)
 	target_link_libraries(${APP_NAME} ${MATH_LIBRARY})

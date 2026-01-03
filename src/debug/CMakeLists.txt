@@ -7,7 +7,7 @@ if(ENABLE_DSP_EMU)
 	set(DSPDBG_C debugdsp.c)
 endif(ENABLE_DSP_EMU)
 
-add_library(Debug
+add_library(Debug OBJECT
 	    log.c debugui.c breakcond.c debugcpu.c debugInfo.c
 	    ${DSPDBG_C} evaluate.c history.c symbols.c vars.c
 	    profile.c profilecpu.c profiledsp.c

@@ -96,5 +96,5 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 		PROPERTIES COMPILE_FLAGS ${CPUMAIN_CFLAGS})
 endif()
 
-add_library(UaeCpu ${CPUEMU_SRCS} ${WINUAE_SRCS} custom.c events.c memory.c
-		   hatari-glue.c)
+add_library(UaeCpu OBJECT ${CPUEMU_SRCS} ${WINUAE_SRCS} custom.c events.c
+			  memory.c hatari-glue.c)

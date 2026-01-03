@@ -5,7 +5,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
 endif()
 
-add_library(GuiSdl
+add_library(GuiSdl OBJECT
 	dlgAbout.c dlgAlert.c dlgCpu.c dlgDevice.c dlgFileSelect.c dlgFloppy.c
 	dlgHalt.c dlgHardDisk.c dlgJoystick.c dlgKeyboard.c dlgMain.c
 	dlgMemory.c dlgNewDisk.c dlgRecord.c dlgRom.c dlgScreen.c

@@ -2,16 +2,9 @@
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/includes
 		    ${CMAKE_SOURCE_DIR}/src/debug)
 
-set(HMSA_SOURCES hmsa.c floppy.c ../../src/file.c)
+set(HMSA_SOURCES hmsa.c floppy.c)
 
-if(ZLIB_FOUND)
-	include_directories(${ZLIB_INCLUDE_DIR})
-	set(HMSA_SOURCES ${HMSA_SOURCES}  ../../src/unzip.c)
-endif(ZLIB_FOUND)
-
-add_executable(hmsa ${HMSA_SOURCES})
-
-target_link_libraries(hmsa Floppy)
+add_executable(hmsa ${HMSA_SOURCES} $<TARGET_OBJECTS:CoreHmsa>)
 
 if(Math_FOUND)
 	target_link_libraries(hmsa ${MATH_LIBRARY})
