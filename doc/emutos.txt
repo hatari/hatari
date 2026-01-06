@@ -1280,6 +1280,7 @@ Color games:
 - Pole Position (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
+- Puckman
 - R0x (line-A bitblit)
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
 - Randomazer 1.x & SV2020 editions
