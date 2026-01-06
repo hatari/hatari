@@ -74,6 +74,7 @@ Emulator improvements:
 - Debugger:
   - Fix: dysfunctional WinUAE CPU core disasm wrapper
   - Fix: separate arguments output by "echo" command with a space
+  - Fix: breakpoint options missing from Hatari debugger state save
   - Add ':print' option for annotating conditional breakpoints
   - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines

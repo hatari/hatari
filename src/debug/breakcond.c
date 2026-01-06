@@ -113,7 +113,7 @@ static bc_breakpoints_t DspBreakPoints = {
 /* forward declarations */
 static void BreakCond_DoDelayedActions(bc_breakpoints_t *bps);
 static bool BreakCond_Remove(bc_breakpoints_t *bps, int position);
-static void BreakCond_Print(bc_breakpoint_t *bp);
+static void BreakCond_Print(FILE *fp, const char *prefix, bc_breakpoint_t *bp);
 
 
 /**
@@ -143,10 +143,16 @@ bool BreakCond_Save(const char *filename)
 	}
 	/* save conditional breakpoints as debugger input file */
 	for (i = 0; i < CpuBreakPoints.count; i++) {
-		fprintf(fp, "b %s\n", CpuBreakPoints.breakpoint[i].expression);
+		bc_breakpoint_t *bp = &CpuBreakPoints.breakpoint[i];
+		if (!bp->options.deleted) {
+			BreakCond_Print(fp, "b ", bp);
+		}
 	}
 	for (i = 0; i < DspBreakPoints.count; i++) {
-		fprintf(fp, "db %s\n", DspBreakPoints.breakpoint[i].expression);
+		bc_breakpoint_t *bp = &DspBreakPoints.breakpoint[i];
+		if (!bp->options.deleted) {
+			BreakCond_Print(fp, "b ", bp);
+		}
 	}
 	fclose(fp);
 	return true;
@@ -335,7 +341,7 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 			if (!bp->options.quiet) {
 				fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
 					i+1, bps->name, bp->hits);
-				BreakCond_Print(bp);
+				BreakCond_Print(stderr, "\t", bp);
 			}
 			History_Mark(bps->reason);
 
@@ -1290,40 +1296,40 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 /**
  * print single breakpoint
  */
-static void BreakCond_Print(bc_breakpoint_t *bp)
+static void BreakCond_Print(FILE *fp, const char *prefix, bc_breakpoint_t *bp)
 {
-	fprintf(stderr, "\t%s", bp->expression);
+	fprintf(fp, "%s%s", prefix, bp->expression);
 	if (bp->options.skip) {
-		fprintf(stderr, " :%d", bp->options.skip);
+		fprintf(fp, " :%d", bp->options.skip);
 	}
 	if (bp->options.once) {
-		fprintf(stderr, " :once");
+		fprintf(fp, " :once");
 	}
 	if (bp->options.quiet) {
-		fprintf(stderr, " :quiet");
+		fprintf(fp, " :quiet");
 	}
 	if (bp->options.trace) {
-		fprintf(stderr, " :trace");
+		fprintf(fp, " :trace");
 		if (bp->options.info) {
-			fprintf(stderr, " :info");
+			fprintf(fp, " :info");
 		}
 		if (bp->options.lock) {
-			fprintf(stderr, " :lock");
+			fprintf(fp, " :lock");
 		}
 		if (bp->options.noinit) {
-			fprintf(stderr, " :noinit");
+			fprintf(fp, " :noinit");
 		}
 	}
 	if (bp->options.filename) {
-		fprintf(stderr, " :file %s", bp->options.filename);
+		fprintf(fp, " :file %s", bp->options.filename);
 	}
 	if (bp->options.print) {
-		fprintf(stderr, " :print %s", bp->options.print);
+		fprintf(fp, " :print %s", bp->options.print);
 	}
 	if (bp->options.deleted) {
-		fprintf(stderr, " (deleted)");
+		fprintf(fp, " (deleted)");
 	}
-	fprintf(stderr, "\n");
+	fprintf(fp, "\n");
 }
 
 /**
@@ -1342,7 +1348,7 @@ static void BreakCond_List(bc_breakpoints_t *bps)
 	bp = bps->breakpoint;
 	for (i = 1; i <= bps->count; bp++, i++) {
 		fprintf(stderr, "%4d:", i);
-		BreakCond_Print(bp);
+		BreakCond_Print(stderr, "\t", bp);
 	}
 }
 
@@ -1369,7 +1375,7 @@ static bool BreakCond_Remove(bc_breakpoints_t *bps, int position)
 	}
 	if (!bp->options.quiet) {
 		fprintf(stderr, "Removed %s breakpoint %d:\n", bps->name, position);
-		BreakCond_Print(bp);
+		BreakCond_Print(stderr, "\t", bp);
 	}
 	free(bp->expression);
 	free(bp->conditions);
