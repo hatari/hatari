@@ -1,7 +1,7 @@
 /*
   Hatari - breakcond.c
 
-  Copyright (c) 2009-2024 by Eero Tamminen
+  Copyright (c) 2009-2025 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -36,9 +36,11 @@ const char BreakCond_fileid[] = "Hatari breakcond.c";
 #include "symbols.h"
 #include "68kDisass.h"
 
-
 /* set to 1 to enable parsing function tracing / debug output */
 #define DEBUG 0
+/* set to 1 for "b info" command for showing struct sizes */
+#define SIZE_INFO 0
+
 
 /* needs to go through long long to handle x=32 */
 #define BITMASK(x)      ((uint32_t)(((unsigned long long)1<<(x))-1))
@@ -1572,6 +1574,39 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 	return true;
 }
 
+#if SIZE_INFO
+/**
+ * Output extra info useful for optimizing breakpoint processing:
+ * - internal structure sizes
+ *
+ * ("pahole" does not list local struct sizes as compiler does
+ * not annotate them. Test code does not have visibility to these
+ * structs and this file depends on too many things for this to
+ * be built independently with some define.)
+ *
+ * Cache line size: "getconf LEVEL1_DCACHE_LINESIZE".
+ */
+static void BreakCond_Info(void)
+{
+	const struct {
+		const char *name;
+		size_t size;
+	} bc_struct[] = {
+		{ "bc_value_t", sizeof(bc_value_t) },
+		{ "bc_options_t", sizeof(bc_options_t) },
+		{ "bc_condition_t", sizeof(bc_condition_t) },
+		{ "bc_breakpoint_t", sizeof(bc_breakpoint_t) },
+		{ "bc_breakpoints_t", sizeof(bc_breakpoints_t) },
+		{ NULL, 0 },
+	};
+	fprintf(stderr, "Breakpoint structure sizes:\n");
+	for (int i = 0; bc_struct[i].name; i++) {
+		fprintf(stderr, "- %s: %ld bytes\n",
+			bc_struct[i].name, bc_struct[i].size);
+	}
+}
+#endif
+
 /**
  * Parse given command expression to set/remove/list
  * conditional breakpoints for CPU or DSP.
@@ -1605,6 +1640,13 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		BreakCond_RemoveAll(bps);
 		goto cleanup;
 	}
+
+#if SIZE_INFO
+	if (strcmp(expression, "info") == 0) {
+		BreakCond_Info();
+		goto cleanup;
+	}
+#endif
 
 	if (bForDsp && !bDspEnabled) {
 		ret = false;
