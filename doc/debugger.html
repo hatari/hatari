@@ -558,9 +558,7 @@ depend on which toolchain is used to build it:
 <dt><em>AHCC</em>:</dt>
 <dd>"-g" and "-l" options for linking</dd>
 <dt><em>GCC</em>:</dt>
-<dd>"-g" for compilation, and no strip option for linking
-(with older Hatari versions that did not support "a.out" format,
-also "-Wl,--traditional-format" option was needed for linking)</dd>
+<dd>"-g" for compilation, and no strip option for linking</dd>
 <dt><em>VBCC</em>:</dt>
 <dd>"-g" (can only be used at linking phase), <em>when VBCC
     configuration file uses "-bataritos" option for
@@ -582,17 +580,17 @@ before directing it to a file.</p>
 <h5>Overriding program symbols</h5>
 
 <p>Symbols in a program can be overridden by providing similarly
-named ".sym" file in the same directory.  If for example there is
-a file called "program.sym", debugger will try to load that instead
-of "program.prg" (when debugger is first invoked after that program
-started).</p>
+named ".sym" file in the same directory.  For example, if there is
+a file called "program.sym", debugger will try to load symbols from
+that instead of "program.prg" (when debugger is first invoked after
+given program started).</p>
 
-<p>There are few reasons why one might want to do that:</p><ul>
-<li>Provide debugger demangled versions of the C++ program symbols</li>
-<li>Stripped binary + ".sym" file take less space than providing
-    also a non-stripped binary</li>
-<li>Add (function) or remove (loop) symbols to improve profiling
-    results</li>
+<p>There are few reasons why one might want to use ".sym" file:</p><ul>
+<li>Debugging C++ programs with demangled (user-friendly) symbol names</li>
+<li>Binary itself can be stripped (be much smaller) when symbols are
+    provided in a separate ".sym" file / download</li>
+<li>Addding missing (function) symbols, or removing (loop) symbols,
+    to improve profiling results</li>
 </ul>
 
 
@@ -2292,25 +2290,27 @@ command limitations.
 </dd>
 
 <dt><em>Seeing program callstack when breakpoint is hit</em></dt>
-<dd><a href="#Caller_information">Profiler caller data</a> includes
-callstack information (with some limitations).
+<dd><a href="#Caller_information">Profiler caller data</a>, shown
+automatically when debugger is entered, includes callstack information
+(with some limitations) if program <a href="#Debug_symbols">debug
+symbols</a> have been loaded.
 </dd>
 
 <dt><em>Seeing call backtraces whenever given function is called</em></dt>
-<dd>Enable profiling, load symbols for the program and set breakpoint
-for that function, in the following way:
+<dd>After enabling profiling and setting breakpoint for a function
+symbol like this:
 <pre>
 profile  on
-symbols  prg
 b  pc = _my_function  :quiet :noinit :file showstack.ini
 </pre>
-I.e. whenever "my_function" address is called, quietly trigger a
-breakpoint without resetting profiling (callstack) information and run
-debugger command(s) from the "showstack.ini" debugger script file,
-which contains following command:
+With "showstack.ini" containing following command:
 <pre>
 profile  stack
 </pre>
+Each call to "my_function" address quietly triggers a breakpoint
+(without resetting profiling callstack information) which shows the
+function backtrace.  If this is enabled right when program starts,
+those backtraces will go up to main().
 </dd>
 
 <dt><em>Seeing how program functions/symbols call each other</em></dt>
