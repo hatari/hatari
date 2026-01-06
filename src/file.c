@@ -519,7 +519,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return basename of given path (remove directory names)
+ * Return basename of given path (pointer to file name part of same string)
  */
 const char *File_Basename(const char *path)
 {
