@@ -123,7 +123,11 @@ static void BreakCond_Print(FILE *fp, const char *prefix, bc_breakpoint_t *bp);
 bool BreakCond_Save(const char *filename)
 {
 	FILE *fp;
-	int i;
+	int i, j;
+	bool ext_files;
+	const bc_breakpoints_t *bps[] = {
+		&CpuBreakPoints, &DspBreakPoints
+	};
 
 	if (!(CpuBreakPoints.count || DspBreakPoints.count)) {
 		if (File_Exists(filename)) {
@@ -135,12 +139,40 @@ bool BreakCond_Save(const char *filename)
 		return true;
 	}
 
-	fprintf(stderr, "Saving breakpoints to '%s'...\n", filename);
+	Log_Printf(LOG_INFO, "Saving breakpoints to '%s'...\n", filename);
 	fp = fopen(filename, "w");
 	if (!fp) {
 		perror("ERROR");
 		return false;
 	}
+
+	/* check whether breakpoints would parse debugger files
+	 * (which could then load further more files)?
+	 */
+	ext_files = false;
+	for (j = 0; j < ARRAY_SIZE(bps); j++) {
+		for (i = 0; i < bps[j]->count; i++) {
+			if (bps[j]->breakpoint[i].options.filename) {
+				ext_files = true;
+				break;
+			}
+		}
+	}
+
+	if (ext_files) {
+		/* make sure possible relative paths in debugger input
+		 * files will work, as they would work currently.
+		 */
+		char *cwd = malloc(FILENAME_MAX);
+		if (cwd && getcwd(cwd, FILENAME_MAX)) {
+			Log_Printf(LOG_WARN, "breakpoints refer to other files => adding 'cd $CWD'\n");
+			fprintf(fp, "cd %s\n", cwd);
+		} else {
+			perror("getting CWD for breakpoint paths failed");
+		}
+		free(cwd);
+	}
+
 	/* save conditional breakpoints as debugger input file */
 	for (i = 0; i < CpuBreakPoints.count; i++) {
 		bc_breakpoint_t *bp = &CpuBreakPoints.breakpoint[i];
@@ -151,9 +183,10 @@ bool BreakCond_Save(const char *filename)
 	for (i = 0; i < DspBreakPoints.count; i++) {
 		bc_breakpoint_t *bp = &DspBreakPoints.breakpoint[i];
 		if (!bp->options.deleted) {
-			BreakCond_Print(fp, "b ", bp);
+			BreakCond_Print(fp, "db ", bp);
 		}
 	}
+
 	fclose(fp);
 	return true;
 }

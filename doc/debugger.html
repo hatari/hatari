@@ -1099,6 +1099,25 @@ these debugger input files also with the debugger "file" command,
 command line option.
 </p>
 
+
+<h4 id="State_saves">Breakpoints in emulation state saves</h4>
+
+<p>
+When emulation state is saved, currently active breakpoints are saved
+to a separate file with additional ".debug" extension.  If breakpoints
+refer to other files, that file starts with a "cd" command that sets
+Hatari working directory to what it was when state was saved.
+</p>
+
+<p>
+This way the relative paths referred by breakpoint ":file" options
+(and possible further files referred from those files), should work
+fine. However, if any of the related files are moved, rest of the them
+need to be moved too, and the "cd" command path in the ".debug" state
+save file updated accordingly.
+</p>
+
+
 <h3 id="Stepping">Stepping through code</h3>
 
 <p>

@@ -17,6 +17,7 @@ char *rl_filename_completion_function(const char *text, int state) { return NULL
 uint64_t LogTraceFlags = 0;
 FILE *TraceFile;
 void Log_Trace(const char *format, ...) { }
+void Log_Printf(LOGTYPE, const char *format, ...) { }
 void Log_ResetMsgRepeat(void) {}
 
 /* fake Hatari configuration variables for number parsing */
