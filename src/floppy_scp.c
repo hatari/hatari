@@ -52,7 +52,7 @@ SCP_STRUCT	SCP_State;			/* All variables related to the SCP support */
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-static bool	SCP_Insert_internal ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize );
+static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize , bool KeepState );
 static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
 
 static int	scp_select_track (struct mfm_stream *s, unsigned int tracknr);
@@ -67,122 +67,51 @@ static int	scp_next_flux (struct mfm_stream *s);
  */
 void SCP_MemorySnapShot_Capture(bool bSave)
 {
-#if 0		// TODO
-	int	StructSize;
 	int	Drive;
-	int	Track , Side;
-	int	TrackSize;
-	uint8_t	*p;
+	int	Track;
+	bool	KeepState;
 
 	if ( bSave )					/* Saving snapshot */
 	{
-		StructSize = sizeof ( IPF_State );	/* 0 if HAVE_CAPSIMAGE is not defined */
-		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
-		if ( StructSize > 0 )
-		{
-			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
-
-			/* Save the content of IPF_RawStreamImage[] */
-			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
-				for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-					for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-					{
-						TrackSize = IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize;
-//						fprintf ( stderr , "IPF : save raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
-						MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
-						if ( TrackSize > 0 )
-							MemorySnapShot_Store(IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData, TrackSize);
-					}
-		}
+		MemorySnapShot_Store ( &SCP_State , sizeof (SCP_State) );
 	}
 
 	else						/* Restoring snapshot */
 	{
-		MemorySnapShot_Store(&StructSize, sizeof(StructSize));
-		if ( ( StructSize == 0 ) && ( sizeof ( IPF_State ) > 0 ) )
+		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
 		{
-			Log_AlertDlg(LOG_ERROR, "Hatari built with IPF floppy support, but no IPF data in memory snapshot -> skip");
-			return;				/* Continue restoring the rest of the memory snapshot */
-		}
-		else if ( ( StructSize > 0 ) && ( sizeof ( IPF_State ) == 0 ) )
-		{
-			Log_AlertDlg(LOG_ERROR, "Memory snapshot with IPF floppy data, but Hatari built without IPF support -> skip");
-			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
-			return;				/* Continue restoring the rest of the memory snapshot */
-		}
-		else if ( ( StructSize > 0 ) && ( StructSize != sizeof ( IPF_State ) ) )
-		{
-			Log_AlertDlg(LOG_ERROR, "Memory snapshot IPF floppy data incompatible with this Hatari version -> skip");
-			MemorySnapShot_Skip( StructSize );	/* Ignore the IPF data */
-			return;				/* Continue restoring the rest of the memory snapshot */
+			/* If an SCP floppy is already loaded when restoring, we free its data */
+			SCP_Eject ( Drive );
 		}
 
-		if ( StructSize > 0 )
+		MemorySnapShot_Store ( &SCP_State , sizeof (SCP_State) );
+
+		/* Call SCP_Insert_internal to recompute SCP_State if needed */
+		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
 		{
-			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
-
-#ifdef HAVE_CAPSIMAGE
-			/* For IPF structures, we need to update some pointers in Fdc/Drive/CapsImage */
-			/* drive : PUBYTE trackbuf, PUDWORD timebuf */
-			/* fdc : PCAPSDRIVE driveprc, PCAPSDRIVE drive, CAPSFDCHOOK callback functions */
-			IPF_State.Fdc.drive = IPF_State.Drive;		/* Connect drives array to the FDC */
-			if ( IPF_State.Fdc.driveprc != NULL )		/* Recompute active drive's pointer */
-				IPF_State.Fdc.driveprc = IPF_State.Fdc.drive + IPF_State.Fdc.driveact;
-
-			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 0 );	/* Invalidate buffered track data for drive 0 */
-			CAPSFdcInvalidateTrack ( &IPF_State.Fdc , 1 );	/* Invalidate buffered track data for drive 1 */
-
-			/* Set callback functions */
-			IPF_State.Fdc.cbirq = IPF_CallBack_Irq;
-			IPF_State.Fdc.cbdrq = IPF_CallBack_Drq;
-			IPF_State.Fdc.cbtrk = IPF_CallBack_Trk;
-#endif
-
-			/* Call IPF_Insert to recompute IPF_State.CapsImage[ Drive ] */
-			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
-				if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
-					if ( IPF_Insert ( Drive , EmulationDrives[Drive].pBuffer , EmulationDrives[Drive].nImageBytes ) == false )
-					{
-						Log_AlertDlg(LOG_ERROR, "Error restoring IPF image %s in drive %d" ,
-							EmulationDrives[Drive].sFileName , Drive );
-						return;
-					}
-
-			/* Restore the content of IPF_RawStreamImage[] */
-			/* NOTE  : IPF_Insert above might already have read the raw tracks from disk, */
-			/* so we free all those tracks and read them again from the snapshot instead */
-			/* (not very efficient, but it's a rare case anyway) */
-			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+			if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
 			{
-				IPF_Eject_RawStreamImage ( Drive );
-				for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-					for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-					{
-						MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
-//						fprintf ( stderr , "IPF : restore raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
-						IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = TrackSize;
-						IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
-						if ( TrackSize > 0 )
-						{
-							p = malloc ( TrackSize );
-							if ( p == NULL )
-							{
-								Log_AlertDlg(LOG_ERROR, "Error restoring IPF raw track drive %d track %d side %d size %d" ,
-									Drive, Track, Side , TrackSize );
-								return;
-							}
-							MemorySnapShot_Store(p, TrackSize);
-							IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = p;
-						}
-					}
+				KeepState = true;
+				if ( SCP_Insert_internal ( Drive , EmulationDrives[Drive].sFileName , EmulationDrives[Drive].pBuffer ,
+					EmulationDrives[Drive].nImageBytes , KeepState ) == false )
+				{
+					Log_AlertDlg(LOG_ERROR, "Error restoring SCP image %s in drive %d" ,
+						EmulationDrives[Drive].sFileName , Drive );
+					return;
+				}
+
+				/* If a track was loaded/selected at the time the snapshot was saved, */
+				/* we need to reload/select it now */
+				if ( SCP_State.SCP_Stream[ Drive ].track >= 0 )
+				{
+					Track = SCP_State.SCP_Stream[ Drive ].track;
+					SCP_State.SCP_Stream[ Drive ].track = -1;	/* Force a reload */
+					scp_select_track ( &MFM_STREAMS[ Drive ] , Track );
+				}
 			}
-			Log_Printf ( LOG_DEBUG , "ipf load ok\n" );
 		}
 	}
-#endif	// TODO
 }
-
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -256,10 +185,12 @@ bool	SCP_Init ( void )
 /*
  * Init the resources to handle the SCP image inserted into a drive (0=A: 1=B:)
  */
-bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , long ImageSize )
+bool	SCP_Insert ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize )
 {
+	bool KeepState = false;
+
 	/* Process the current SCP image */
-	if ( SCP_Insert_internal ( Drive , FilenameSTX , pImageBuffer , ImageSize ) == false )
+	if ( SCP_Insert_internal ( Drive , FilenameSCP , pImageBuffer , ImageSize , KeepState ) == false )
 		return false;
 
 //SCP_LoadTrack ( 0,0,0);	// boot
@@ -272,8 +203,9 @@ bool	SCP_Insert ( int Drive , const char *FilenameSTX , uint8_t *pImageBuffer , 
 /*-----------------------------------------------------------------------*/
 /*
  * Init the resources to handle the SCP image inserted into a drive (0=A: 1=B:)
+ * If KeepState==true we don't call mfm_stream_setup and mfm_stream_reset (used to restore a memory snapshot)
  */
-static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize )
+static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize , bool KeepState )
 {
 	Log_Printf ( LOG_DEBUG , "SCP : SCP_Insert_internal drive=%d file=%s buf=%p size=%ld\n" , Drive , FilenameSCP , pImageBuffer , ImageSize );
 
@@ -285,19 +217,19 @@ static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t 
 	}
 
 	/* Init the flux decoder for an SCP stream + reset all variables */
-
-	mfm_stream_setup ( &(MFM_STREAMS[ Drive ]) , 300 , 300 );
+	if ( !KeepState )
+		mfm_stream_setup ( &(MFM_STREAMS[ Drive ]) , 300 , 300 );
 
 	MFM_STREAMS[ Drive ].type.select_track = scp_select_track;
 	MFM_STREAMS[ Drive ].type.reset = scp_reset;
 	MFM_STREAMS[ Drive ].type.next_flux = scp_next_flux;
 	MFM_STREAMS[ Drive ].type.flux_struct_param = &(SCP_State.SCP_Stream[ Drive ]);
 
-	mfm_stream_reset ( &(MFM_STREAMS[ Drive ]) );
+	if ( !KeepState )
+		mfm_stream_reset ( &(MFM_STREAMS[ Drive ]) );
 
 	SCP_State.SCP_Stream[ Drive ].Drive = Drive;
-	SCP_State.SCP_Stream[ Drive ].track = -1;		/* no track loaded */
-	SCP_State.SCP_Stream[ Drive ].dat = NULL;		/* no track loaded */
+	SCP_State.SCP_Stream[ Drive ].dat = NULL;		/* no track loaded with scp_select_track */
 	SCP_State.SCP_Stream[ Drive ].revs = SCP_State.ImageStruct[ Drive ]->RevolutionsNbr;
 
 	/* Ignore "cued" flag in Hatari, for ST dumps we consider the revs are read */
@@ -341,7 +273,10 @@ bool	SCP_Eject ( int Drive )
 		/* Free the stream's data */
 		free ( SCP_State.SCP_Stream[ Drive ].index_off );
 		if ( SCP_State.SCP_Stream[ Drive ].dat )
+		{
 			free ( SCP_State.SCP_Stream[ Drive ].dat );
+			SCP_State.SCP_Stream[ Drive ].dat = NULL;
+		}
 	}
 
 	return true;
@@ -403,7 +338,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 	p = pFileBuffer;
 
 	/* Read file's header */
-	memcpy ( pScpMain->FileID , p , SCP_HEADER_ID_LEN ); p += SCP_HEADER_ID_LEN;
+	memcpy ( pScpMain->FileId , p , SCP_HEADER_ID_LEN ); p += SCP_HEADER_ID_LEN;
 	pScpMain->Version		=	*p++;
 	pScpMain->DiskType		=	*p++;
 	pScpMain->RevolutionsNbr	=	*p++;
@@ -419,7 +354,7 @@ SCP_MAIN_STRUCT	*SCP_BuildStruct ( uint8_t *pFileBuffer , int Debug )
 	if ( Debug & SCP_DEBUG_FLAG_STRUCTURE )
 		fprintf ( stderr , "SCP header ID='%.3s' Version=0x%2.2x DiskType=0x%2.2x RevolutionsNbr=%d"
 			" StartTrack=0x%2.2x EndTrack=0x%2.2x Flags=0x%2.2x CellTimeWidth=%d HeadsNbr=%d CaptureRes=%d"
-			" CRC=0x%8.8x\n" , pScpMain->FileID , pScpMain->Version , pScpMain->DiskType ,
+			" CRC=0x%8.8x\n" , pScpMain->FileId , pScpMain->Version , pScpMain->DiskType ,
 			pScpMain->RevolutionsNbr , pScpMain->StartTrack , pScpMain->EndTrack , pScpMain->Flags ,
 			pScpMain->CellTimeWidth , pScpMain->HeadsNbr , pScpMain->CaptureRes , pScpMain->CRC );
 
@@ -540,7 +475,8 @@ static int scp_select_track (struct mfm_stream *s, unsigned int tracknr)
 	if ( pScpTracks->TrackHeaderOffset == 0 )		/* No flux data for this track */
 		return -1;
 
-	free(scss->dat);
+	if ( scss->dat )
+		free(scss->dat);
 	scss->dat = NULL;
 	scss->datsz = 0;
 

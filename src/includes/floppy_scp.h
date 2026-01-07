@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct {
 	/* Content of the SCP main header (16 bytes) */
-	char		FileID[ SCP_HEADER_ID_LEN ];		/* +0 : Should be "SCP" */
+	char		FileId[ SCP_HEADER_ID_LEN ];		/* +0 : Should be "SCP" */
 	uint8_t		Version;				/* +3 : Upper 4 bits are version, lower 4 bits are revision */
 	uint8_t		DiskType;				/* +4 : Disk Type */
 	uint8_t		RevolutionsNbr;				/* +5 : Number of revolutions used to image the floppy */
