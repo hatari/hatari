@@ -420,7 +420,14 @@ void ConvST_Refresh(bool force_flip)
 	}
 	else
 	{
-		Screen_Draw(force_flip);
+		if (Screen_Draw(force_flip))
+		{
+			unsigned char *pTmpScreen;
+			/* Swap copy/raster buffers in screen. */
+			pTmpScreen = pFrameBuffer->pSTScreenCopy;
+			pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
+			pFrameBuffer->pSTScreen = pTmpScreen;
+		}
 	}
 }
 

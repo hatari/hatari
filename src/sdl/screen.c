@@ -859,7 +859,6 @@ void Screen_UnLock(void)
  */
 static void Screen_Blit(SDL_Rect *sbar_rect)
 {
-	unsigned char *pTmpScreen;
 	int count = 1;
 	SDL_Rect rects[2];
 
@@ -870,11 +869,6 @@ static void Screen_Blit(SDL_Rect *sbar_rect)
 		count = 2;
 	}
 	Screen_UpdateRects(sdlscrn, count, rects);
-
-	/* Swap copy/raster buffers in screen. */
-	pTmpScreen = pFrameBuffer->pSTScreenCopy;
-	pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
-	pFrameBuffer->pSTScreen = pTmpScreen;
 }
 
 
