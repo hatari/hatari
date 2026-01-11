@@ -403,7 +403,7 @@ void ConvST_SetFullUpdate(void)
  * we're in ST/STe, Falcon or TT mode.  Needed when switching modes
  * while emulation is paused.
  */
-void ConvST_Refresh(void)
+void ConvST_Refresh(bool force_flip)
 {
 	if (bUseVDIRes)
 	{
@@ -420,7 +420,7 @@ void ConvST_Refresh(void)
 	}
 	else
 	{
-		Screen_Draw(true);
+		Screen_Draw(force_flip);
 	}
 }
 

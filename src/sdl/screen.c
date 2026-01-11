@@ -753,7 +753,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			ConvST_Refresh();
+			ConvST_Refresh(true);
 		}
 		/* Grab mouse pointer in fullscreen */
 		SDL_SetWindowRelativeMouseMode(sdlWindow, true);
@@ -798,7 +798,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			ConvST_Refresh();
+			ConvST_Refresh(true);
 		}
 
 		if (!bGrabMouse)

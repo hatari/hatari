@@ -4779,7 +4779,6 @@ static void Video_DrawScreen(void)
 	if (nVBLs % (nFrameSkips+1))
 		return;
 
-	/* Now draw the screen! */
 	if (bUseVDIRes)
 	{
 		if (Config_IsMachineTT() && !bTTColorsSync)
@@ -4790,27 +4789,17 @@ static void Video_DrawScreen(void)
 		{
 			VIDEL_UpdateColors();
 		}
-		ConvGen_Draw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
-		             VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (Config_IsMachineFalcon())
-	{
-		VIDEL_renderScreen();
-	}
-	else if (Config_IsMachineTT())
-	{
-		Video_RenderTTScreen();
-	}
-	else
+	else if (!Config_IsMachineTT() && !Config_IsMachineFalcon())
 	{
 		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
 		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
 		/* pSTScreen was set during Video_CopyScreenLineColor */
 		if (nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
-
-		Screen_Draw(false);
 	}
+
+	ConvST_Refresh(false);
 }
 
 

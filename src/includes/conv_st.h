@@ -97,7 +97,7 @@ void ConvST_Reset(void);
 void ConvST_SetSTResolution(bool bForceChange);
 void ConvST_ChangeResolution(bool bForceChange);
 void ConvST_SetFullUpdate(void);
-void ConvST_Refresh(void);
+void ConvST_Refresh(bool force_flip);
 bool ConvST_DrawFrame(void);
 
 #endif  /* ifndef HATARI_SCRCONVST_H */
