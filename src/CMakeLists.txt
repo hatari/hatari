@@ -8,7 +8,7 @@ set(SOURCES
 	m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
 	ncr5380.c paths.c  psg.c printer.c rs232.c reset.c rtc.c
 	scandir.c scc.c scu_vme.c stMemory.c screenSnapShot.c
-	shortcut.c sound.c spec512.c str.c timing.c tos.c
+	shortcut.c sound.c spec512.c str.c tos.c
 	utils.c vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
 
 if(EMSCRIPTEN)
