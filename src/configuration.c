@@ -80,9 +80,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nMonitorType", Int_Tag, &ConfigureParams.Screen.nMonitorType },
 	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
-#if !ENABLE_SDL3
 	{ "bKeepResolution", Bool_Tag, &ConfigureParams.Screen.bKeepResolution },
-#endif
 	{ "bResizable", Bool_Tag, &ConfigureParams.Screen.bResizable },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },

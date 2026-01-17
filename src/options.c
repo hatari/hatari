@@ -507,7 +507,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound frequency (off/6000-50066, off=fastest)" },
 	{ OPT_SOUNDBUFFERSIZE,   NULL, "--sound-buffer-size",
-	  "<int>", "Sound buffer size in ms (0/10-100, 0=SDL default)" },
+	  "<int>", "Sound buffer size in ms (0/10-100, 0=default)" },
 	{ OPT_SOUNDSYNC,   NULL, "--sound-sync",
 	  "<bool>", "Sound synchronized emulation (on|off, off=default)" },
 	{ OPT_YM_MIXING,   NULL, "--ym-mixing",
@@ -2192,7 +2192,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			{
 				return Opt_ShowError(OPT_SOUNDBUFFERSIZE, arg, "Unsupported sound buffer size");
 			}
-			Log_Printf(LOG_DEBUG, "SDL sound buffer size = %d ms.\n", val);
+			Log_Printf(LOG_DEBUG, "Sound buffer size = %d ms.\n", val);
 			ConfigureParams.Sound.SdlAudioBufferSize = val;
 			break;
 

@@ -1934,7 +1934,7 @@ void Sound_SetOutputAudioFreq(int nNewFrequency)
 			DmaSnd_Init_Bass_and_Treble_Tables();
 		}
 
-		/* Re-open SDL audio interface if necessary: */
+		/* Re-open audio interface if necessary: */
 		if (bSoundWorking)
 		{
 			Audio_UnInit();
