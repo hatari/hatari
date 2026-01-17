@@ -57,6 +57,8 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SDL3 0
     CACHE BOOL "Use SDL3 instead of SDL2")
+set(ENABLE_LIBRETRO 0
+    CACHE BOOL "Build a core for libretro (experimental)")
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
@@ -500,6 +502,12 @@ else()
 	message("  - LFS :\tLarge File Support is NOT available (size of off_t = ${SIZEOF_OFF_T}),")
 	message("         \tAVI recording and HD image files will be limited to 2 GB")
 endif()
+
+if(ENABLE_LIBRETRO)
+  message( "  - libretro :\tenabled, retroarch core will be built" )
+else()
+  message( "  - libretro :\tnot enabled, retroarch core won't be built" )
+endif(ENABLE_LIBRETRO)
 
 if(NOT HAVE_SYS_TIMES_H)
   message("\n  Note: times() function is missing (sys/times.h is not available)")

@@ -12,3 +12,7 @@ add_library(Debug OBJECT
 	    ${DSPDBG_C} evaluate.c history.c symbols.c vars.c
 	    profile.c profilecpu.c profiledsp.c
 	    natfeats.c console.c 68kDisass.c)
+
+if(ENABLE_LIBRETRO)
+	set_target_properties(Debug PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+endif(ENABLE_LIBRETRO)

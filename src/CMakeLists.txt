@@ -39,7 +39,7 @@ endif()
 # Recent mingw version sets _FORTIFY_SOURCE, which requires to link with lib ssp.
 # We use "--as-needed" to keep compatibility with older mingw that don't require lib ssp
 if(WIN32)
-	set(GUIWIN_SOURCES gui-win/opencon.c)
+	set(SOURCES ${SOURCES} gui-win/opencon.c)
 	set(GUIWIN_RES gui-win/hatari-winicon.rc)
 	if(CMAKE_COMPILER_IS_GNUCC)
 		set(CMAKE_EXE_LINKER_FLAGS
@@ -76,6 +76,12 @@ endif(Capstone_FOUND)
 
 add_library(Core OBJECT ${SOURCES})
 add_library(CoreHmsa OBJECT ${SOURCES_HMSA})
+
+if(ENABLE_LIBRETRO)
+	set_target_properties(Core PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+	set_target_properties(CoreHmsa PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+	add_subdirectory(retro)
+endif(ENABLE_LIBRETRO)
 
 add_subdirectory(cpu)
 add_subdirectory(debug)
@@ -197,7 +203,7 @@ elseif(WIN32)
 	ENABLE_LANGUAGE(RC)
 	set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -Ocoff -o <OBJECT> <SOURCE>")
 	set_source_files_properties(${GUIWIN_RES} PROPERTIES LANGUAGE RC)
-	add_executable(${APP_NAME} ${GUIWIN_RES} ${APP_TARGET_OBJECTS} ${GUIWIN_SOURCES})
+	add_executable(${APP_NAME} ${GUIWIN_RES} ${APP_TARGET_OBJECTS})
 
 #emscripten needs some em-specific linker flags
 elseif(EMSCRIPTEN)
@@ -225,6 +231,16 @@ if(SDL2_OTHER_CFLAGS)
 	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
 endif(SDL2_OTHER_CFLAGS)
 
+if(ENABLE_LIBRETRO)
+	add_library(retro-hatari MODULE
+			$<TARGET_OBJECTS:Core>
+			$<TARGET_OBJECTS:CoreHmsa>
+			$<TARGET_OBJECTS:Falcon>
+			$<TARGET_OBJECTS:UaeCpu>
+			$<TARGET_OBJECTS:Debug>
+			$<TARGET_OBJECTS:UiRetro>)
+endif(ENABLE_LIBRETRO)
+
 target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
 
 if(Math_FOUND AND NOT APPLE)
@@ -233,14 +249,23 @@ endif()
 
 if(Readline_FOUND)
 	target_link_libraries(${APP_NAME} ${READLINE_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${READLINE_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(Readline_FOUND)
 
 if(ZLIB_FOUND)
 	target_link_libraries(${APP_NAME} ${ZLIB_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${ZLIB_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(ZLIB_FOUND)
 
 if(PNG_FOUND)
 	target_link_libraries(${APP_NAME} ${PNG_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${PNG_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(PNG_FOUND)
 
 if(X11_FOUND)
@@ -249,22 +274,37 @@ endif(X11_FOUND)
 
 if(PortMidi_FOUND)
 	target_link_libraries(${APP_NAME} ${PORTMIDI_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${PORTMIDI_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(PortMidi_FOUND)
 
 if(CapsImage_FOUND)
 	target_link_libraries(${APP_NAME} ${CAPSIMAGE_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${CAPSIMAGE_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(CapsImage_FOUND)
 
 if(Udev_FOUND)
 	target_link_libraries(${APP_NAME} ${UDEV_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${UDEV_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(Udev_FOUND)
 
 if(Capstone_FOUND)
 	target_link_libraries(${APP_NAME} ${CAPSTONE_LIBRARY})
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari ${CAPSTONE_LIBRARY})
+	endif(ENABLE_LIBRETRO)
 endif(Capstone_FOUND)
 
 if(APPLE)
 	target_link_libraries(${APP_NAME} "-framework Cocoa")
+	if(ENABLE_LIBRETRO)
+		target_link_libraries(retro-hatari "-framework Cocoa")
+	endif(ENABLE_LIBRETRO)
 endif()
 
 if(WIN32)
