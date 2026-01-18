@@ -632,6 +632,7 @@ Free/shareware/PD games:
 - Alien Blockade* (quixx)
 - Atari Dash
 - Atax
+- Babaliba
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues)
@@ -1215,6 +1216,7 @@ Color demos:
 - The Art of Profanity (by SMFX & DHS)
 - The Star Wars Demo (by The Arctic Land)
 - Tribute to Rainbow TOS (by 505 & Tobe)
+- Trumpton Riots (by M Lynn)
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
 - Unbeatable (by Masters of Electric City)
