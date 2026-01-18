@@ -1,15 +1,70 @@
 
+# all C-sources from this directory except for:
+# - SOURCES_HMSA: sources "hatari" shares with "hmsa"
+# - unzip.c: added separately if ZLIB_FOUND
 set(SOURCES
-	acia.c avi_record.c bios.c blitter.c cart.c cfgopts.c
-	clocks_timings.c configuration.c options.c change.c control.c
-	conv_gen.c conv_st.c cycInt.c cycles.c dialog.c dmaSnd.c event.c fdc.c
-	floppy.c floppy_ipf.c floppy_stx.c gemdos.c hdc.c ide.c ikbd.c ioMem.c
-	ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c
-	m68000.c main.c midi.c memorySnapShot.c mfp.c nf_scsidrv.c
-	ncr5380.c paths.c  psg.c printer.c rs232.c reset.c rtc.c
-	scandir.c scc.c scu_vme.c stMemory.c screenSnapShot.c
-	shortcut.c sound.c spec512.c str.c tos.c
-	vdi.c inffile.c video.c wavFormat.c xbios.c ymFormat.c lilo.c)
+	acia.c
+	avi_record.c
+	bios.c
+	blitter.c
+	cart.c
+	cfgopts.c
+	change.c
+	clocks_timings.c
+	configuration.c
+	control.c
+	conv_gen.c
+	conv_st.c
+	cycInt.c
+	cycles.c
+	dialog.c
+	dmaSnd.c
+	event.c
+	fdc.c
+	floppy.c
+	floppy_ipf.c
+	floppy_stx.c
+	gemdos.c
+	hdc.c
+	ide.c
+	ikbd.c
+	inffile.c
+	ioMem.c
+	ioMemTabFalcon.c
+	ioMemTabST.c
+	ioMemTabSTE.c
+	ioMemTabTT.c
+	joy.c
+	lilo.c
+	m68000.c
+	main.c
+	memorySnapShot.c
+	mfp.c
+	midi.c
+	ncr5380.c
+	nf_scsidrv.c
+	options.c
+	paths.c
+	printer.c
+	psg.c
+	reset.c
+	rs232.c
+	rtc.c
+	scandir.c
+	scc.c
+	screenSnapShot.c
+	scu_vme.c
+	shortcut.c
+	sound.c
+	spec512.c
+	stMemory.c
+	str.c
+	tos.c
+	vdi.c
+	video.c
+	wavFormat.c
+	xbios.c
+	ymFormat.c)
 
 # Some code is shared with the hmsa tool, so we list this separately:
 set(SOURCES_HMSA createBlankImage.c dim.c file.c msa.c st.c zip.c utils.c)
