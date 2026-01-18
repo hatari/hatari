@@ -299,7 +299,7 @@ static void DebugInfo_PrintOSHeader(FILE *fp, uint32_t sysbase)
 {
 	uint32_t gemblock, basepage;
 	uint16_t osversion, datespec, osconf, langbits;
-	const char *lang;
+	const char *lang, *palmode;
 
 	/* first more technical info */
 
@@ -347,9 +347,16 @@ static void DebugInfo_PrintOSHeader(FILE *fp, uint32_t sysbase)
 
 	osconf = STMemory_ReadWord(sysbase+0x1C);
 	langbits = osconf >> 1;
-	lang = TOS_LanguageName(langbits);
+	if (osconf != 0xff) {
+		lang = TOS_LanguageName(langbits);
+		palmode = osconf&1 ? "PAL":"NTSC";
+	} else {
+		/* (Emu)TOS build defaults */
+		lang = "DEFAULT";
+		palmode = "DEFAULT";
+	}
 	fprintf(fp, "OS config    : %s (0x%x), %s (%d)\n",
-		osconf&1 ? "PAL":"NTSC", osconf, lang, langbits);
+		palmode, osconf, lang, langbits);
 	fprintf(fp, "Phystop      : %d KB\n", (STMemory_ReadLong(OS_PHYSTOP) + 511) / 1024);
 }
 
