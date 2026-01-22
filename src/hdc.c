@@ -238,7 +238,6 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	buf[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
 
 	buf[2] = dev->scsi_version;
-	buf[4] = count - 5;
 
 	ctr->status = HD_STATUS_OK;
 
