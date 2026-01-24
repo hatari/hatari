@@ -57,8 +57,17 @@ set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 set(ENABLE_SDL3 0
     CACHE BOOL "Use SDL3 instead of SDL2")
-set(ENABLE_LIBRETRO 0
-    CACHE BOOL "Build a core for libretro (experimental)")
+
+find_path(LIBRETRO_INCLUDE_DIR libretro.h
+          PATH_SUFFIXES libretro libretro-common)
+
+if (LIBRETRO_INCLUDE_DIR)
+	set(ENABLE_LIBRETRO 1
+	    CACHE BOOL "Build a core for libretro (experimental)")
+else()
+	set(ENABLE_LIBRETRO 0
+	    CACHE BOOL "Build a core for libretro (experimental)")
+endif(LIBRETRO_INCLUDE_DIR)
 
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
@@ -504,9 +513,11 @@ else()
 endif()
 
 if(ENABLE_LIBRETRO)
-  message( "  - libretro :\tenabled, retroarch core will be built" )
+  message("  - libretro :\tenabled (include dir = '${LIBRETRO_INCLUDE_DIR}'),")
+  message("              \tretroarch core will be built")
 else()
-  message( "  - libretro :\tnot enabled, retroarch core won't be built" )
+  message("  - libretro :\tnot enabled (libretro.h header has not been found),")
+  message("              \tretroarch core won't be built")
 endif(ENABLE_LIBRETRO)
 
 if(NOT HAVE_SYS_TIMES_H)
