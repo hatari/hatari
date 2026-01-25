@@ -2692,7 +2692,7 @@ yet have the required write support.)
 
 <p>
 Hatari supports three ways of emulating Atari hard drives: The
-low-level ACSI and IDE hard drive emulation and a GEMDOS based HD
+low-level ACSI, SCSI and IDE hard drive emulation and a GEMDOS based HD
 emulation. In most cases the GEMDOS HD emulation is best as it allows
 exchanging files easily between the emulated and the host environment.
 </p>
@@ -2755,9 +2755,12 @@ host system and the emulated Atari, but there are also several
 order, for consistency.  E.g. moving files to a different directory and
 back (without changing their names) like AUTOSORT does, doesn't change
 that order. You need to rename the files.</li>
-<li>Names which aren't valid TOS directory or file names, are converted
-to a valid format.  If there are multiple files which converted
-names are identical in TOS-format, you see only one of those.</li>
+<li>Names which are not valid TOS directory or file names, are converted
+to a valid format; too long file names are truncated (like TOS does),
+and invalid GEMDOS characters replaced with valid ones. If there are
+multiple files which converted names are identical in TOS 8+3 format,
+they show as duplicates on the Atari side (and correct mapping cannot
+be guaranteed).</li>
 <li>Host file paths need to be shorter than 256 characters currently
 (like Atari side TOS file paths).</li>
 <li>It is not possible to use a cartridge image at the same time
@@ -2771,13 +2774,13 @@ files open on <i>non-GEMDOS HD drives</i>, i.e. their indexes increase
 over 64, accesses to those indexes could get routed (incorrectly) to
 GEMDOS HD drive instead</li>
 <li>GEMDOS HD supports up to 64 file handles (TOS supports slightly more).</li>
-<li>GEMDOS HD drive assignment can conflict with the ACSI and IDE hard
-drives. If you want to use GEMDOS HD directory and ACSI/IDE disk
-images together, either use the GEMDOS HD option for skipping ACSI
-&amp; IDE partitions, or use a multiple partition GEMDOS HD emulation
+<li>GEMDOS HD drive assignment can conflict with the ACSI / SCSI / IDE
+hard drives. If you want to use GEMDOS HD directory and disk images
+together, either use the GEMDOS HD option for skipping disk image
+partitions, or use a multiple partition GEMDOS HD emulation
 setup and select the partition subdirectory names (see above) so that
-they do not conflict with the drive letters for ACSI/IDE partitions.
-With HD Driver you have also another option,
+they do not conflict with the drive letters for the ACSI / SCSI / IDE
+partitions. With HD Driver you have also another option,
 see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
 with GEMDOS HD partitions</a>.</li>
 <li><em>The GEMDOS HD emulation does not work (very well) with TOS
@@ -2790,7 +2793,9 @@ handles used with GEMDOS <em>file</em> functions, such as Fwrite() to standard
 output that is redirected to a file.  File redirection is NOT supported
 e.g. for GEMDOS Ccon* console functions.</li>
 <li>Only FsFirst() / FsNext() calls support drive volume labels, other
-GEMDOS calls return errors when volume label attribute is specified
+GEMDOS calls return errors when volume label attribute is specified.
+<li>While programs can open dot-files (".*"), they are (intentionally)
+not returned by the FsFirst() / FsNext() pattern matches</li>
 <li>Host and emulation have their own clocks, which will drift apart
 after emulation is started, especially when emulation is
 fast-forwarded or paused.  Because of this, anything inside emulation
