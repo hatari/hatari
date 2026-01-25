@@ -426,16 +426,23 @@ static void GemDOS_FreeAllInternalDTAs(void)
 /**
  * Match a TOS file name to a dir mask.
  *
- * Set 'dots' if dotfiles are acccepted, and 'only_invalid'
+ * Set 'subdir' when file is not at drive root, and 'only_invalid'
  * when '?' in (host file) name pattern should match only
  * characters that are invalid for Atari GEMDOS file names.
  */
-static bool fsfirst_match(const char *pat, const char *name, bool dots, bool only_invalid)
+static bool fsfirst_match(const char *pat, const char *name, bool subdir, bool only_invalid)
 {
 	const char *dot, *p=pat, *n=name;
 
-	if (name[0] == '.' && !dots)
-		return false;           /* skip .* entries for drive root */
+	if (name[0] == '.')
+	{
+		if (!subdir)
+			/* skip all ".*" entries for drive root */
+			return false;
+		if (strcmp(name, ".") && strcmp(name, ".."))
+			/* skip other than "." and ".." entries for subdirs */
+			return false;
+	}
 
 	dot = strrchr(name, '.');	/* '*' matches everything except last dot in name */
 	if (dot && p[0] == '*' && p[1] == 0)
@@ -1186,13 +1193,13 @@ static char* match_host_dir_entry(const char *path, const char *name,
 	if (pattern)
 	{
 		/* TOS handles "." / ".." */
-		const bool dots = false;
+		const bool subdir = false;
 
 		while ((entry = readdir(dir)))
 		{
 			char *d_name = entry->d_name;
 			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-			if (fsfirst_match(name, d_name, dots, only_invalid))
+			if (fsfirst_match(name, d_name, subdir, only_invalid))
 			{
 				match = strdup(d_name);
 				break;
@@ -3175,12 +3182,12 @@ static bool GemDOS_SFirst(uint32_t Params)
 	for (i=0; i < count; i++)
 	{
 		/* root dir does not include "." & ".." entries, others do */
-		const bool dots = !isRoot;
+		const bool subdir = !isRoot;
 		const bool only_invalid = false;
 		char *d_name = files[i]->d_name;
 
 		Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-		if (fsfirst_match(dirmask, d_name, dots, only_invalid))
+		if (fsfirst_match(dirmask, d_name, subdir, only_invalid))
 		{
 			InternalDTAs[useidx].found[j] = files[i];
 			j++;
