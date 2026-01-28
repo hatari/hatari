@@ -21,8 +21,6 @@ static bool has_cpu_config_changed = true;
 
 retro_environment_t environment_cb;
 retro_video_refresh_t video_refresh_cb;
-retro_audio_sample_t audio_sample_cb;
-retro_audio_sample_batch_t audio_batch_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
@@ -44,16 +42,6 @@ RETRO_API void retro_set_environment(retro_environment_t cb)
 RETRO_API void retro_set_video_refresh(retro_video_refresh_t cb)
 {
 	video_refresh_cb = cb;
-}
-
-RETRO_API void retro_set_audio_sample(retro_audio_sample_t cb)
-{
-	audio_sample_cb = cb;
-}
-
-RETRO_API void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb)
-{
-        audio_batch_cb = cb;
 }
 
 RETRO_API void retro_set_input_poll(retro_input_poll_t cb)
@@ -106,7 +94,7 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 	info->geometry.max_width = MAX_VDI_WIDTH;
 	info->geometry.max_height = MAX_VDI_HEIGHT;
 	info->geometry.aspect_ratio = (float)width / (float)height;
-	info->timing.fps = 60.0f;
+	info->timing.fps = 50.0f;
 
 	info->timing.sample_rate = nAudioFrequency;
 }
