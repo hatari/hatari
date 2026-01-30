@@ -5122,8 +5122,8 @@ static int do_specialties (int cycles)
 		}
 	}
 
- #ifndef WINUAE_FOR_HATARI
 	if (spcflags & SPCFLAG_CHECK) {
+#ifndef WINUAE_FOR_HATARI
 		if (regs.halted) {
 			if (regs.halted == CPU_HALT_ACCELERATOR_CPU_FALLBACK) {
 				return 1;
@@ -5145,9 +5145,9 @@ static int do_specialties (int cycles)
 			}
 		}
 		m68k_reset_delay = 0;
+#endif
 		unset_special(SPCFLAG_CHECK);
 	}
-#endif
 
 #ifdef ACTION_REPLAY
 #ifdef ACTION_REPLAY_HRTMON
