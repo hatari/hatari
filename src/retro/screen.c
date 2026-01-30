@@ -166,8 +166,8 @@ void Screen_Init(void)
 	ConfigureParams.Screen.nMaxHeight = 200;
 	ConfigureParams.Screen.bAllowOverscan = false;
 
-	/* Auto-frameskipping does not work well yet, so hard-wire to 1 */
-	ConfigureParams.Screen.nFrameSkips = 1;
+	/* We want to render each frame with libretro, so disable frameskip */
+	ConfigureParams.Screen.nFrameSkips = 0;
 }
 
 
@@ -235,13 +235,6 @@ void Screen_UnLock(void)
 }
 
 
-static void Screen_QuitCpuLoop(void)
-{
-	M68000_SetSpecial(SPCFLAG_BRK);
-	quit_program = UAE_QUIT;
-}
-
-
 /**
  * Draw ST screen to window/full-screen
  * @param  bForceFlip  Force screen update, even if contents did not change
@@ -259,7 +252,6 @@ bool Screen_Draw(bool bForceFlip)
 		                 screen_width * 4);
 	}
 
-	Screen_QuitCpuLoop();
 	return screen_changed;
 }
 
@@ -268,8 +260,6 @@ void Screen_GenConvUpdate(bool update_statusbar)
 {
 	video_refresh_cb(framebuffer, screen_width, screen_height,
 	                 screen_width * 4);
-
-	Screen_QuitCpuLoop();
 }
 
 uint32_t Screen_GetGenConvWidth(void)

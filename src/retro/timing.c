@@ -11,6 +11,7 @@
 #include <errno.h>
 
 #include "main.h"
+#include "m68000.h"
 #include "audio.h"
 #include "avi_record.h"
 #include "configuration.h"
@@ -76,55 +77,10 @@ const char* Timing_SetVBLSlowdown(int factor)
 
 void Timing_WaitOnVbl(void)
 {
-	int64_t CurrentTicks;
-	static int64_t DestTicks = 0;
-	int64_t FrameDuration_micro;
-	int64_t nDelay;
-
-	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
-	CurrentTicks = Timing_GetTicks();
-
-	if (DestTicks == 0)			/* on first call, init DestTicks */
-	{
-		DestTicks = CurrentTicks + FrameDuration_micro;
-	}
-
-	DestTicks += pulse_swallowing_count;	/* audio.c - Audio_CallBack() */
-
-	nDelay = DestTicks - CurrentTicks;
-
-	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
-	/* or if we are in benchmark mode */
-	if (ConfigureParams.System.bFastForward == true
-	    || nDelay < -4*FrameDuration_micro || nDelay > 50*FrameDuration_micro
-	    || BenchmarkMode )
-
-	{
-		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
-		{
-			nFrameSkips += 1;
-			Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
-		}
-		/* Only update DestTicks for next VBL */
-		DestTicks = CurrentTicks + FrameDuration_micro;
-		return;
-	}
-
-	/* If automatic frameskip is enabled and delay's more than twice
-	 * the effect of single frameskip, decrease frameskip
-	 */
-	if (nFrameSkips > 0
-	    && ConfigureParams.Screen.nFrameSkips >= AUTO_FRAMESKIP_LIMIT
-	    && 2*nDelay > FrameDuration_micro/nFrameSkips)
-	{
-		nFrameSkips -= 1;
-		Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
-	}
-
-	/* Assume that libretro does the syncing for us, so don't wait here! */
-
-	/* Update DestTicks for next VBL */
-	DestTicks += FrameDuration_micro;
+	/* Assume that libretro does the syncing for us, so don't wait here,
+	 * just tell the CPU core to yield back to libretro! */
+	M68000_SetSpecial(SPCFLAG_BRK);
+	quit_program = UAE_QUIT;
 }
 
 
