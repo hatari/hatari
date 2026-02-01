@@ -1435,7 +1435,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 	free(dir);
 
 	recurse = recursing;
-	recursing = true;
+	recursing++;
 
 	offset = 0;
 	while (fgets(input+offset, sizeof(input)-offset, fp) != NULL)
@@ -1480,7 +1480,7 @@ bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 		DebugUI_ParseCommand(cmd);
 		free(expanded);
 	}
-	recursing = false;
+	recursing--;
 
 	fclose(fp);
 
@@ -1511,10 +1511,15 @@ bool DebugUI_ParseFile(const char *path, bool reinit, bool verbose)
 		 */
 		if (reinit)
 		{
+			if (verbose)
+				fprintf(stderr, "Debugger re-init.\n");
 			DebugCpu_SetDebugging();
 			DebugDsp_SetDebugging();
 		}
 	}
+	else if (verbose)
+		fprintf(stderr, "Recursing back from script level %d...\n", recursing);
+
 	return true;
 }
 
