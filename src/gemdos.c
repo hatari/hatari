@@ -3410,6 +3410,10 @@ static void GemDOS_TerminateClose(void)
 			unforced++;
 		}
 	}
+
+	/* user-configured program termination "event" actions */
+	Event_DoPrgTermActions();
+
 	if (!(closed || unforced))
 		return;
 	Log_Printf(LOG_WARN, "Closing %d & unforcing %d file handle(s) remaining at program 0x%x exit.\n",
@@ -3424,6 +3428,7 @@ static bool GemDOS_Pterm0(uint32_t Params)
 {
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x00 Pterm0() at PC 0x%X\n",
 		  CallingPC);
+
 	GemDOS_TerminateClose();
 	Symbols_RemoveCurrentProgram();
 

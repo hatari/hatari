@@ -29,5 +29,6 @@ extern event_actions_t *Event_GetPrefixActions(const char **str);
 extern void Event_DoResetActions(void);
 extern void Event_DoInfLoadActions(void);
 extern void Event_DoPrgExecActions(void);
+extern void Event_DoPrgTermActions(void);
 
 #endif /* ifndef HATARI_EVENT_H */

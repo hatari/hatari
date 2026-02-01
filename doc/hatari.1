@@ -754,14 +754,23 @@ on the Hatari command line).
 When Atari program is started from GEMDOS HD (after program relocation
 is done for Pexec() call, but before program basepage is available
 from TOS).
+.TP
+.B term
+When Atari program (started from GEMDOS HD) terminates with Pterm /
+Pterm0 / Ptermres.
 .PP
 For example, to fast-forward TOS startup (also after resets), but
-nothing after it, one can enable fast-forward for boot and disable it
-at Atari program autostart:
+disable fast-forwarding on Atari program startup, load symbols when
+program is executed and trace them until program terminates, while
+always showing basic OS calls and event actions:
 .PP
 .nf
 .RS
-$ hatari --fast-forward boot:on --fast-forward prg:off <program>
+$ hatari \\
+  --fast-forward boot:on --fast-forward prg:off \\
+  --symload exec \\
+  --trace prg:+cpu_symbols --trace term:-cpu_symbols \\
+  --trace event,os_base <program>
 .RE
 .fi
 

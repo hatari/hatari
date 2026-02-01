@@ -21,6 +21,7 @@ const char Event_fileid[] = "Hatari event.c";
 static event_actions_t resetActions;
 static event_actions_t infLoadActions;
 static event_actions_t prgExecActions;
+static event_actions_t prgTermActions;
 
 /* Invalid value regardless of option */
 #define EVENT_ACT_UNSET -1
@@ -49,6 +50,7 @@ void Event_Init(void)
 	resetActions = unset;
 	infLoadActions = unset;
 	prgExecActions = unset;
+	prgTermActions = unset;
 }
 
 /**
@@ -66,6 +68,7 @@ event_actions_t *Event_GetPrefixActions(const char **str)
 		{ "boot:", &resetActions },
 		{ "inf:", &infLoadActions },
 		{ "prg:", &prgExecActions },
+		{ "term:", &prgTermActions },
 	};
 	for (int i = 0; i < ARRAY_SIZE(act); i++) {
 		const char *prefix = act[i].prefix;
@@ -162,6 +165,15 @@ void Event_DoPrgExecActions(void)
 {
 	LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Program exec\n");
 	Event_PerformActions(&prgExecActions);
+}
+
+/**
+ * Perform actions related to Atari program (GEMDOS HD) Pterm/Pterm0/Ptermres
+ */
+void Event_DoPrgTermActions(void)
+{
+	LOG_TRACE(TRACE_EVENT_ACTION, "EVENT: Program termination\n");
+	Event_PerformActions(&prgTermActions);
 }
 
 /**
