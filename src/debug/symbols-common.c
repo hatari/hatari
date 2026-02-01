@@ -1393,8 +1393,9 @@ static bool symbols_print_prg_info(uint32_t tabletype, uint32_t prgflags, uint16
  *
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
-					  bool (*update_sections)(prg_section_t*))
+static symbol_list_t* symbols_load_binary(FILE *fp, uint32_t *offsets,
+					  bool (*update_sections)(uint32_t *, prg_section_t *),
+					  const symbol_opts_t *opts)
 {
 	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
@@ -1622,7 +1623,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 	sections[1].end = datalen;
 	sections[2].end = bsslen;
 	/* add suitable offsets to section beginnings & ends, and validate them */
-	if (!update_sections(sections)) {
+	if (!update_sections(offsets, sections)) {
 		free(headers);
 		return NULL;
 	}

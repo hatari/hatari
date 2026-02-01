@@ -30,7 +30,7 @@ extern void GemDOS_Info(FILE *fp, uint32_t bShowOpcodes);
 extern void GemDOS_InfoDTA(FILE *fp, uint32_t addrDTA);
 extern int GemDOS_Trap(void);
 extern void GemDOS_Boot(void);
-extern int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, uint32_t *textAddr, uint32_t *textEnd, bool bFullBpSetup);
+extern int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, uint32_t *offsets, uint32_t *textEnd, bool bFullBpSetup);
 extern void GemDOS_PexecBpCreated(void);
 
 #endif /* HATARI_GEMDOS_H */

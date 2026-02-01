@@ -276,36 +276,54 @@ static void symbols_split_addresses(symbol_list_t* list)
 
 /**
  * Set sections to match running process by adding TEXT/DATA/BSS
- * start addresses to section offsets and ends, and return true if
- * results match it.
+ * start addresses to section offsets and ends.  If explicit section
+ *offsets are not given, they are taken from the program basepage.
+ * Return true if results match it.
  */
-static bool update_sections(prg_section_t *sections)
+static bool update_sections(uint32_t *offsets, prg_section_t *sections)
 {
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
-	uint32_t start = DebugInfo_GetTEXT();
+	uint32_t start;
+
+	if (offsets) {
+		start = offsets[0];
+	} else {
+		start = DebugInfo_GetTEXT();
+	}
 	if (!start) {
-		fprintf(stderr, "ERROR: no valid program basepage!\n");
+		fprintf(stderr, "ERROR: program TEXT address invalid!\n");
 		return false;
 	}
 	sections[0].offset = start;
 	sections[0].end += start;
-	if (DebugInfo_GetTEXTEnd() != sections[0].end) {
-		fprintf(stderr, "ERROR: given program TEXT section size differs from one in RAM!\n");
+	if (!offsets && sections[0].end != DebugInfo_GetTEXTEnd()) {
+		fprintf(stderr, "ERROR: given program TEXT end (0x%x) does not match basepage info (0x%x)!\n",
+			sections[0].end, DebugInfo_GetTEXTEnd());
 		return false;
 	}
 
-	start = DebugInfo_GetDATA();
-	sections[1].offset = start;
-	if (sections[1].offset != sections[0].end) {
-		fprintf(stderr, "WARNING: DATA start doesn't match TEXT start + size!\n");
+	if (offsets) {
+		start = offsets[1];
+	} else {
+		start = DebugInfo_GetDATA();
 	}
+	if (start != sections[0].end) {
+		fprintf(stderr, "WARNING: program DATA start (0x%x) doesn't match TEXT start + size (0x%x)!\n",
+			start, sections[0].end);
+	}
+	sections[1].offset = start;
 	sections[1].end += start;
 
-	start = DebugInfo_GetBSS();
-	sections[2].offset = start;
-	if (sections[2].offset != sections[1].end) {
-		fprintf(stderr, "WARNING: BSS start doesn't match DATA start + size!\n");
+	if (offsets) {
+		start = offsets[2];
+	} else {
+		start = DebugInfo_GetBSS();
 	}
+	if (start != sections[1].end) {
+		fprintf(stderr, "WARNING: program BSS start (0x%x) doesn't match DATA start + size (0x%x)!\n",
+			start, sections[1].end);
+	}
+	sections[2].offset = start;
 	sections[2].end += start;
 
 	return true;
@@ -342,7 +360,7 @@ static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint
 		}
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		fp = fopen(filename, "rb");
-		list = symbols_load_binary(fp, &opts, update_sections);
+		list = symbols_load_binary(fp, offsets, update_sections, &opts);
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
@@ -869,8 +887,8 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
  *
  * Assumes all (relevant) sections use the same load address.
  */
-static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
-				  uint32_t loadaddr, uint32_t maxaddr)
+static symbol_list_t *loadSymFile(const char *path, uint32_t *offsets,
+				  uint32_t maxaddr, symtype_t symtype)
 {
 	char symfile[PATH_MAX];
 	size_t len = strlen(path);
@@ -884,16 +902,15 @@ static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
 	if (!File_Exists(symfile)) {
 		return NULL;
 	}
-	fprintf(stderr, "Loading sym file: %s\n", symfile);
 
-	uint32_t offsets[3] = { loadaddr, loadaddr, loadaddr };
+	fprintf(stderr, "Loading sym file: %s\n", symfile);
 	return Symbols_Load(symfile, offsets, maxaddr, symtype);
 }
 
 /**
  * Load symbols for last opened program when symbol autoloading is enabled.
  *
- * When either textAddr or textEnd is zero, basepage values are used instead.
+ * When program section 'offsets' is NULL, basepage values are used instead.
  *
  * If there's file with same name as the program, but with '.sym'
  * extension, that overrides / is loaded instead of the symbol table
@@ -901,7 +918,7 @@ static symbol_list_t *loadSymFile(const char *path, symtype_t symtype,
  *
  * Called when debugger is invoked.
  */
-void Symbols_LoadCurrentProgram(uint32_t textAddr, uint32_t textEnd)
+void Symbols_LoadCurrentProgram(uint32_t *offsets, uint32_t textEnd)
 {
 	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
@@ -918,21 +935,19 @@ void Symbols_LoadCurrentProgram(uint32_t textAddr, uint32_t textEnd)
 		return;
 	}
 
-	uint32_t loadaddr, maxaddr;
-	if (textAddr & textEnd) {
-		loadaddr = textAddr;
+	uint32_t maxaddr;
+	if (offsets) {
 		maxaddr = textEnd;
 	} else {
-		loadaddr = DebugInfo_GetTEXT();
 		maxaddr = DebugInfo_GetTEXTEnd();
 	}
-	symbol_list_t *symbols;
 
-	symbols = loadSymFile(CurrentProgramPath, SYMTYPE_CODE, loadaddr, maxaddr);
+	symbol_list_t *symbols;
+	symbols = loadSymFile(CurrentProgramPath, offsets, maxaddr, SYMTYPE_CODE);
 	if (symbols) {
-		fprintf(stderr, "Symbols override loaded for: %s\n", CurrentProgramPath);
+		fprintf(stderr, "Symbols override file loaded for: %s\n", CurrentProgramPath);
 	} else {
-		symbols = Symbols_Load(CurrentProgramPath, NULL, 0,
+		symbols = Symbols_Load(CurrentProgramPath, offsets, maxaddr,
 				       SYMTYPE_CODE);
 	}
 	if (!symbols) {
@@ -965,8 +980,11 @@ void Symbols_LoadTOS(const char *path, uint32_t maxaddr)
 	if (CpuSymbolsList && CpuSymbolsAreFor == SYMBOLS_FOR_USER) {
 		return;
 	}
+
 	symbol_list_t *symbols;
-	symbols = loadSymFile(path, SYMTYPE_ALL, 0, maxaddr);
+	uint32_t offsets[3] = {0};
+
+	symbols = loadSymFile(path, offsets, maxaddr, SYMTYPE_ALL);
 	if (symbols) {
 		fprintf(stderr, "Loaded symbols for TOS: %s\n", path);
 		Symbols_UpdateCpu(symbols, SYMBOLS_FOR_TOS);

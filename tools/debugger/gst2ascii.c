@@ -109,7 +109,7 @@ static void usage(const char *msg)
  * Sections just follow each other, so just add their sizes
  * (initially in .end fields) to successive fields and return true
  */
-static bool update_sections(prg_section_t *sections)
+static bool update_sections(uint32_t *dummy, prg_section_t *sections)
 {
 	uint32_t offset;
 	sections[0].offset = 0;
@@ -132,6 +132,7 @@ static bool update_sections(prg_section_t *sections)
  */
 static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *opts)
 {
+	uint32_t offsets[3] = {0};
 	symbol_list_t *list;
 	uint16_t magic;
 	FILE *fp;
@@ -148,7 +149,7 @@ static symbol_list_t* symbols_load(const char *filename, const symbol_opts_t *op
 	if (be_swap16(magic) != ATARI_PROGRAM_MAGIC) {
 		usage("file isn't an Atari program file");
 	}
-	list = symbols_load_binary(fp, opts, update_sections);
+	list = symbols_load_binary(fp, offsets, update_sections, opts);
 	fclose(fp);
 
 	if (!list || !list->namecount) {
