@@ -1638,7 +1638,7 @@ Demos working under EmuTOS >= v1.4 (full TC support):
 
 Demos working partly under EmuTOS >= v1.4:
 - 124 beers later (by Trio)
-  - Works already with v1.0, but fighter screen DSP textures need v1.1
+  - Runs already with v1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
 
 Broken demos (with EmuTOS v1.4):
@@ -1832,8 +1832,8 @@ Broken games (with EmuTOS v1.4):
     when the actual game would start
   - "fast Falcon" (B) option gets infinite illegal DSP instruction
     errors after pressing joypad button 3 in main menu
-- Neurobot
-  - Both intro & game just exit immediately (TOS version?)
+- Neurobotix (v1.02/v1.08)
+  - Exits immediately at start (see EmuTOS incompatible.txt)
 - Reeking Rubber
   - Broken graphics & pterm0() on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)
