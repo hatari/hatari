@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2025 by Eero Tamminen
+ * Copyright (C) 2010-2026 by Eero Tamminen
  * Copyright (C) 2017,2021,2023 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -1393,8 +1393,8 @@ static bool symbols_print_prg_info(uint32_t tabletype, uint32_t prgflags, uint16
  *
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_binary(FILE *fp, uint32_t *offsets,
-					  bool (*update_sections)(uint32_t *, prg_section_t *),
+static symbol_list_t* symbols_load_binary(FILE *fp, const uint32_t *offsets,
+					  bool (*update_sections)(const uint32_t *, prg_section_t *),
 					  const symbol_opts_t *opts)
 {
 	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;

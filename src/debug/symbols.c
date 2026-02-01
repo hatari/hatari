@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2025 by Eero Tamminen
+ * Copyright (C) 2010-2026 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -81,7 +81,7 @@ static symbols_for_t CpuSymbolsAreFor = SYMBOLS_FOR_NONE;
  * the given ASCII file and add given offsets to the addresses.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t maxaddr,
+static symbol_list_t* symbols_load_ascii(FILE *fp, const uint32_t *offsets, uint32_t maxaddr,
 					 symtype_t gettype, const symbol_opts_t *opts)
 {
 	symbol_list_t *list;
@@ -91,6 +91,8 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, uint32_t *offsets, uint32_t m
 	uint32_t address, offset;
 	ignore_counts_t ignore;
 	symtype_t symtype;
+
+	assert(offsets);
 
 	/* count content lines */
 	line = symbols = 0;
@@ -280,7 +282,7 @@ static void symbols_split_addresses(symbol_list_t* list)
  *offsets are not given, they are taken from the program basepage.
  * Return true if results match it.
  */
-static bool update_sections(uint32_t *offsets, prg_section_t *sections)
+static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
 {
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
 	uint32_t start;
@@ -332,9 +334,10 @@ static bool update_sections(uint32_t *offsets, prg_section_t *sections)
 /**
  * Load symbols of given type and the symbol address addresses from
  * the given file and add given offsets to the addresses.
+ * Offsets are optional for running binaries.
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* Symbols_Load(const char *filename, uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
+static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
 	symbol_list_t *list;
 	symbol_opts_t opts;
@@ -887,7 +890,7 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
  *
  * Assumes all (relevant) sections use the same load address.
  */
-static symbol_list_t *loadSymFile(const char *path, uint32_t *offsets,
+static symbol_list_t *loadSymFile(const char *path, const uint32_t *offsets,
 				  uint32_t maxaddr, symtype_t symtype)
 {
 	char symfile[PATH_MAX];
@@ -918,7 +921,7 @@ static symbol_list_t *loadSymFile(const char *path, uint32_t *offsets,
  *
  * Called when debugger is invoked.
  */
-void Symbols_LoadCurrentProgram(uint32_t *offsets, uint32_t textEnd)
+void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t textEnd)
 {
 	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
