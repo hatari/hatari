@@ -1085,7 +1085,7 @@ const char Symbols_Description[] =
 int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_CPU, TYPE_DSP } listtype;
-	uint32_t offsets[3], maxaddr;
+	uint32_t addrs[3], *offsets, maxaddr;
 	symbol_list_t *list;
 	const char *file;
 	int i;
@@ -1160,15 +1160,15 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	/* get offsets */
-	offsets[0] = 0;
-	for (i = 0; i < ARRAY_SIZE(offsets); i++) {
+	/* get section offsets */
+	addrs[0] = 0;
+	for (i = 0; i < ARRAY_SIZE(addrs); i++) {
 		if (i+2 < nArgc) {
 			int dummy;
-			Eval_Expression(psArgs[i+2], &(offsets[i]), &dummy, listtype==TYPE_DSP);
+			Eval_Expression(psArgs[i+2], &(addrs[i]), &dummy, listtype==TYPE_DSP);
 		} else {
 			/* default to first (text) offset */
-			offsets[i] = offsets[0];
+			addrs[i] = addrs[0];
 		}
 	}
 
@@ -1179,6 +1179,10 @@ int Symbols_Command(int nArgc, char *psArgs[])
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;
 		}
+		/* use basepage */
+		offsets = NULL;
+	} else {
+		offsets = addrs;
 	}
 
 	/* do actual loading */
