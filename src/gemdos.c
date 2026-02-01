@@ -4379,7 +4379,7 @@ void GemDOS_Boot(void)
  * Load and relocate a PRG file into the memory of the emulated machine.
  */
 int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr,
-			uint32_t *offsets, uint32_t *textEnd,
+			uint32_t *offsets, uint32_t *bssEnd,
 			bool bFullBpSetup)
 {
 	long nFileSize, nRelTabIdx;
@@ -4442,7 +4442,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr,
 	offsets[0] = nTextAddr;
 	offsets[1] = offsets[0] + nTextLen;
 	offsets[2] = offsets[1] + nDataLen;
-	*textEnd = offsets[1];
+	*bssEnd = offsets[2] + nBssLen;
 
 	/* Set up basepage */
 	STMemory_WriteLong(baseaddr + 8, offsets[0]);   /* p_tbase */
@@ -4552,7 +4552,7 @@ void GemDOS_PexecBpCreated(void)
 	char *sStFileName;
 	uint32_t errcode;
 	uint32_t offsets[3];
-	uint32_t textEnd;
+	uint32_t bssEnd;
 	uint16_t sr = M68000_GetSR();
 	uint16_t mode;
 	uint32_t prgname;
@@ -4573,7 +4573,7 @@ void GemDOS_PexecBpCreated(void)
 		GemDOS_CreateHardDriveFileName(drive, sStFileName, sFileName,
 		                               sizeof(sFileName));
 		errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0],
-					      offsets, &textEnd, false);
+					      offsets, &bssEnd, false);
 	}
 	else
 	{
@@ -4597,7 +4597,7 @@ void GemDOS_PexecBpCreated(void)
 		/* whether to immediately load symbols for the executed program */
 		if (ConfigureParams.Debugger.nSymbolsAutoLoad == SYM_AUTOLOAD_EXEC)
 		{
-			Symbols_LoadCurrentProgram(offsets, textEnd);
+			Symbols_LoadCurrentProgram(offsets, bssEnd);
 		}
 
 		/* do user-configured program exec "event" actions */

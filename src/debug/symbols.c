@@ -933,7 +933,7 @@ static symbol_list_t *loadSymFile(const char *path, const uint32_t *offsets,
  *
  * Called when debugger is invoked.
  */
-void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t textEnd)
+void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t maxaddr)
 {
 	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
@@ -950,20 +950,17 @@ void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t textEnd)
 		return;
 	}
 
-	uint32_t maxaddr;
-	if (offsets) {
-		maxaddr = textEnd;
-	} else {
-		maxaddr = DebugInfo_GetTEXTEnd();
+	if (!offsets) {
+		maxaddr = DebugInfo_GetBSSEnd();
 	}
 
 	symbol_list_t *symbols;
-	symbols = loadSymFile(CurrentProgramPath, offsets, maxaddr, SYMTYPE_CODE);
+	symbols = loadSymFile(CurrentProgramPath, offsets, maxaddr, SYMTYPE_ALL);
 	if (symbols) {
 		fprintf(stderr, "Symbols override file loaded for: %s\n", CurrentProgramPath);
 	} else {
 		symbols = Symbols_Load(CurrentProgramPath, offsets, maxaddr,
-				       SYMTYPE_CODE);
+				       SYMTYPE_ALL);
 	}
 	if (!symbols) {
 		AutoLoadFailed = true;

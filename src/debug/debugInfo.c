@@ -210,6 +210,14 @@ uint32_t DebugInfo_GetBSS(void)
 	return GetBasepageValue(0x18);
 }
 /**
+ * DebugInfo_GetBSSEnd: return BSS section end for current program
+ * or zero if basepage missing/invalid.  For max valid symbol address.
+ */
+uint32_t DebugInfo_GetBSSEnd(void)
+{
+	return GetBasepageValue(0x18) + GetBasepageValue(0x1C);
+}
+/**
  * DebugInfo_GetBASEPAGE: return current basepage address.
  */
 uint32_t DebugInfo_GetBASEPAGE(void)
