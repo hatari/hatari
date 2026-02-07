@@ -25,9 +25,11 @@ const char Audio_fileid[] = "Hatari audio.c";
 #include "video.h"
 
 
+#define DEFAULT_BUFFER_SAMPLES 1024
+
 bool bSoundWorking = false;			/* Is sound OK */
 static volatile bool bPlayingBuffer = false;	/* Is playing buffer? */
-int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
+int SoundBufferSize = DEFAULT_BUFFER_SAMPLES;	/* Size of sound buffer (in samples) */
 int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
 						/*  window comparator and pulse swallowing counter */
@@ -132,6 +134,34 @@ static void SDLCALL Audio_SDL3Callback(void *userdata, SDL_AudioStream *stream,
 #endif
 
 
+static int Audio_GetBufferSize(int freq)
+{
+	int buf_size;
+
+	/* In most case, setting samples to 1024 will give an equivalent */
+	/* sdl sound buffer of ~20-30 ms (depending on freq). */
+	/* But setting samples to 1024 for all the freq can cause some faulty */
+	/* OS sound drivers to add an important delay when playing sound at lower freq. */
+	/* In that case we use SdlAudioBufferSize (in ms) to compute a value */
+	/* of samples that matches the corresponding freq and buffer size. */
+	if (SdlAudioBufferSize == 0)			/* don't compute "samples", use default value */
+	{
+		buf_size = DEFAULT_BUFFER_SAMPLES;	/* buffer size in samples */
+	}
+	else
+	{
+		int samples = (freq / 1000) * SdlAudioBufferSize;
+		int power2 = 1;
+		while ( power2 < samples )		/* compute the power of 2 just above samples */
+			power2 *= 2;
+
+		buf_size = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
+	}
+
+	return buf_size;
+}
+
+
 /**
  * Initialize the audio subsystem. Return true if all OK.
  * We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
@@ -167,6 +197,11 @@ void Audio_Init(void)
 		}
 	}
 
+	char samples_str[11];
+	SoundBufferSize = Audio_GetBufferSize(nAudioFrequency);
+	snprintf(samples_str, sizeof(samples_str), "%u", SoundBufferSize);
+	SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, samples_str);
+
 	audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
 						 &desiredAudioSpec,
 						 Audio_SDL3Callback,
@@ -198,25 +233,7 @@ void Audio_Init(void)
 	/* Set up SDL audio: */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
-
-	/* In most case, setting samples to 1024 will give an equivalent */
-	/* sdl sound buffer of ~20-30 ms (depending on freq). */
-	/* But setting samples to 1024 for all the freq can cause some faulty */
-	/* OS sound drivers to add an important delay when playing sound at lower freq. */
-	/* In that case we use SdlAudioBufferSize (in ms) to compute a value */
-	/* of samples that matches the corresponding freq and buffer size. */
-	if ( SdlAudioBufferSize == 0 )			/* don't compute "samples", use default value */
-		desiredAudioSpec.samples = 1024;	/* buffer size in samples */
-	else
-	{
-		int samples = (desiredAudioSpec.freq / 1000) * SdlAudioBufferSize;
-		int power2 = 1;
-		while ( power2 < samples )		/* compute the power of 2 just above samples */
-			power2 *= 2;
-
-		desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
-	}
-
+	desiredAudioSpec.samples = Audio_GetBufferSize(desiredAudioSpec.freq);
 
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
