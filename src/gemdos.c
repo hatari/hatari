@@ -3536,7 +3536,7 @@ static bool GemDOS_Super(uint32_t Params)
  * Map GEMDOS call opcodes to their names
  * 
  * Mapping is based on TOSHYP information:
- *	http://toshyp.atari.org/en/005013.html
+ *	https://freemint.github.io/tos.hyp/en/gemdos_functions.html
  */
 static const char* GemDOS_Opcode2Name(uint16_t opcode)
 {
@@ -4263,7 +4263,7 @@ int GemDOS_Trap(void)
 		break;
 	case 0x4A:	/* Mshrink */
 		/* Mshrink's two pointers are prefixed by reserved zero word:
-		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
+		 * https://freemint.github.io/tos.hyp/en/gemdos_memory.html#Mshrink
 		 */
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X) at PC 0x%X\n",
 			  STMemory_ReadLong(Params+SIZE_WORD),

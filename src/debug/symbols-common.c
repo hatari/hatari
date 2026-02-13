@@ -700,7 +700,7 @@ static void show_ignored(const ignore_counts_t *counts)
 /**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
- *	http://toshyp.atari.org/en/005005.html
+ *	https://freemint.github.io/tos.hyp/en/gemdos_programs.html
  * Return symbols list or NULL for failure.
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, uint32_t tablesize, const symbol_opts_t *opts)
