@@ -9,6 +9,7 @@
 #include "main_retro.h"
 #include "hatari-glue.h"
 #include "dialog.h"
+#include "floppy.h"
 #include "m68000.h"
 #include "reset.h"
 #include "screen.h"
@@ -157,6 +158,13 @@ RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 RETRO_API bool retro_load_game(const struct retro_game_info *game)
 {
+	if (game)
+		Floppy_SetDiskFileName(0, game->path, NULL);
+	else
+		Floppy_SetDiskFileNameNone(0);
+
+	Floppy_InsertDiskIntoDrive(0);
+
 	return true;
 }
 
@@ -167,6 +175,7 @@ RETRO_API bool retro_load_game_special(unsigned game_type, const struct retro_ga
 
 RETRO_API void retro_unload_game(void)
 {
+	Floppy_EjectDiskFromDrive(0);
 }
 
 RETRO_API unsigned retro_get_region(void)
