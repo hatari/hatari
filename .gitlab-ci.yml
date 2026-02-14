@@ -14,7 +14,7 @@ build-32bit:
  script:
  - dpkg --add-architecture i386
  - apt-get update -qq
- - apt-get install -y cmake clang file gcc-multilib
+ - apt-get install -y cmake clang file gcc-multilib retroarch-dev
                       libgcc1:i386 libportmidi-dev:i386 libpng-dev:i386
                       libglib2.0-dev:i386 zlib1g-dev:i386
                       libsdl2-dev:i386 libudev-dev:i386 libreadline-dev:i386
