@@ -453,7 +453,15 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 
 	Screen_FreeSDL2Resources();
-	if (sdlWindow && bInFullScreen && !ConfigureParams.Screen.bKeepResolution)
+	if (sdlWindow &&
+	    ((bInFullScreen && !ConfigureParams.Screen.bKeepResolution)
+#if SDL_MAJOR_VERSION == 2 && SDL_PATCHLEVEL < 50
+	     /* Real SDL2 (i.e. not the sdl2-compat lib) show weird behavior
+	      * when keeping the window (reported on KDE with Wayland), thus
+	      * allow to force-destroy it here */
+	     || bForceChange
+#endif
+	    ))
 	{
 		SDL_DestroyWindow(sdlWindow);
 		sdlWindow = NULL;
