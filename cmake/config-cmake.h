@@ -9,6 +9,9 @@
 /* Define if you have the PortMidi library */
 #cmakedefine HAVE_PORTMIDI 1
 
+/* Define if you have the libarchive library */
+#cmakedefine HAVE_LIBARCHIVE 1
+
 /* Define if you have the capsimage library */
 #cmakedefine HAVE_CAPSIMAGE 1
 
