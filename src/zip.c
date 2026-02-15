@@ -15,6 +15,11 @@ const char ZIP_fileid[] = "Hatari zip.c";
 #if HAVE_ZLIB_H
 #include <zlib.h>
 #endif
+#if HAVE_LIBARCHIVE
+#include <archive.h>
+#include <archive_entry.h>
+#define ARCHIVE_READ_BLOCK 10240
+#endif
 
 #include "dim.h"
 #include "file.h"
@@ -52,6 +57,24 @@ static const char * const pszDiskNameExts[] =
 	NULL
 };
 
+
+
+#if HAVE_LIBARCHIVE
+/* Possible file extensions to handle with libarchive */
+static const char * const ArchiveExts[] =
+{
+	".zip",
+	".7z",
+	".rar",
+	".lha",
+	".lzh",
+	".tar.gz",
+	".tgz",
+	".tar.bz2",
+	".tbz",
+	NULL
+};
+#endif
 
 
 //#define DEBUGPRINT(x) fprintf x
@@ -300,8 +323,410 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 
 
 
+#if HAVE_LIBARCHIVE
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Does filename end with a supported archive extension ? If so, return true.
+ */
+bool ZIP_FileNameIsZIP ( const char *FileName )
+{
+	int	i;
+
+	for ( i = 0; ArchiveExts[i] != NULL; i++ )
+	{
+		if ( File_DoesFileExtensionMatch ( FileName , ArchiveExts[i] ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Returns a list of files from an archive file. returns NULL on failure,
+ * returns a pointer to an array of strings if successful. Sets nfiles
+ * to the number of files.
+ */
+zip_dir *ZIP_GetFiles ( const char *FileName )
+{
+	int		nfiles;
+	char **		filelist = NULL;
+	const char *	entry_pathname;
+	zip_dir *	zd = NULL;
+	struct archive	*arc;
+	struct archive_entry *entry;
+	int		r;
+
+	arc = archive_read_new();
+	archive_read_support_filter_all ( arc );
+	archive_read_support_format_all ( arc );
+
+	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
+	if ( r != ARCHIVE_OK )
+	{
+		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", FileName);
+		return NULL;
+	}
+
+	nfiles = 0;
+	while ( archive_read_next_header ( arc, &entry ) == ARCHIVE_OK )
+	{
+		if ( nfiles == 0 )		/* allocate a file list with 1 element at start*/
+			filelist = (char **) malloc ( sizeof(char *) );
+		else				/* increase by 1 element */
+			filelist = (char **) realloc ( filelist , sizeof(char *) * ( nfiles+1 ) );
+		if ( !filelist )
+		{
+			perror("ZIP_GetFiles malloc/realloc");
+			goto cleanup;
+		}
+
+		entry_pathname = archive_entry_pathname ( entry );
+
+		/* Alloc an extra char in case a trailing '/' must be added below for directories */
+		filelist[ nfiles ] = (char *) malloc ( strlen ( entry_pathname ) + 2 );
+		if ( !filelist[ nfiles ] )
+		{
+			perror("ZIP_GetFiles");
+			goto cleanup;
+		}
+
+		strcpy ( filelist[ nfiles ], entry_pathname );
+
+		/* Some archive format (eg RAR) don't add a trailing '/' to the directoty name */
+		/* We add it if needed as this is required for our functions accessing files */
+		if ( archive_entry_filetype(entry) == AE_IFDIR )
+			File_AddSlashToEndFileName ( filelist[ nfiles ] );
+
+DEBUGPRINT (( stderr, "zip new : nfiles=%d path=%s size=%ld type=0x%x\n" , nfiles , filelist[ nfiles ] ,archive_entry_size(entry),archive_entry_filetype(entry)  ));
+		nfiles++;
+	}
+
+	zd = (zip_dir *) malloc ( sizeof(zip_dir) );
+	if (zd)
+	{
+		zd->names = filelist;
+		zd->nfiles = nfiles;
+	}
+	else
+	{
+		perror("ZIP_GetFiles");
+	}
+
+cleanup:
+	r = archive_read_free(arc);
+DEBUGPRINT (( stderr, "zip new : nfiles=%d filelist=%p\n" , nfiles , filelist ));
+
+	if ( !zd && filelist )
+	{
+		/* deallocate memory */
+		for ( ; nfiles > 0; nfiles-- )
+			free ( filelist[ nfiles-1 ] );
+		free ( filelist );
+	}
+
+	return zd;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Locate a file (with its full path) inside an archive.
+ * Return true if file is found, else false
+ * If file is found then arc_entry_ptr will be updated to the entry associated
+ * with this file
+ */
+static bool Arc_LocateFile ( struct archive *arc , struct archive_entry	**arc_entry_ptr , char *FileName )
+{
+	bool			found;
+
+	found = false;
+	while ( archive_read_next_header ( arc, arc_entry_ptr ) == ARCHIVE_OK )
+	{
+		if ( strcmp ( FileName , archive_entry_pathname ( *arc_entry_ptr ) ) == 0 )
+		{
+			found = true;
+			break;
+		}
+	}
+
+	return found;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check a floppy disk image file in the archive
+ * If the filename's extensions matches a supported disk image then
+ * we return the uncompressed length and we update *pImageType
+ * If filename is not a supported disk image, return 0
+ * In case of error, return -1
+ */
+static long ZIP_CheckImageFile ( struct archive *arc, char *FileName, int *pImageType )
+{
+	struct archive_entry	*arc_entry;
+	int			uncompressed_size;
+
+
+DEBUGPRINT (( stderr , "ZIP_CheckImageFile new file=%s\n", FileName ));
+
+	if ( !Arc_LocateFile ( arc , &arc_entry , FileName ) )
+	{
+		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", FileName);
+		return -1;
+	}
+	uncompressed_size = archive_entry_size ( arc_entry );
+
+	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
+
+	/* check for .stx, .ipf, .msa, .dim or .st extension */
+	if ( STX_FileNameIsSTX(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_STX;
+
+	else if ( IPF_FileNameIsIPF(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+
+	else if ( MSA_FileNameIsMSA(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
+
+	else if ( ST_FileNameIsST(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_ST;
+
+	else if ( DIM_FileNameIsDIM(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_DIM;
+
+	/* Known extension found, return uncompressed size */
+	if ( pImageType != FLOPPY_IMAGE_TYPE_NONE )
+		return uncompressed_size;
+
+	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n" );
+	return 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Extract a file from an archive
+ * The extracted file is the one in the current archive_entry
+ * Returns a pointer to a buffer containing the uncompressed data, or NULL.
+ */
+static void *ZIP_ExtractFile ( struct archive *arc, size_t size )
+{
+	uint8_t *	buf;
+	size_t		size_buf;
+	size_t		last_read;
+	size_t		total_read;
+
+	size_buf = size;
+	buf = malloc ( size_buf );
+	if ( !buf )
+	{
+		perror("ZIP_ExtractFile");
+		return NULL;
+	}
+
+
+	/* Handle the case where archive_read_data returns less than size_buf bytes */
+	total_read = 0;
+	while ( ( last_read = archive_read_data ( arc, buf + total_read , size_buf - total_read ) ) > 0 )
+		total_read += last_read;
+
+	if ( total_read != size_buf )
+	{
+		Log_Printf ( LOG_ERROR, "ZIP_ExtractFile: could not read file\n" );
+		free(buf);
+		return NULL;
+	}
+
+	return buf;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Load a disk image "FileName" with an optional path from an archive into memory,
+ * set the number of bytes loaded into pImageSize and return the data or NULL on error.
+ */
+uint8_t *ZIP_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath, long *pImageSize, int *pImageType )
+{
+	struct archive	*arc;
+	int		r;
+	uLong		ImageSize = 0;
+	uint8_t		*buf;
+	char		*path;
+	uint8_t		*pDiskBuffer = NULL;
+
+	*pImageSize = 0;
+	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
+
+	arc = archive_read_new();
+	archive_read_support_filter_all ( arc );
+	archive_read_support_format_all ( arc );
+
+	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
+	if ( r != ARCHIVE_OK )
+	{
+		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", FileName);
+		return NULL;
+	}
+
+	if ( ArchivePath == NULL || ArchivePath[0] == 0 )
+	{
+DEBUGPRINT (( stderr , "ZIP_ReadDisk new first filename=%s\n" , FileName ));
+		path = ZIP_FirstFile ( FileName, pszDiskNameExts );
+		if ( path == NULL )
+		{
+			Log_Printf ( LOG_ERROR, "Cannot open %s\n", FileName );
+			archive_read_free ( arc );
+			return NULL;
+		}
+	}
+	else
+	{
+DEBUGPRINT (( stderr , "ZIP_ReadDisk news path=%s filename=%s\n" , ArchivePath , FileName ));
+		path = malloc ( ZIP_PATH_MAX );
+		if ( path == NULL )
+		{
+			perror("ZIP_ReadDisk");
+			archive_read_free ( arc );
+			return NULL;
+		}
+		strncpy ( path, ArchivePath, ZIP_PATH_MAX - 1 );
+		path[ZIP_PATH_MAX-1] = '\0';
+	}
+
+	ImageSize = ZIP_CheckImageFile ( arc, path, pImageType );
+	if ( ImageSize <= 0 )
+	{
+		archive_read_free ( arc );
+		free ( path );
+		return NULL;
+	}
+
+	/* Extract the current archive_entry set by ZIP_CheckImageFile */
+	buf = ZIP_ExtractFile ( arc, ImageSize );
+	if ( buf == NULL )
+	{
+		archive_read_free ( arc );
+		free ( path );
+		return NULL;
+	}
+
+	archive_read_free ( arc );
+	free ( path );
+	path = NULL;
+
+	if ( buf == NULL )
+	{
+		return NULL;			/* failed extraction, return error */
+	}
+
+	switch ( *pImageType ) {
+	case FLOPPY_IMAGE_TYPE_IPF:
+#ifndef HAVE_CAPSIMAGE
+		Log_AlertDlg ( LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled." );
+		return NULL;
+#else
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+#endif
+	case FLOPPY_IMAGE_TYPE_STX:
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+	case FLOPPY_IMAGE_TYPE_MSA:
+		/* uncompress the MSA file */
+		pDiskBuffer = MSA_UnCompress ( buf, (long *)&ImageSize, ImageSize );
+		free ( buf );
+		buf = NULL;
+		break;
+	case FLOPPY_IMAGE_TYPE_DIM:
+		/* Skip DIM header */
+		ImageSize -= 32;
+		memmove ( buf, buf+32, ImageSize );
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+	case FLOPPY_IMAGE_TYPE_ST:
+		/* ST image => return buffer directly */
+		pDiskBuffer = buf;
+		break;
+	}
+
+	if (pDiskBuffer)
+	{
+		*pImageSize = ImageSize;
+	}
+	return pDiskBuffer;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Load the first file from the archive FileName into memory, and return the number
+ * of bytes loaded.
+ * The first file must match one of the extensions defined in Exts[]
+ */
+uint8_t *ZIP_ReadFirstFile ( const char *FileName, long *pImageSize, const char * const Exts[] )
+{
+	struct archive	*arc;
+	struct archive_entry *arc_entry;
+	int		r;
+	uint8_t		*pBuffer = NULL;
+	char		*ArchivePath;
+	int		uncompressed_size;
+
+
+DEBUGPRINT (( stderr , "ZIP_ReadFirstFile new filename=%s\n", FileName ));
+	*pImageSize = 0;
+
+	/* Locate the first file in the archive */
+	ArchivePath = ZIP_FirstFile ( FileName, Exts );
+	if ( ArchivePath == NULL )
+	{
+		Log_Printf(LOG_ERROR, "Failed to locate first file in '%s'\n", FileName);
+		return NULL;
+	}
+
+	arc = archive_read_new();
+	archive_read_support_filter_all ( arc );
+	archive_read_support_format_all ( arc );
+
+	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
+	if ( r != ARCHIVE_OK )
+	{
+		Log_Printf(LOG_ERROR, "ZIP_ReadFirstFile: Cannot open %s\n", FileName);
+		return NULL;
+	}
+
+
+	if ( !Arc_LocateFile ( arc , &arc_entry , ArchivePath ) )
+	{
+		Log_Printf(LOG_ERROR, "Can not locate '%s' in the archive!\n", ArchivePath);
+		goto cleanup;
+	}
+	uncompressed_size = archive_entry_size ( arc_entry );
+
+	/* Extract the current archive entry set by ZIP_CheckImageFile */
+	pBuffer = ZIP_ExtractFile ( arc, uncompressed_size );
+	if ( pBuffer )
+		*pImageSize = uncompressed_size;
+
+cleanup:
+	archive_read_free ( arc );
+	free(ArchivePath);
+
+	return pBuffer;
+}
+
+
+
+#else	// ! HAVE_LIBARCHIVE
 
 
 /*-----------------------------------------------------------------------*/
@@ -694,6 +1119,8 @@ cleanup:
 
 	return pBuffer;
 }
+
+#endif		// ! HAVE_LIBARCHIVE
 
 #else		// ! HAVE_LIBZ
 
