@@ -516,6 +516,7 @@ static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
 		if (err < 0)
 		{
 			Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not read file\n");
+			free(buf);
 			return NULL;
 		}
 	}
