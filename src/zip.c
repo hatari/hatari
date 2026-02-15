@@ -53,14 +53,10 @@ static const char * const pszDiskNameExts[] =
 };
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Does filename end with a .ZIP extension? If so, return true.
- */
-bool ZIP_FileNameIsZIP(const char *pszFileName)
-{
-	return File_DoesFileExtensionMatch(pszFileName,".zip");
-}
+
+//#define DEBUGPRINT(x) fprintf x
+#define DEBUGPRINT(x)
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -83,111 +79,18 @@ static int Zip_FileNameHasSlash(const char *fn)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Returns a list of files from a zip file. returns NULL on failure,
- * returns a pointer to an array of strings if successful. Sets nfiles
- * to the number of files.
- */
-zip_dir *ZIP_GetFiles(const char *pszFileName)
-{
-	int nfiles;
-	unsigned int i;
-	unz_global_info gi;
-	int err;
-	unzFile uf;
-	char **filelist;
-	unz_file_info file_info;
-	char filename_inzip[ZIP_PATH_MAX];
-	zip_dir *zd = NULL;
-
-	uf = unzOpen(pszFileName);
-	if (uf == NULL)
-	{
-		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", pszFileName);
-		return NULL;
-	}
-
-	err = unzGetGlobalInfo(uf,&gi);
-	if (err != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Error %d with zipfile in unzGetGlobalInfo \n",err);
-		return NULL;
-	}
-
-	/* allocate a file list */
-	filelist = (char **)malloc(gi.number_entry*sizeof(char *));
-	if (!filelist)
-	{
-		perror("ZIP_GetFiles");
-		unzClose(uf);
-		return NULL;
-	}
-
-	nfiles = gi.number_entry;  /* set the number of files */
-
-	for (i = 0; i < gi.number_entry; i++)
-	{
-		err = unzGetCurrentFileInfo(uf, &file_info, filename_inzip, ZIP_PATH_MAX, NULL, 0, NULL, 0);
-		if (err != UNZ_OK)
-		{
-			Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
-			goto cleanup;
-		}
-
-		filelist[i] = (char *)malloc(strlen(filename_inzip) + 1);
-		if (!filelist[i])
-		{
-			perror("ZIP_GetFiles");
-			goto cleanup;
-		}
-
-		strcpy(filelist[i], filename_inzip);
-		if ((i+1) < gi.number_entry)
-		{
-			err = unzGoToNextFile(uf);
-			if (err != UNZ_OK)
-			{
-				Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
-				goto cleanup;
-			}
-		}
-	}
-
-	zd = (zip_dir *)malloc(sizeof(zip_dir));
-	if (zd)
-	{
-		zd->names = filelist;
-		zd->nfiles = nfiles;
-	}
-	else
-	{
-		perror("ZIP_GetFiles");
-	}
-
-cleanup:
-	unzClose(uf);
-	if (!zd && filelist)
-	{
-		/* deallocate memory */
-		for (; i > 0; i--)
-			free(filelist[i]);
-		free(filelist);
-	}
-
-	return zd;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Free the memory that has been allocated for a zip_dir.
  */
 void ZIP_FreeZipDir(zip_dir *f_zd)
 {
+DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d\n" , f_zd->nfiles ));
 	while (f_zd->nfiles > 0)
 	{
 		f_zd->nfiles--;
+DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d %p %s\n" , f_zd->nfiles , f_zd->names[f_zd->nfiles] , f_zd->names[f_zd->nfiles] ));
 		free(f_zd->names[f_zd->nfiles]);
 		f_zd->names[f_zd->nfiles] = NULL;
+DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d %p ok\n" , f_zd->nfiles , f_zd->names[f_zd->nfiles] ));
 	}
 	free(f_zd->names);
 	f_zd->names = NULL;
@@ -214,7 +117,7 @@ static void ZIP_FreeFentries(struct dirent **fentries, int entries)
 /**
  *   Returns a list of files from the directory (dir) in a zip file list (zip)
  *   sets entries to the number of entries and returns a dirent structure, or
- *   NULL on failure. NOTE: only f_name is set in the dirent structures. 
+ *   NULL on failure. NOTE: only f_name is set in the dirent structures.
  */
 struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entries)
 {
@@ -336,61 +239,6 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check an image file in the archive, return the uncompressed length
- */
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pImageType)
-{
-	unz_file_info file_info;
-
-	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", filename);
-		return -1;
-	}
-
-	if (unzGetCurrentFileInfo(uf, &file_info, filename, namelen, NULL, 0, NULL, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo\n");
-		return -1;
-	}
-
-	/* check for .stx, .ipf, .msa, .dim or .st extension */
-	if (STX_FileNameIsSTX(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_STX;
-		return file_info.uncompressed_size;
-	}
-
-	if (IPF_FileNameIsIPF(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
-		return file_info.uncompressed_size;
-	}
-
-	if (MSA_FileNameIsMSA(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
-		return file_info.uncompressed_size;
-	}
-
-	if (ST_FileNameIsST(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_ST;
-		return file_info.uncompressed_size;
-	}
-
-	if (DIM_FileNameIsDIM(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_DIM;
-		return file_info.uncompressed_size;
-	}
-
-	Log_Printf(LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n");
-	return 0;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * Return the first matching file in a zip, or NULL on failure.
  * String buffer size is ZIP_PATH_MAX
  */
@@ -448,6 +296,172 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 	}
 
 	return name;
+}
+
+
+
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Does filename end with a .ZIP extension? If so, return true.
+ */
+bool ZIP_FileNameIsZIP(const char *pszFileName)
+{
+	return File_DoesFileExtensionMatch(pszFileName,".zip");
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Returns a list of files from a zip file. returns NULL on failure,
+ * returns a pointer to an array of strings if successful. Sets nfiles
+ * to the number of files.
+ */
+zip_dir *ZIP_GetFiles(const char *pszFileName)
+{
+	int nfiles;
+	unsigned int i;
+	unz_global_info gi;
+	int err;
+	unzFile uf;
+	char **filelist;
+	unz_file_info file_info;
+	char filename_inzip[ZIP_PATH_MAX];
+	zip_dir *zd = NULL;
+
+	uf = unzOpen(pszFileName);
+	if (uf == NULL)
+	{
+		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", pszFileName);
+		return NULL;
+	}
+
+	err = unzGetGlobalInfo(uf,&gi);
+	if (err != UNZ_OK)
+	{
+		Log_Printf(LOG_ERROR, "Error %d with zipfile in unzGetGlobalInfo \n",err);
+		return NULL;
+	}
+
+	/* allocate a file list */
+	filelist = (char **)malloc(gi.number_entry*sizeof(char *));
+	if (!filelist)
+	{
+		perror("ZIP_GetFiles");
+		unzClose(uf);
+		return NULL;
+	}
+
+	nfiles = gi.number_entry;  /* set the number of files */
+
+	for (i = 0; i < gi.number_entry; i++)
+	{
+		err = unzGetCurrentFileInfo(uf, &file_info, filename_inzip, ZIP_PATH_MAX, NULL, 0, NULL, 0);
+		if (err != UNZ_OK)
+		{
+			Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
+			goto cleanup;
+		}
+
+		filelist[i] = (char *)malloc(strlen(filename_inzip) + 1);
+DEBUGPRINT (( stderr ,  "zip old : i=%d nfiles=%d %s\n" , i , nfiles, filename_inzip ));
+		if (!filelist[i])
+		{
+			perror("ZIP_GetFiles");
+			goto cleanup;
+		}
+
+		strcpy(filelist[i], filename_inzip);
+		if ((i+1) < gi.number_entry)
+		{
+			err = unzGoToNextFile(uf);
+			if (err != UNZ_OK)
+			{
+				Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
+				goto cleanup;
+			}
+		}
+	}
+
+	zd = (zip_dir *)malloc(sizeof(zip_dir));
+	if (zd)
+	{
+		zd->names = filelist;
+		zd->nfiles = nfiles;
+	}
+	else
+	{
+		perror("ZIP_GetFiles");
+	}
+
+cleanup:
+	unzClose(uf);
+	if (!zd && filelist)
+	{
+		/* deallocate memory */
+		for (; i > 0; i--)
+			free(filelist[i]);
+		free(filelist);
+	}
+
+	return zd;
+}
+
+
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pImageType)
+{
+	unz_file_info file_info;
+
+DEBUGPRINT (( stderr , "ZIP_CheckImageFile file=%s namelen=%d\n", filename , namelen ));
+
+	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
+	{
+		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", filename);
+		return -1;
+	}
+
+	if (unzGetCurrentFileInfo(uf, &file_info, filename, namelen, NULL, 0, NULL, 0) != UNZ_OK)
+	{
+		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo\n");
+		return -1;
+	}
+
+	/* check for .stx, .ipf, .msa, .dim or .st extension */
+	if (STX_FileNameIsSTX(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_STX;
+		return file_info.uncompressed_size;
+	}
+
+	if (IPF_FileNameIsIPF(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+		return file_info.uncompressed_size;
+	}
+
+	if (MSA_FileNameIsMSA(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
+		return file_info.uncompressed_size;
+	}
+
+	if (ST_FileNameIsST(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_ST;
+		return file_info.uncompressed_size;
+	}
+
+	if (DIM_FileNameIsDIM(filename, false))
+	{
+		*pImageType = FLOPPY_IMAGE_TYPE_DIM;
+		return file_info.uncompressed_size;
+	}
+
+	Log_Printf(LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n");
+	return 0;
 }
 
 
@@ -513,7 +527,7 @@ static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Load disk image from a .ZIP archive into memory, set  the number
+ * Load disk image from a .ZIP archive into memory, set the number
  * of bytes loaded into pImageSize and return the data or NULL on error.
  */
 uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType)
@@ -536,6 +550,7 @@ uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath
 
 	if (pszZipPath == NULL || pszZipPath[0] == 0)
 	{
+DEBUGPRINT (( stderr , "ZIP_ReadDisk first filename=%s\n" , pszFileName ));
 		path = ZIP_FirstFile(pszFileName, pszDiskNameExts);
 		if (path == NULL)
 		{
@@ -546,6 +561,7 @@ uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath
 	}
 	else
 	{
+DEBUGPRINT (( stderr , "ZIP_ReadDisk path=%s filename=%s\n" , pszZipPath , pszFileName ));
 		path = malloc(ZIP_PATH_MAX);
 		if (path == NULL)
 		{
@@ -631,6 +647,7 @@ uint8_t *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char
 	char *pszZipPath;
 	unz_file_info file_info;
 
+DEBUGPRINT (( stderr , "ZIP_ReadFirstFile old filename=%s\n", pszFileName ));
 	*pImageSize = 0;
 
 	/* Open the ZIP file */
@@ -677,7 +694,7 @@ cleanup:
 	return pBuffer;
 }
 
-#else
+#else		// ! HAVE_LIBZ
 
 bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
