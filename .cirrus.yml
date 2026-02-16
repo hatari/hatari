@@ -113,7 +113,7 @@ cygwin_task:
   install_script:
     - choco install -y --no-progress cygwin
     - C:\tools\cygwin\cygwinsetup.exe -q -P
-        make,cmake,gcc-core,pkg-config,zlib-devel,libSDL3-devel,libpng-devel
+        make,cmake,gcc-core,pkg-config,zlib-devel,libSDL3-devel,libpng-devel,libarchive-devel
   script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ;
        CFLAGS='-Werror -Wno-error=char-subscripts'
@@ -146,7 +146,8 @@ msys2_task:
          mingw-w64-x86_64-gcc
          mingw-w64-x86_64-SDL2
          mingw-w64-x86_64-libpng
-         mingw-w64-x86_64-portmidi"
+         mingw-w64-x86_64-portmidi
+         mingw-w64-x86_64-libarchive"
   script:
     - C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."
     - C:\tools\msys64\usr\bin\bash -lc "make -j4"
