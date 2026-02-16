@@ -14,6 +14,10 @@ if(ZLIB_FOUND)
 	target_link_libraries(hmsa ${ZLIB_LIBRARY})
 endif(ZLIB_FOUND)
 
+if(LibArchive_FOUND)
+	target_link_libraries(hmsa ${LibArchive_LIBRARIES})
+endif(LibArchive_FOUND)
+
 install(TARGETS hmsa RUNTIME DESTINATION ${BINDIR})
 
 if(ENABLE_MAN_PAGES)
