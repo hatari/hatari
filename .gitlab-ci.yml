@@ -88,7 +88,7 @@ build-mingw:
       - ./*.zip
 
 build-fedora:
-  image: fedora:latest
+  image: fedora:41
   variables:
     GIT_DEPTH: 1000
   before_script:
