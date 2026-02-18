@@ -47,7 +47,7 @@ emulators.
 make %{?_smp_mflags}
 
 %check
-make test
+ctest -j$(nproc) --output-on-failure
 
 %install
 rm -rf $RPM_BUILD_ROOT
