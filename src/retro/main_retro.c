@@ -77,7 +77,7 @@ RETRO_API void retro_get_system_info(struct retro_system_info *info)
 {
 	memset(info, 0, sizeof(*info));
 	info->library_name = "hatari";
-	info->library_version = PROG_NAME;
+	info->library_version = HATARI_VERSION;
 	info->need_fullpath = false;
 	info->valid_extensions = "st|msa|dim|stx";
 }
