@@ -81,7 +81,7 @@ for f in "$testdir/$compare".*; do
 done
 
 # TODO: compare also hatari_profile post-processing output?
-if ! diff -q "$testdir/$compare".*; then
+if ! diff -q "$testdir/$compare.old" "$testdir/$compare.new" ; then
 	echo "-----------------------------------------------------"
 	echo "Test log output:"
 	cat "$testdir/log.txt"
