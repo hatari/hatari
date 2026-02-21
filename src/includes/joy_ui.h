@@ -8,6 +8,10 @@
 #ifndef HATARI_JOYUI_H
 #define HATARI_JOYUI_H
 
+#define JOYREADING_BUTTON1  1		/* bit 0, regular fire button */
+#define JOYREADING_BUTTON2  2		/* bit 1, space / jump button */
+#define JOYREADING_BUTTON3  4		/* bit 2, autofire button */
+
 typedef struct
 {
 	int XPos, YPos;       /* the actually read axis values in range of -32768...0...32767 */

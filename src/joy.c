@@ -28,9 +28,6 @@ const char Joy_fileid[] = "Hatari joy.c";
 #define Dprintf(a)
 #endif
 
-#define JOYREADING_BUTTON1  1		/* bit 0, regular fire button */
-#define JOYREADING_BUTTON2  2		/* bit 1, space / jump button */
-#define JOYREADING_BUTTON3  4		/* bit 2, autofire button */
 #define STE_JOY_ANALOG_MIN_VALUE 0x04	/* minimum value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MID_VALUE 0x24	/* neutral mid value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MAX_VALUE 0x43	/* maximum value for STE analog joystick/paddle axis */
