@@ -1,0 +1,27 @@
+# Software Information
+display_name = "Atari - ST / STE / TT / Falcon (Hatari)"
+authors = "Nicolas Pomarède, Thomas Huth"
+supported_extensions = "st|msa|zip|stx|dim|ipf"
+corename = "hatari"
+license = "GPLv2"
+permissions = "microphone_optional"
+display_version = "tech preview"
+categories = "Emulator"
+
+# Hardware Information
+manufacturer = "Atari"
+systemname = "Atari ST/STE/TT/Falcon"
+systemid = "atari_st"
+
+# Libretro Features
+database = "Atari - ST"
+supports_no_game = "true"
+savestate = "false"
+cheats = "false"
+memory_descriptors = "false"
+libretro_saves = "false"
+load_subsystem = "false"
+hw_render = "false"
+needs_fullpath = "true"
+
+description = "Hatari emulator for libretro. This core supports Atari's 16-/32-bit ST/STE/TT/Falcon hardware and tries to emulate the hardware as closely as possible, so it can support most of the old Atari games and demos. The core requires a TOS image to function. This core is a good option for most users on a modern device."
