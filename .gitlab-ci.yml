@@ -94,7 +94,7 @@ build-fedora:
   before_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-          capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
+          capstone-devel GraphicsMagick SDL3-devel libpng-devel zlib-devel tidy
           python3-gobject gtk3 readline-devel man git rpmdevtools libarchive-devel
   script:
     - rpmdev-setuptree

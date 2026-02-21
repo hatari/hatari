@@ -19,7 +19,8 @@ Prefix:       /usr
 
 BuildRequires: binutils cmake coreutils cpio cpp diffutils file filesystem
 BuildRequires: findutils gcc grep gzip libgcc make man patch sed util-linux
-BuildRequires: glibc-devel zlib-devel SDL2-devel libpng-devel readline-devel
+BuildRequires: glibc-devel zlib-devel SDL3-devel libpng-devel readline-devel
+BuildRequires: libarchive-devel
 
 # Required by zip2st and atari-hd-image
 Requires: unzip

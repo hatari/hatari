@@ -17,7 +17,6 @@ print_help()
   echo "  --enable-asan              Enable address sanitizer debug build"
   echo "  --enable-debug             Enable debug (non-optimized) build"
   echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
-  echo "  --enable-sdl3              Use SDL3 instead of SDL2"
   echo "  --disable-tracing          Disable tracing messages for debugging"
   echo "  --disable-osx-bundle       Disable application bundling on macOS"
   echo "  --enable-ubsan             Enable undefined behavior sanitizer debug build"
@@ -64,12 +63,6 @@ do
     ;;
     --disable-dsp)
       cmake_args="$cmake_args -DENABLE_DSP_EMU:BOOL=0"
-    ;;
-    --enable-sdl3)
-      cmake_args="$cmake_args -DENABLE_SDL3:BOOL=1"
-    ;;
-    --disable-sdl3)
-      cmake_args="$cmake_args -DENABLE_SDL3:BOOL=0"
     ;;
     --enable-tracing)
       cmake_args="$cmake_args -DENABLE_TRACING:BOOL=1"

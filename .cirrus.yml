@@ -117,7 +117,7 @@ cygwin_task:
   script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ;
        CFLAGS='-Werror -Wno-error=char-subscripts'
-       cmake -G 'Unix Makefiles' -DENABLE_SDL3=1 ."
+       cmake -G 'Unix Makefiles' ."
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; make -j4"
   test_script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4 --output-on-failure"

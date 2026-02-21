@@ -55,8 +55,6 @@ set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
-set(ENABLE_SDL3 0
-    CACHE BOOL "Use SDL3 instead of SDL2")
 
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
@@ -123,19 +121,20 @@ endif(ENABLE_OSX_BUNDLE)
 # Check for libraries:
 # ####################
 
-if(ENABLE_SDL3)
-	find_package(SDL3)
-	if(NOT SDL3_FOUND)
-		message(FATAL_ERROR "SDL3 library not found!")
-	endif(NOT SDL3_FOUND)
+if(NOT DEFINED ENABLE_SDL3 OR ENABLE_SDL3)
+	find_package(SDL3 QUIET)
+endif()
+if(SDL3_FOUND)
 	# Yes, we're cheating by re-using the SDL2_* variables:
 	set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
 	set(SDL2_LIBRARIES ${SDL3_LIBRARIES})
+	set(ENABLE_SDL3 1 CACHE BOOL "Use SDL3 instead of SDL2")
 else()
 	find_package(SDL2)
 	if(NOT SDL2_FOUND)
-		message(FATAL_ERROR "SDL2 library not found!")
+		message(FATAL_ERROR "SDL library not found!")
 	endif(NOT SDL2_FOUND)
+	set(ENABLE_SDL3 0 CACHE BOOL "Use SDL3 instead of SDL2")
 endif()
 
 find_package(Math)
@@ -216,7 +215,7 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-if(NOT ENABLE_SDL3)
+if(NOT SDL3_FOUND)
     if(PKG_CONFIG_FOUND)
 	execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --cflags-only-other sdl2
 			OUTPUT_VARIABLE SDL2_OTHER_CFLAGS
@@ -451,7 +450,7 @@ Libraries summary :
 -------------------
 ")
 
-if(ENABLE_SDL3)
+if(SDL3_FOUND)
 	message("  - sdl :\tusing SDL3 ${SDL3_VERSION}")
 else()
 	message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
