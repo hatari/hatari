@@ -71,12 +71,12 @@ cp "$testdir/profile.txt" "$testdir/$compare.new"
 # remove insignificant differences from the comparison & new profile files
 for f in "$testdir/$compare".*; do
 	# remove Hatari version
-	sed -i 's/^\(Hatari CPU profile\).*$/\1/' "$f"
+	sed -i -e 's/^\(Hatari CPU profile\).*$/\1/' "$f"
 	# for 030 MMU profile, replace cycle counts with instruction counts
 	# as 030 emulation cycle-accuracy has not stabilized yet (changes
 	# to i-cache misses & d-cache hits rates are assumed to be rare)
 	if [ -n "$mmu" ]; then
-		sed -i 's/% (\([0-9]\+\), [0-9]\+,/% (\1, \1,/' "$f"
+		sed -i -e 's/% (\([0-9]\+\), [0-9]\+,/% (\1, \1,/' "$f"
 	fi
 done
 
