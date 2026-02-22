@@ -21,9 +21,6 @@
 
 #define FRAMES_PER_BUFFER 512
 
-static Sint16 micro_buffer_L[FRAMES_PER_BUFFER];	/* left buffer */
-static Sint16 micro_buffer_R[FRAMES_PER_BUFFER];	/* right buffer */
-
 #if ENABLE_SDL3
 static SDL_AudioStream *mic_stream;
 #else
@@ -38,21 +35,8 @@ static int nMicDevId;
  */
 static void Microphone_Callback(void *pUserData, Uint8 *inputBuffer, int nLen)
 {
-	unsigned int i;
-	const Sint16 *in = (Sint16 *)inputBuffer;
-	unsigned int framesPerBuffer = nLen / 4;
-
-	Sint16 *out_L = (Sint16*)micro_buffer_L;
-	Sint16 *out_R = (Sint16*)micro_buffer_R;
-
-	for (i=0; i<framesPerBuffer; i++)
-	{
-		*out_L ++ = *in++;	/* left data */
-		*out_R ++ = *in++;	/* right data */
-	}
-
 	/* send buffer to crossbar */
-	Crossbar_GetMicrophoneDatas(micro_buffer_L, micro_buffer_R, framesPerBuffer);
+	Crossbar_EnqueueMicrophoneData((int16_t *)inputBuffer, nLen / 4);
 }
 
 
