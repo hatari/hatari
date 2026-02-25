@@ -9,8 +9,15 @@
 
 #ifndef _SDLMain_h_
 #define _SDLMain_h_
+
 #import <Cocoa/Cocoa.h>
+#import "config.h"
+
+#if ENABLE_SDL3
+#import <SDL3/SDL.h>
+#else
 #import "SDL.h"
+#endif
 
 
 @interface HatariAppDelegate : NSObject // SDLApplication// NSObject  // <NSApplicationDelegate>

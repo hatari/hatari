@@ -128,6 +128,7 @@ if(SDL3_FOUND)
 	# Yes, we're cheating by re-using the SDL2_* variables:
 	set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
 	set(SDL2_LIBRARIES ${SDL3_LIBRARIES})
+	set(SDL2_LIBDIR $<TARGET_FILE_DIR:SDL3::SDL3-shared>)
 	set(ENABLE_SDL3 1 CACHE BOOL "Use SDL3 instead of SDL2")
 else()
 	find_package(SDL2)

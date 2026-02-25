@@ -619,11 +619,11 @@ static const int nSoundFreqs[] =
 		[self initKeysDropDown:joystickUp];
 		[self initKeysDropDown:joystickRight];
 		[self initKeysDropDown:joystickDown];
-		[self initKeysDropDown:joystickLeft];		
+		[self initKeysDropDown:joystickLeft];
 		[self initKeysDropDown:joystickFire];
 		
 		// Get and store the number of real joysticks
-		cRealJoysticks = SDL_NumJoysticks();
+		cRealJoysticks = JoyUI_NumJoysticks();
 
 		// Fill the real joysticks dropdown, if any are available
 		if (cRealJoysticks > 0)

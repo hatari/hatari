@@ -13,7 +13,6 @@
 /* Use this flag to determine whether we use CPS (docking) or not */
 #define		SDL_USE_CPS			1
 
-#import "SDL.h"
 #import "SDLMain.h"
 #import <sys/param.h> // for MAXPATHLEN
 #import <unistd.h>
@@ -32,6 +31,10 @@
 #import "avi_record.h"
 #import "debugui.h"
 #import "change.h"
+
+#if ENABLE_SDL3
+int SDL_main(int argc, char *argv[]);
+#endif
 
 extern void Main_RequestQuit(int exitval) ;
 
@@ -364,11 +367,17 @@ static BOOL		gCalledAppMainline = NO ;
 	SDL_KeyboardEvent event;
 	memset(&event, 0, sizeof(event));
 	event.type = SDL_KEYDOWN;
+#if ENABLE_SDL3
+	event.key = SDLK_F11;
+#else
 	event.state = SDL_PRESSED;
 	event.keysym.sym = SDLK_F11;
+#endif
 	SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key press
 	event.type = SDL_KEYUP;
+#if !ENABLE_SDL3
 	event.state = SDL_RELEASED;
+#endif
 	SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key release
 }
 
@@ -487,7 +496,7 @@ static int IsFinderLaunch(const int argc, char **argv)
 /*----------------------------------------------------------------------*/
 // Main entry point to executable - should *not* be SDL_main!
 /*----------------------------------------------------------------------*/
-int main (int argc, char **argv)
+int main (int argc, char *argv[])
 {
 	// Copy the arguments into a global variable
 	if (IsFinderLaunch(argc, argv)) {

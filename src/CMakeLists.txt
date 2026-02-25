@@ -161,6 +161,7 @@ set(APP_TARGET_OBJECTS
 if(ENABLE_OSX_BUNDLE)
 	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS}
 	               ${APP_TARGET_OBJECTS} ${GUIOSX_SOURCES})
+	target_compile_definitions(${APP_NAME} PRIVATE SDL_ENABLE_OLD_NAMES)
 	set_target_properties(${APP_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST
 			      ${CMAKE_CURRENT_SOURCE_DIR}/gui-osx/Info-Hatari.plist)
 	set_target_properties(${APP_NAME} PROPERTIES INSTALL_RPATH

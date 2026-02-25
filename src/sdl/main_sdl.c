@@ -10,9 +10,12 @@
 #include "main.h"
 
 #if ENABLE_SDL3
-#include <SDL3/SDL.h>
+# include <SDL3/SDL.h>
+# if defined(__APPLE__)
+#  define main SDL_main   /* See SDLMain.m */
+# endif
 #else
-#include <SDL.h>
+# include <SDL.h>
 #endif
 
 #include "avi_record.h"
