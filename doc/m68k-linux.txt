@@ -132,7 +132,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel sources:
-     $ release=v6.18
+     $ release=v6.19
      $ repo=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    Either just the latest release (= faster):
      $ git clone --depth 1 --branch $release $repo
@@ -306,8 +306,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v6.18
-Symbols = System.map-v6.18
+Kernel = vmlinux-v6.19
+Symbols = System.map-v6.19
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
