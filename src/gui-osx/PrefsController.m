@@ -232,7 +232,7 @@ static const int nSoundFreqs[] =
 /*  Helper method for Choose buttons                                     */
 /*  Returns: TRUE is the user selected a path, FALSE if he/she aborted   */
 /*-----------------------------------------------------------------------*/
-- (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir 
+- (BOOL)choosePathForControl:(NSTextField*)textField chooseDirectories:(BOOL)chooseDirectories defaultInitialDir:(NSString*)defaultInitialDir
     mutString:(NSMutableString *)mutString
 {
 	NSString *directoryToOpen ;
@@ -240,21 +240,25 @@ static const int nSoundFreqs[] =
 	NSString *newPath ;
 
 	if ((mutString != nil) && (mutString.length > 2))
-	 {	directoryToOpen = mutString.stringByDeletingLastPathComponent ;		// There is existing path: we use it.
-		fileToPreselect = mutString.lastPathComponent ; }
+	{
+		directoryToOpen = mutString.stringByDeletingLastPathComponent;		// There is existing path: we use it.
+		fileToPreselect = mutString.lastPathComponent;
+	}
 	else
-	 {	directoryToOpen = defaultInitialDir.stringByExpandingTildeInPath ;	// no path: use user's directory
-		fileToPreselect = nil; } ;
+	{
+		directoryToOpen = defaultInitialDir.stringByExpandingTildeInPath;	// no path: use user's directory
+		fileToPreselect = nil;
+	}
 
 	newPath = [NSApp hopenfile:chooseDirectories
 					   defoDir:directoryToOpen
-                      defoFile:fileToPreselect];
+					   defoFile:fileToPreselect];
 	if (newPath.length != 0)												// user canceled if empty
 	{
 		[mutString setString:[NSString stringWithString:newPath]] ;			// save this path
 		[textField setStringValue:[NSApp pathUser:newPath]];				// show localized path
 		return YES;
-	} ;
+	}
 
 	return NO;																// Selection aborted
 }
@@ -272,7 +276,7 @@ static const int nSoundFreqs[] =
 				 chooseDirectories:NO
                  defaultInitialDir:imgeDir
                          mutString:realPath])
-		
+
 		Floppy_SetDiskFileName(drive, [realPath cStringUsingEncoding:NSASCIIStringEncoding], NULL);
 		// Insert the floppy image at this path  ????
 }
@@ -349,7 +353,7 @@ static const int nSoundFreqs[] =
 /*----------------------------------------------------------------------*/
 - (IBAction)chooseMidiOutputFile:(id)sender
 {
-	[self choosePathForControl: writeMidiToFile chooseDirectories:NO defaultInitialDir:[self initial:midiOut]			// midi output 
+	[self choosePathForControl: writeMidiToFile chooseDirectories:NO defaultInitialDir:[self initial:midiOut]			// midi output
             mutString:midiOut];
 }
 /*----------------------------------------------------------------------*/
@@ -384,7 +388,7 @@ static const int nSoundFreqs[] =
 - (IBAction)ejectFloppyA:(id)sender
 {
 	Floppy_SetDiskFileNameNone(0);
-	
+
 	// Refresh  control & mutablestring
 	floppyImageA.stringValue = @"" ;
 	floppyA.string = @"" ;
@@ -447,11 +451,12 @@ static const int nSoundFreqs[] =
 	opnPanel.canChooseFiles = YES ;
 	opnPanel.accessoryView = partage ;
 	//10.5 ?
-	//	if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	opnPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;
+	// if ([opnPanel respondsToSelector:@selector(setDirectoryURL:)])
+	{
+		opnPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;
 		opnPanel.nameFieldStringValue = @"hatari" ;
 		btOk = [opnPanel runModal] == NSModalResponseOK;				// Ok ?
-	 }
+	}
 	// 10.5 ?
 	//	else
 	//        btOk = [opnPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton 	;
@@ -475,7 +480,7 @@ static const int nSoundFreqs[] =
 }
 
 /*----------------------------------------------------------------------*/
-// Methods for the "Save Config" button  (bottom preference window)		
+// Methods for the "Save Config" button  (bottom preference window)
 /*----------------------------------------------------------------------*/
 - (IBAction)saveConfigAs:(id)sender
 {
@@ -487,10 +492,11 @@ static const int nSoundFreqs[] =
 	savPanel.accessoryView = hartage ;
 	//10.5
 	//	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	savPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;			// Since OS X 10.6
+	{
+		savPanel.directoryURL = [NSURL fileURLWithPath:ru isDirectory:YES] ;			// Since OS X 10.6
 		savPanel.nameFieldStringValue = @"hatari" ;
 		btOk = [savPanel runModal] == NSModalResponseOK ;								// Ok ?
-	 }
+	}
 	//10.5
 	//	else
 	//        btOk = [savPanel runModalForDirectory:ru file:@"hatari"] == NSModalResponseOK; //NSOKButton ;		// avant 10.6
@@ -502,7 +508,7 @@ static const int nSoundFreqs[] =
 
 																	// Make a non-const C string out of it
 	[configNm getCString:sConfigFileName maxLength:FILENAME_MAX encoding:NSASCIIStringEncoding];
-	[self saveAllControls] ;										// Save the config from ConfigureParams		
+	[self saveAllControls] ;										// Save the config from ConfigureParams
 	Configuration_Save();											// [self configSave:configNm] ;
 }
 /*----------------------------------------------------------------------*/
@@ -537,7 +543,7 @@ static const int nSoundFreqs[] =
 
 	// The user clicked OK
 	[self saveAllControls];
-	
+
 	[window close] ;
 
 
@@ -569,7 +575,7 @@ static const int nSoundFreqs[] =
 	const char* szinPortName = "Off";
 	[midiInPort  addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
 	[midiOutPort addItemWithTitle:[NSString stringWithCString:szinPortName encoding:NSASCIIStringEncoding]];
-	
+
 #ifdef HAVE_PORTMIDI
 	const char* portName = NULL;
 	while ((portName = Midi_Host_GetPortName(portName, MIDI_NAME_NEXT, MIDI_FOR_INPUT)))
@@ -621,7 +627,7 @@ static const int nSoundFreqs[] =
 		[self initKeysDropDown:joystickDown];
 		[self initKeysDropDown:joystickLeft];
 		[self initKeysDropDown:joystickFire];
-		
+
 		// Get and store the number of real joysticks
 		cRealJoysticks = JoyUI_NumJoysticks();
 
@@ -659,11 +665,11 @@ static const int nSoundFreqs[] =
 
 	// Display the window
 	ModalWrapper *mw = [[ModalWrapper alloc] init];
-	
+
 	[mw runModal:window];
-	
+
 	[mw release];			// */
-	
+
 	// solve bug screen-reset: close and kill preference windows before
 	// M. Saro, 2013
 
@@ -687,7 +693,6 @@ static const int nSoundFreqs[] =
     // {
     //      ConfigureParams = CurrentParams; //Restore backup params
     // }
-	
 }
 
 /*----------------------------------------------------------------------*/
@@ -697,10 +702,10 @@ static const int nSoundFreqs[] =
 {
 	// Save the pre-joystick controls, as we are about to change them
 	[self saveJoystickControls];
-	
+
 	// Refresh the per-joystick controls
 	[self setJoystickControls];
-	
+
 	// Update the controls' enabled states
 	[self updateEnabledStates:self];
 }
@@ -738,7 +743,7 @@ static const int nSoundFreqs[] =
 	IMPORT_TEXTFIELD(configFile, configNm, sConfigFileName);
 	IMPORT_TEXTFIELD(readRS232FromFile, rs232In, ConfigureParams.RS232.szInFileName);
 	IMPORT_TEXTFIELD(writeRS232ToFile, rs232Out, ConfigureParams.RS232.szOutFileName);
-	
+
 	IMPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);
 	IMPORT_SWITCH(blitter, ConfigureParams.System.bBlitter);
 	IMPORT_SWITCH(bootFromHD, ConfigureParams.HardDisk.bBootFromHardDisk);
@@ -779,7 +784,7 @@ static const int nSoundFreqs[] =
 	IMPORT_SWITCH(fullScreen, ConfigureParams.Screen.bFullScreen);
 	IMPORT_SWITCH(ledDisks, ConfigureParams.Screen.bShowDriveLed);
 	IMPORT_SWITCH(keepDesktopResolution, ConfigureParams.Screen.bKeepResolution);
-	
+
 	//v1.6.1
 	IMPORT_SWITCH(FastBootPatch,ConfigureParams.System.bFastBoot);
 	IMPORT_RADIO(YMVoicesMixing,ConfigureParams.Sound.YmVolumeMixing);
@@ -791,7 +796,7 @@ static const int nSoundFreqs[] =
 	//deal with the Max Zoomed Stepper
 	IMPORT_NTEXTFIELD(maxZoomedWidth, ConfigureParams.Screen.nMaxWidth);
 	IMPORT_NTEXTFIELD(maxZoomedHeight, ConfigureParams.Screen.nMaxHeight);
-	
+
 	[widthStepper setDoubleValue:[maxZoomedWidth intValue]];
 	[heightStepper setDoubleValue:[maxZoomedHeight intValue]];
 
@@ -813,7 +818,7 @@ static const int nSoundFreqs[] =
 	IMPORT_SWITCH(cycleExactCPU, ConfigureParams.System.bCycleExactCpu);
 	IMPORT_SWITCH(MMU_Emulation, ConfigureParams.System.bMMU);
 	IMPORT_SWITCH(adressSpace24, ConfigureParams.System.bAddressSpace24);
-	
+
 	if (ConfigureParams.System.n_FPUType == FPU_NONE)
 		[FPUType selectCellWithTag:0];
 	else if (ConfigureParams.System.n_FPUType == FPU_68881)
@@ -852,7 +857,7 @@ static const int nSoundFreqs[] =
 	{
 		hdImage.stringValue = @""; hrdDisk.string = @"" ;
 	}
-	
+
 	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
 	//Master
 	if (ConfigureParams.Ide[0].bUseDevice)
@@ -872,7 +877,7 @@ static const int nSoundFreqs[] =
 	{
 		ideSlaveHdImage.stringValue = @"" ; [slaveIDE setString:@""] ;
 	}
-	
+
 	// If the Gemdos flag is set, load the Gemdos path, otherwise make it blank
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
@@ -917,7 +922,7 @@ static const int nSoundFreqs[] =
 	EXPORT_SWITCH(useVDIResolution, bUsingVDI);
 	resolution.enabled = bUsingVDI;
 	colorDepth.enabled = bUsingVDI;
-	
+
 	// Playback quality depends on enable sound
 	BOOL bSoundEnabled;
 	EXPORT_SWITCH(enableSound, bSoundEnabled);
@@ -966,7 +971,7 @@ static const int nSoundFreqs[] =
 /*----------------------------------------------------------------------*/
 - (void)saveJoystickControls
 {
-	EXPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);	
+	EXPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);
 	EXPORT_DROPDOWN(realJoystick, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId);
 	EXPORT_DROPDOWN(joystickUp, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeUp);
 	EXPORT_DROPDOWN(joystickRight, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeRight);
@@ -1126,7 +1131,7 @@ static const int nSoundFreqs[] =
 	{
 		ConfigureParams.Ide[0].bUseDevice = NO;
 	}
-	
+
 	// IDE Slave
 	if (slaveIDE.length > 0)
 	{
@@ -1137,7 +1142,7 @@ static const int nSoundFreqs[] =
 	{
 		ConfigureParams.Ide[1].bUseDevice = NO;
 	}
-	
+
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
 	if (gemdos.length > 0)
 	{
@@ -1177,7 +1182,6 @@ static const int nSoundFreqs[] =
 {
 	NSLog(@"Change TTRAMSize: %d", [sender intValue]);
 	TTRAMSizeValue.intValue = [sender intValue] ;
-    
 }
 
 +(PrefsController *)prefs

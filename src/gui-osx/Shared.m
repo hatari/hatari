@@ -28,12 +28,13 @@
 
 	// Change emulation and UI state
 	bool bWasRunning = GuiOsx_Pause(true);
-	
+
 	// Run it as modal
 	[NSApp runModalForWindow:window];
 
 	// Restore emulation and UI state
-	if (bWasRunning) {
+	if (bWasRunning)
+	{
 		GuiOsx_Resume();
 	}
 }
@@ -42,7 +43,7 @@
 - (void) windowWillClose:(NSNotification *)notification
 {
 	NSWindow *windowAboutToClose = notification.object ;
-	
+
 	// Is this our modal window?
 	if (windowAboutToClose == modalWindow)
 	{
@@ -112,18 +113,20 @@ NSOpenPanel *openPanel ;
 	if (titre != nil) openPanel.title = titre ;
 
 //	if ([openPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	if (defoDir!=nil)  openPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES] ;	// A partir de 10.6
+	{
+		if (defoDir!=nil)  openPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES] ;	// A partir de 10.6
 		if (defoFile!=nil) openPanel.nameFieldStringValue = defoFile ;
 		btOk = [openPanel runModal] == NSModalResponseOK ;                                         			// Ok ?
-	 }
+	}
 //	else
 //	 	btOk = [openPanel runModalForDirectory:defoDir file:defoFile] == NSModalResponseOK;					// avant 10.6
 
 	if (btOk)
-	 {	lesURLs = openPanel.URLs ;
+	{
+		lesURLs = openPanel.URLs ;
 		if ((lesURLs != nil) && (lesURLs.count != 0))
 				return [[lesURLs objectAtIndex:0] path] ;
-	 } ;
+	}
 	return @"" ;
 }
 
@@ -144,23 +147,27 @@ NSOpenPanel *openPanel ;
 	savPanel = [NSSavePanel savePanel];
 	savPanel.canCreateDirectories = creatDir ;
 	if (types != nil)
-	 {	savPanel.allowedFileTypes = types ;
-		savPanel.allowsOtherFileTypes = YES ; } ;
+	{
+		savPanel.allowedFileTypes = types;
+		savPanel.allowsOtherFileTypes = YES;
+	}
 	if (titre != nil)  savPanel.title = titre ;
 
 //	if ([savPanel respondsToSelector:@selector(setDirectoryURL:)])
-	 {	if (defoDir!=nil)  savPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES] ;	// A partir de 10.6
-		if (defoFile!=nil) savPanel.nameFieldStringValue = defoFile ;
+	{
+		if (defoDir!=nil)  savPanel.directoryURL = [NSURL fileURLWithPath:defoDir isDirectory:YES];	// A partir de 10.6
+		if (defoFile!=nil) savPanel.nameFieldStringValue = defoFile;
 		btOk = [savPanel runModal] == NSModalResponseOK;												// Ok?
-	 }
+	}
 //	else
 //		btOk = [savPanel runModalForDirectory:defoDir file:defoFile] == NSOKButton ;					// Ok ? deprecated en 10.6
 
 	if (btOk)
-	 {	lURL = savPanel.URL ;
+	{
+		lURL = savPanel.URL;
 		if (lURL != nil)
-			return lURL.path ;
-	 } ;
+			return lURL.path;
+	}
 	return @"" ;
 }
 /*----------------------------------------------------------------------*/
@@ -174,11 +181,12 @@ NSOpenPanel *openPanel ;
 	if (thepath == nil) return @"" ;
 	if (thepath.length == 0) return @"" ;
 	if (![afilemanager fileExistsAtPath:thepath])
-	 {	thend = thepath.lastPathComponent ;
-	 	return [[self localpath:thepath.stringByDeletingLastPathComponent :afilemanager] stringByAppendingPathComponent:thend] ;
-	 } ;
+	{
+		thend = thepath.lastPathComponent;
+	 	return [[self localpath:thepath.stringByDeletingLastPathComponent :afilemanager] stringByAppendingPathComponent:thend];
+	}
 	thelist = [afilemanager  componentsToDisplayForPath:thepath] ;				// convert in matrix
-	if ( thelist.count != 0)
+	if (thelist.count != 0)
 		return [NSString pathWithComponents:thelist] ;                          // return localized path
 	else
 		return thepath ;
@@ -222,14 +230,15 @@ NSOpenPanel *openPanel ;
 	if (informativeT!= nil) [lalerte setInformativeText:informativeT] ;
 	ret = [lalerte runModal] ;
 	[lalerte release] ;
-	switch (ret) {
+	switch (ret)
+	{
 	case NSAlertFirstButtonReturn :
 		return NSAlertFirstButtonReturn;
 	case NSAlertSecondButtonReturn:
 		return NSAlertSecondButtonReturn;
 	default:
 		return NSAlertFirstButtonReturn;
-	} ;
+	}
 }
 
 @end

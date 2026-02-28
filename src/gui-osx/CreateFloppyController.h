@@ -9,10 +9,10 @@
 
 @interface CreateFloppyController : NSObject
 {
-    IBOutlet NSWindow *window;
-    IBOutlet NSMatrix *sectors;
-    IBOutlet NSMatrix *sides;
-    IBOutlet NSPopUpButton *tracks;
+	IBOutlet NSWindow *window;
+	IBOutlet NSMatrix *sectors;
+	IBOutlet NSMatrix *sides;
+	IBOutlet NSPopUpButton *tracks;
 }
 - (void)awakeFromNib;
 - (IBAction)runModal:(id)sender;

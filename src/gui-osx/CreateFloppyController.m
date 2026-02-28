@@ -43,7 +43,8 @@
 		// Create the image
 		cRet=CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides, NULL);
 		if(cRet==TRUE)
-		 {	ret = [NSApp myAlerte:NSAlertStyleInformational Txt:nil firstB:localize(@"Ignore") alternateB:@"  A:  "
+		{
+			ret = [NSApp myAlerte:NSAlertStyleInformational Txt:nil firstB:localize(@"Ignore") alternateB:@"  A:  "
 				otherB:@"  B:  " informativeTxt:@""] ;
 			if (ret == NSAlertFirstButtonReturn)
 				return ;
@@ -51,8 +52,8 @@
 			ret = ret == NSAlertSecondButtonReturn ? 0 : 1 ;
 			Floppy_SetDiskFileName(ret, szPath, NULL);
 			Floppy_InsertDiskIntoDrive(ret);
-		 } ;
-	 } ;
+		}
+	}
 }
 
 - (void)awakeFromNib

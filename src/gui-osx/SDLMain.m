@@ -135,7 +135,7 @@ static BOOL		gCalledAppMainline = NO ;
 	gCalledAppMainline = TRUE;
 	status = SDL_main (gArgc, gArgv) ;
 
-	// We're done, thank you for playing 
+	// We're done, thank you for playing
 	exit(status) ;
 }
 
@@ -169,7 +169,7 @@ static BOOL		gCalledAppMainline = NO ;
 	if ([NSApp myAlerte:NSAlertStyleInformational Txt:localize(@"Warm reset!") firstB:localize(@"OK") alternateB:localize(@"Cancel")
 			otherB:nil informativeTxt:localize(@"Really reset the emulator?")] == NSAlertFirstButtonReturn )
 		Reset_Warm();
-} 
+}
 /*----------------------------------------------------------------------*/
 - (IBAction)coldReset:(id)sender
 {
@@ -188,7 +188,7 @@ static BOOL		gCalledAppMainline = NO ;
 	[self insertDisk:1] ;
 }
 /*----------------------------------------------------------------------*/
-- (void)insertDisk:(int)disque 
+- (void)insertDisk:(int)disque
 {
 	char		szPath[FILENAME_MAX] ;
 	NSString	*aDisk ;
@@ -246,15 +246,15 @@ static BOOL		gCalledAppMainline = NO ;
 	preferredPath = [[NSString stringWithCString:pathInParams encoding:NSASCIIStringEncoding] stringByAbbreviatingWithTildeInPath];
 
 	if ((preferredPath != nil) && (preferredPath.length > 0))					// Determine the directory and filename
-	 {
+	{
 		directoryToOpen = preferredPath.stringByDeletingLastPathComponent ;		// Existing path: we use it
 		fileToPreselect = preferredPath.lastPathComponent;
-	 }
+	}
 	else
-	 {
+	{
 		directoryToOpen = [@"~" stringByExpandingTildeInPath];					// No path: we use the user's directory
 		fileToPreselect = preferredFileName;
-	 }	;
+	}
 
 	if(bInFullScreen)
 		Screen_ReturnFromFullScreen();
@@ -278,15 +278,19 @@ static BOOL		gCalledAppMainline = NO ;
 - (IBAction)captureAnimation:(id)sender
 {
 	GuiOsx_Pause(false);
-	if(!Avi_AreWeRecording()) {
+	if(!Avi_AreWeRecording())
+	{
 		NSString* path = [self displayFileSelection:ConfigureParams.Video.AviRecordFile preferredFileName:@"hatari.avi"
 									 allowedExtensions:@[@"avi"]];
 
-		if(path) {
+		if (path)
+		{
 			GuiOsx_ExportPathString(path, ConfigureParams.Video.AviRecordFile, sizeof(ConfigureParams.Video.AviRecordFile));
 			Avi_StartRecording_WithConfig ();
 		}
-	} else {
+	}
+	else
+	{
 		Avi_StopRecording();
 	}
 	GuiOsx_Resume();
@@ -304,7 +308,8 @@ static BOOL		gCalledAppMainline = NO ;
 	GuiOsx_Pause(true);
 	NSString* path = [self displayFileSelection:ConfigureParams.Sound.szYMCaptureFileName preferredFileName:@"hatari.wav"
 								 allowedExtensions:@[@"ym", @"wav"]];
-	if(path) {
+	if (path)
+	{
 		GuiOsx_ExportPathString(path, ConfigureParams.Sound.szYMCaptureFileName, sizeof(ConfigureParams.Sound.szYMCaptureFileName));
 		Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
 	}
@@ -323,8 +328,9 @@ static BOOL		gCalledAppMainline = NO ;
 	GuiOsx_Pause(true);
 
 	NSString* path = [self displayFileSelection:ConfigureParams.Memory.szMemoryCaptureFileName preferredFileName:@"hatari.sav"
-        allowedExtensions:@[@"sav"]];
-	if(path) {
+	allowedExtensions:@[@"sav"]];
+	if (path)
+	{
 		GuiOsx_ExportPathString(path, ConfigureParams.Memory.szMemoryCaptureFileName, sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
 		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
 	}
@@ -345,11 +351,15 @@ static BOOL		gCalledAppMainline = NO ;
 	oldPath = [NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName) encoding:NSASCIIStringEncoding];
 
 	if ((oldPath != nil) && (oldPath.length > 0))						// Determine directory and filename
-	 {	directoryToOpen = oldPath.stringByDeletingLastPathComponent ;	// existing path: we use it.
-		fileToPreselect = oldPath.lastPathComponent ; }
+	{
+		directoryToOpen = oldPath.stringByDeletingLastPathComponent;	// existing path: we use it.
+		fileToPreselect = oldPath.lastPathComponent;
+	}
 	else
-	 {	directoryToOpen = @"~".stringByExpandingTildeInPath ;			// Currently no path: we use user's directory
-		fileToPreselect = nil; } ;
+	{
+		directoryToOpen = @"~".stringByExpandingTildeInPath;			// Currently no path: we use user's directory
+		fileToPreselect = nil;
+	}
 
 	newPath = [NSApp hopenfile:NO defoDir:directoryToOpen defoFile:fileToPreselect] ;
 	if (newPath.length != 0)											// Perform the memory snapshot load
@@ -400,8 +410,9 @@ static BOOL		gCalledAppMainline = NO ;
 	[[NSWorkspace sharedWorkspace] openFile:the_help];
 }
 /*----------------------------------------------------------------------*/
-- (IBAction)PauseMenu:(id)sender {
-	if(!emulationPaused)
+- (IBAction)PauseMenu:(id)sender
+{
+	if (!emulationPaused)
 	{
 		GuiOsx_Pause(true);
 		emulationPaused=YES;
@@ -447,9 +458,10 @@ static BOOL		gCalledAppMainline = NO ;
 			Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, true); 	// Ok with Reset
 		else
 			ConfigureParams = CurrentParams;   //Restore previous Params.
-	} ;
+	}
 
-	if (bWasRunning) {
+	if (bWasRunning)
+	{
 		GuiOsx_Resume();
 	}
 }
@@ -478,10 +490,12 @@ static int IsTenPointNineOrLater(void)
 static int IsFinderLaunch(const int argc, char **argv)
 {
 	/* -psn_XXX is passed if we are launched from Finder in 10.8 and earlier */
-	if (argc >= 2 && strncmp(argv[1], "-psn", 4) == 0) {
+	if (argc >= 2 && strncmp(argv[1], "-psn", 4) == 0)
+	{
 		return 1;
 	}
-	if (IsTenPointNineOrLater() && argc == 1 && IsRootCwd()) {
+	if (IsTenPointNineOrLater() && argc == 1 && IsRootCwd())
+	{
 		/* we might still be launched from the Finder; on 10.9+, you might not
 		get the -psn command line anymore. Check version, if there's no
 		command line, and if our current working directory is "/". */
@@ -499,13 +513,16 @@ static int IsFinderLaunch(const int argc, char **argv)
 int main (int argc, char *argv[])
 {
 	// Copy the arguments into a global variable
-	if (IsFinderLaunch(argc, argv)) {
+	if (IsFinderLaunch(argc, argv))
+	{
 		gArgv = (char **) SDL_malloc(sizeof (char *) * 2);
 		gArgv[0] = argv[0];
 		gArgv[1] = NULL;
 		gArgc = 1;
 		gFinderLaunch = YES;
-	} else {
+	}
+	else
+	{
 		int i;
 		gArgc = argc;
 		gArgv = (char **) SDL_malloc(sizeof (char *) * (argc+1));
