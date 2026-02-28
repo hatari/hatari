@@ -47,6 +47,8 @@ Emulator improvements:
   - New "--vsync" option to enable screen update vsyncing
   - Hatari exits with return value 1 on option errors
   - Stricter validation of integer option values
+- Experimental support for compiling Hatari as core for libretro
+- Added support for compiling with SDL3
 - SDL GUI:
   - Fix: allow exit from text edit mode when using just joystick
   - Fix: do not show recording in progress, if starting it failed
