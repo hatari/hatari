@@ -19,6 +19,10 @@ uint8_t *Archive_ReadFirstFile(const char *pName, long *pSize, const char * cons
 {
 	return NULL;
 }
+bool	Archive_FileNameIsSupported ( const char *FileName )
+{
+	return false;
+}
 
 static void strcpy_path(char *dst, const char *src, int bufsize)
 {

@@ -294,9 +294,9 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 		pFile = File_ZlibRead(filepath, &FileSize);
 	}
 #if HAVE_LIBARCHIVE
-	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
+	else if (Archive_FileNameIsSupported(filepath))
 	{
-		/* It is a .ZIP file! -> Try to load the first file in the archive */
+		/* It's a supported archive (zip,rar,7z,...) : try to load the first file in the archive */
 		pFile = Archive_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
 #endif
