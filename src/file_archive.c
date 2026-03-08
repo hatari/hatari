@@ -5,7 +5,8 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   2026/03/08	Nicolas Pomarède
-    Drop zlib's codepath and use libarchive instead to handle all kinds of archives (zip, rar, 7z, ...)
+    Drop old zlib's code and use libarchive instead to handle all kinds of archives (zip, rar, 7z, ...)
+    zlib is used only to handle .gz files and libarchive is required for browsing inside zip/rar/7z/...
 */
 const char File_Archive_fileid[] = "Hatari file_archive.c";
 
@@ -36,13 +37,11 @@ const char File_Archive_fileid[] = "Hatari file_archive.c";
 #define dirent direct
 #endif
 
-/* #define SAVE_TO_ZIP_IMAGES */
-
-#define ZIP_PATH_MAX  256
-
-
 
 #if HAVE_LIBARCHIVE
+
+#define FILE_ARCHIVE_PATH_MAX  256
+
 
 /* Possible file extensions to handle with libarchive */
 static const char * const ArchiveExts[] =
@@ -52,6 +51,7 @@ static const char * const ArchiveExts[] =
 	".rar",
 	".lha",
 	".lzh",
+	".tar",
 	".tar.gz",
 	".tgz",
 	".tar.bz2",
@@ -83,7 +83,7 @@ static const char * const pszDiskNameExts[] =
 /**
  * Check if a file name contains a slash or backslash and return its position.
  */
-static int Zip_FileNameHasSlash(const char *fn)
+static int Archive_FileNameHasSlash(const char *fn)
 {
 	int i=0;
 
@@ -99,22 +99,22 @@ static int Zip_FileNameHasSlash(const char *fn)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Free the memory that has been allocated for a zip_dir.
+ * Free the memory that has been allocated for a archive_dir.
  */
-void ZIP_FreeZipDir(zip_dir *f_zd)
+void	Archive_FreeArcDir(archive_dir *pArcDir)
 {
-DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d\n" , f_zd->nfiles ));
-	while (f_zd->nfiles > 0)
+DEBUGPRINT (( stderr , "Archive_FreeArcDir %d\n" , pArcDir->nfiles ));
+	while (pArcDir->nfiles > 0)
 	{
-		f_zd->nfiles--;
-DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d %p %s\n" , f_zd->nfiles , f_zd->names[f_zd->nfiles] , f_zd->names[f_zd->nfiles] ));
-		free(f_zd->names[f_zd->nfiles]);
-		f_zd->names[f_zd->nfiles] = NULL;
-DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d %p ok\n" , f_zd->nfiles , f_zd->names[f_zd->nfiles] ));
+		pArcDir->nfiles--;
+DEBUGPRINT (( stderr , "Archive_FreeArcDir %d %p %s\n" , pArcDir->nfiles , pArcDir->names[pArcDir->nfiles] , pArcDir->names[pArcDir->nfiles] ));
+		free(pArcDir->names[pArcDir->nfiles]);
+		pArcDir->names[pArcDir->nfiles] = NULL;
+DEBUGPRINT (( stderr , "Archive_FreeArcDir %d %p ok\n" , pArcDir->nfiles , pArcDir->names[pArcDir->nfiles] ));
 	}
-	free(f_zd->names);
-	f_zd->names = NULL;
-	free(f_zd);
+	free(pArcDir->names);
+	pArcDir->names = NULL;
+	free(pArcDir);
 }
 
 
@@ -122,7 +122,7 @@ DEBUGPRINT (( stderr , "ZIP_FreeZipDir %d %p ok\n" , f_zd->nfiles , f_zd->names[
 /**
  * Free the memory that has been allocated for fentries.
  */
-static void ZIP_FreeFentries(struct dirent **fentries, int entries)
+static void	Archive_FreeFentries ( struct dirent **fentries, int entries )
 {
 	while (entries > 0)
 	{
@@ -135,30 +135,30 @@ static void ZIP_FreeFentries(struct dirent **fentries, int entries)
 
 /*-----------------------------------------------------------------------*/
 /**
- *   Returns a list of files from the directory (dir) in a zip file list (zip)
- *   sets entries to the number of entries and returns a dirent structure, or
+ *   Returns a list of files from the directory (dir) in an archive file list
+ *   Sets *pEntries to the number of entries and returns a dirent structure, or
  *   NULL on failure. NOTE: only f_name is set in the dirent structures.
  */
-struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entries)
+struct dirent	**Archive_GetFilesDir ( const archive_dir *pArcDir, const char *dir, int *pEntries )
 {
 	int i,j;
-	zip_dir *files;
+	archive_dir *files;
 	char *temp;
 	bool flag;
 	int slash;
 	struct dirent **fentries;
 
-	files = (zip_dir *)malloc(sizeof(zip_dir));
+	files = (archive_dir *)malloc(sizeof(archive_dir));
 	if (!files)
 	{
-		perror("ZIP_GetFilesDir");
+		perror("Archive_GetFilesDir");
 		return NULL;
 	}
 
-	files->names = (char **)malloc((zip->nfiles + 1) * sizeof(char *));
+	files->names = (char **)malloc((pArcDir->nfiles + 1) * sizeof(char *));
 	if (!files->names)
 	{
-		perror("ZIP_GetFilesDir");
+		perror("Archive_GetFilesDir");
 		free(files);
 		return NULL;
 	}
@@ -168,7 +168,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	temp = (char *)malloc(4);
 	if (!temp)
 	{
-		ZIP_FreeZipDir(files);
+		Archive_FreeArcDir(files);
 		return NULL;
 	}
 	temp[0] = temp[1] = '.';
@@ -177,17 +177,17 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	files->names[0] = temp;
 	files->nfiles++;
 
-	for (i = 0; i < zip->nfiles; i++)
+	for (i = 0; i < pArcDir->nfiles; i++)
 	{
-		if (strlen(zip->names[i]) > strlen(dir))
+		if (strlen(pArcDir->names[i]) > strlen(dir))
 		{
-			if (strncasecmp(zip->names[i], dir, strlen(dir)) == 0)
+			if (strncasecmp(pArcDir->names[i], dir, strlen(dir)) == 0)
 			{
-				temp = zip->names[i];
+				temp = pArcDir->names[i];
 				temp = (char *)(temp + strlen(dir));
 				if (temp[0] != '\0')
 				{
-					if ((slash=Zip_FileNameHasSlash(temp)) > 0)
+					if ((slash=Archive_FileNameHasSlash(temp)) > 0)
 					{
 						/* file is in a subdirectory, add this subdirectory if it doesn't exist in the list */
 						flag = false;
@@ -201,8 +201,8 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 							char *subdir = malloc(slash+2);
 							if (!subdir)
 							{
-								perror("ZIP_GetFilesDir");
-								ZIP_FreeZipDir(files);
+								perror("Archive_GetFilesDir");
+								Archive_FreeArcDir(files);
 								return NULL;
 							}
 							strncpy(subdir, temp, slash+1);
@@ -217,8 +217,8 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 						files->names[files->nfiles] = strdup(temp);
 						if (!files->names[files->nfiles])
 						{
-							perror("ZIP_GetFilesDir");
-							ZIP_FreeZipDir(files);
+							perror("Archive_GetFilesDir");
+							Archive_FreeArcDir(files);
 							return NULL;
 						}
 						files->nfiles++;
@@ -229,12 +229,12 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	}
 
 	/* copy to a dirent structure */
-	*entries = files->nfiles;
+	*pEntries = files->nfiles;
 	fentries = (struct dirent **)malloc(sizeof(struct dirent *)*files->nfiles);
 	if (!fentries)
 	{
-		perror("ZIP_GetFilesDir");
-		ZIP_FreeZipDir(files);
+		perror("Archive_GetFilesDir");
+		Archive_FreeArcDir(files);
 		return NULL;
 	}
 	for (i = 0; i < files->nfiles; i++)
@@ -242,16 +242,16 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 		fentries[i] = (struct dirent *)malloc(sizeof(struct dirent));
 		if (!fentries[i])
 		{
-			perror("ZIP_GetFilesDir");
-			ZIP_FreeFentries(fentries, i+1);
-			ZIP_FreeZipDir(files);
+			perror("Archive_GetFilesDir");
+			Archive_FreeFentries(fentries, i+1);
+			Archive_FreeArcDir(files);
 			return NULL;
 		}
 		strncpy(fentries[i]->d_name, files->names[i], sizeof(fentries[i]->d_name)-1);
 		fentries[i]->d_name[sizeof(fentries[i]->d_name) - 1] = 0;
 	}
 
-	ZIP_FreeZipDir(files);
+	Archive_FreeArcDir(files);
 
 	return fentries;
 }
@@ -259,24 +259,24 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the first matching file in a zip, or NULL on failure.
- * String buffer size is ZIP_PATH_MAX
+ * Return the first matching file in an archive, or NULL on failure.
+ * String buffer size is FILE_ARCHIVE_PATH_MAX
  */
-static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
+static char *Archive_FirstFile(const char *filename, const char * const ppsExts[])
 {
-	zip_dir *files;
+	archive_dir *files;
 	int i, j;
 	char *name;
 
-	files = ZIP_GetFiles(filename);
+	files = Archive_GetFiles ( filename );
 	if (files == NULL)
 		return NULL;
 
-	name = malloc(ZIP_PATH_MAX);
+	name = malloc(FILE_ARCHIVE_PATH_MAX);
 	if (!name)
 	{
-		perror("ZIP_FirstFile");
-		ZIP_FreeZipDir(files);
+		perror("Archive_FirstFile");
+		Archive_FreeArcDir(files);
 		return NULL;
 	}
 	name[0] = '\0';
@@ -289,7 +289,7 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 			for (j = 0; ppsExts[j] != NULL; j++)
 			{
 				if (File_DoesFileExtensionMatch(files->names[i], ppsExts[j])
-				    && strlen(files->names[i]) < ZIP_PATH_MAX - 1)
+				    && strlen(files->names[i]) < FILE_ARCHIVE_PATH_MAX - 1)
 				{
 					strcpy(name, files->names[i]);
 					break;
@@ -300,14 +300,14 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 	else
 	{
 		/* There was no extension given -> use the very first name */
-		if (strlen(files->names[0]) < ZIP_PATH_MAX - 1)
+		if (strlen(files->names[0]) < FILE_ARCHIVE_PATH_MAX - 1)
 		{
 			strcpy(name, files->names[0]);
 		}
 	}
 
 	/* free the files */
-	ZIP_FreeZipDir(files);
+	Archive_FreeArcDir(files);
 
 	if (name[0] == '\0')
 	{
@@ -325,7 +325,7 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 /**
  * Does filename end with a supported archive extension ? If so, return true.
  */
-bool ZIP_FileNameIsZIP ( const char *FileName )
+bool Archive_FileNameIsSupported ( const char *FileName )
 {
 	int	i;
 
@@ -347,12 +347,12 @@ bool ZIP_FileNameIsZIP ( const char *FileName )
  * returns a pointer to an array of strings if successful. Sets nfiles
  * to the number of files.
  */
-zip_dir *ZIP_GetFiles ( const char *FileName )
+archive_dir	*Archive_GetFiles ( const char *FileName )
 {
 	int		nfiles;
-	char **		filelist = NULL;
-	const char *	entry_pathname;
-	zip_dir *	zd = NULL;
+	char 		**filelist = NULL;
+	const char	*entry_pathname;
+	archive_dir	*ad = NULL;
 	struct archive	*arc;
 	struct archive_entry *entry;
 	int		r;
@@ -364,7 +364,7 @@ zip_dir *ZIP_GetFiles ( const char *FileName )
 	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
 	if ( r != ARCHIVE_OK )
 	{
-		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", FileName);
+		Log_Printf(LOG_ERROR, "Archive_GetFiles: Cannot open %s\n", FileName);
 		return NULL;
 	}
 
@@ -377,7 +377,7 @@ zip_dir *ZIP_GetFiles ( const char *FileName )
 			filelist = (char **) realloc ( filelist , sizeof(char *) * ( nfiles+1 ) );
 		if ( !filelist )
 		{
-			perror("ZIP_GetFiles malloc/realloc");
+			perror("Archive_GetFiles malloc/realloc");
 			goto cleanup;
 		}
 
@@ -387,7 +387,7 @@ zip_dir *ZIP_GetFiles ( const char *FileName )
 		filelist[ nfiles ] = (char *) malloc ( strlen ( entry_pathname ) + 2 );
 		if ( !filelist[ nfiles ] )
 		{
-			perror("ZIP_GetFiles");
+			perror("Archive_GetFiles");
 			goto cleanup;
 		}
 
@@ -398,26 +398,26 @@ zip_dir *ZIP_GetFiles ( const char *FileName )
 		if ( archive_entry_filetype(entry) == AE_IFDIR )
 			File_AddSlashToEndFileName ( filelist[ nfiles ] );
 
-DEBUGPRINT (( stderr, "zip new : nfiles=%d path=%s size=%ld type=0x%x\n" , nfiles , filelist[ nfiles ] ,archive_entry_size(entry),archive_entry_filetype(entry)  ));
+DEBUGPRINT (( stderr, "arc new : nfiles=%d path=%s size=%ld type=0x%x\n" , nfiles , filelist[ nfiles ] ,archive_entry_size(entry),archive_entry_filetype(entry)  ));
 		nfiles++;
 	}
 
-	zd = (zip_dir *) malloc ( sizeof(zip_dir) );
-	if (zd)
+	ad = (archive_dir *) malloc ( sizeof(archive_dir) );
+	if (ad)
 	{
-		zd->names = filelist;
-		zd->nfiles = nfiles;
+		ad->names = filelist;
+		ad->nfiles = nfiles;
 	}
 	else
 	{
-		perror("ZIP_GetFiles");
+		perror("Archive_GetFiles");
 	}
 
 cleanup:
 	r = archive_read_free(arc);
-DEBUGPRINT (( stderr, "zip new : nfiles=%d filelist=%p\n" , nfiles , filelist ));
+DEBUGPRINT (( stderr, "arc new : nfiles=%d filelist=%p\n" , nfiles , filelist ));
 
-	if ( !zd && filelist )
+	if ( !ad && filelist )
 	{
 		/* deallocate memory */
 		for ( ; nfiles > 0; nfiles-- )
@@ -425,7 +425,7 @@ DEBUGPRINT (( stderr, "zip new : nfiles=%d filelist=%p\n" , nfiles , filelist ))
 		free ( filelist );
 	}
 
-	return zd;
+	return ad;
 }
 
 
@@ -462,13 +462,13 @@ static bool Arc_LocateFile ( struct archive *arc , struct archive_entry	**arc_en
  * If filename is not a supported disk image, return 0
  * In case of error, return -1
  */
-static long ZIP_CheckImageFile ( struct archive *arc, char *FileName, int *pImageType )
+static long Archive_CheckImageFile ( struct archive *arc, char *FileName, int *pImageType )
 {
 	struct archive_entry	*arc_entry;
 	int			uncompressed_size;
 
 
-DEBUGPRINT (( stderr , "ZIP_CheckImageFile new file=%s\n", FileName ));
+DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 
 	if ( !Arc_LocateFile ( arc , &arc_entry , FileName ) )
 	{
@@ -510,7 +510,7 @@ DEBUGPRINT (( stderr , "ZIP_CheckImageFile new file=%s\n", FileName ));
  * The extracted file is the one in the current archive_entry
  * Returns a pointer to a buffer containing the uncompressed data, or NULL.
  */
-static void *ZIP_ExtractFile ( struct archive *arc, size_t size )
+static void *Archive_ExtractFile ( struct archive *arc, size_t size )
 {
 	uint8_t *	buf;
 	size_t		size_buf;
@@ -521,7 +521,7 @@ static void *ZIP_ExtractFile ( struct archive *arc, size_t size )
 	buf = malloc ( size_buf );
 	if ( !buf )
 	{
-		perror("ZIP_ExtractFile");
+		perror("Archive_ExtractFile");
 		return NULL;
 	}
 
@@ -533,7 +533,7 @@ static void *ZIP_ExtractFile ( struct archive *arc, size_t size )
 
 	if ( total_read != size_buf )
 	{
-		Log_Printf ( LOG_ERROR, "ZIP_ExtractFile: could not read file\n" );
+		Log_Printf ( LOG_ERROR, "Archive_ExtractFile: could not read file\n" );
 		free(buf);
 		return NULL;
 	}
@@ -547,7 +547,7 @@ static void *ZIP_ExtractFile ( struct archive *arc, size_t size )
  * Load a disk image "FileName" with an optional path from an archive into memory,
  * set the number of bytes loaded into pImageSize and return the data or NULL on error.
  */
-uint8_t *ZIP_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath, long *pImageSize, int *pImageType )
+uint8_t *Archive_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath, long *pImageSize, int *pImageType )
 {
 	struct archive	*arc;
 	int		r;
@@ -566,14 +566,14 @@ uint8_t *ZIP_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath
 	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
 	if ( r != ARCHIVE_OK )
 	{
-		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", FileName);
+		Log_Printf(LOG_ERROR, "Archive_ReadDisk: Cannot open %s\n", FileName);
 		return NULL;
 	}
 
 	if ( ArchivePath == NULL || ArchivePath[0] == 0 )
 	{
-DEBUGPRINT (( stderr , "ZIP_ReadDisk new first filename=%s\n" , FileName ));
-		path = ZIP_FirstFile ( FileName, pszDiskNameExts );
+DEBUGPRINT (( stderr , "Archive_ReadDisk new first filename=%s\n" , FileName ));
+		path = Archive_FirstFile ( FileName, pszDiskNameExts );
 		if ( path == NULL )
 		{
 			Log_Printf ( LOG_ERROR, "Cannot open %s\n", FileName );
@@ -583,19 +583,19 @@ DEBUGPRINT (( stderr , "ZIP_ReadDisk new first filename=%s\n" , FileName ));
 	}
 	else
 	{
-DEBUGPRINT (( stderr , "ZIP_ReadDisk news path=%s filename=%s\n" , ArchivePath , FileName ));
-		path = malloc ( ZIP_PATH_MAX );
+DEBUGPRINT (( stderr , "Archive_ReadDisk news path=%s filename=%s\n" , ArchivePath , FileName ));
+		path = malloc ( FILE_ARCHIVE_PATH_MAX );
 		if ( path == NULL )
 		{
-			perror("ZIP_ReadDisk");
+			perror("Archive_ReadDisk");
 			archive_read_free ( arc );
 			return NULL;
 		}
-		strncpy ( path, ArchivePath, ZIP_PATH_MAX - 1 );
-		path[ZIP_PATH_MAX-1] = '\0';
+		strncpy ( path, ArchivePath, FILE_ARCHIVE_PATH_MAX - 1 );
+		path[FILE_ARCHIVE_PATH_MAX-1] = '\0';
 	}
 
-	ImageSize = ZIP_CheckImageFile ( arc, path, pImageType );
+	ImageSize = Archive_CheckImageFile ( arc, path, pImageType );
 	if ( ImageSize <= 0 )
 	{
 		archive_read_free ( arc );
@@ -603,8 +603,8 @@ DEBUGPRINT (( stderr , "ZIP_ReadDisk news path=%s filename=%s\n" , ArchivePath ,
 		return NULL;
 	}
 
-	/* Extract the current archive_entry set by ZIP_CheckImageFile */
-	buf = ZIP_ExtractFile ( arc, ImageSize );
+	/* Extract the current archive_entry set by Archive_CheckImageFile */
+	buf = Archive_ExtractFile ( arc, ImageSize );
 	if ( buf == NULL )
 	{
 		archive_read_free ( arc );
@@ -668,7 +668,7 @@ DEBUGPRINT (( stderr , "ZIP_ReadDisk news path=%s filename=%s\n" , ArchivePath ,
  * of bytes loaded.
  * The first file must match one of the extensions defined in Exts[]
  */
-uint8_t *ZIP_ReadFirstFile ( const char *FileName, long *pImageSize, const char * const Exts[] )
+uint8_t		*Archive_ReadFirstFile ( const char *FileName, long *pImageSize, const char * const Exts[] )
 {
 	struct archive	*arc;
 	struct archive_entry *arc_entry;
@@ -678,11 +678,11 @@ uint8_t *ZIP_ReadFirstFile ( const char *FileName, long *pImageSize, const char 
 	int		uncompressed_size;
 
 
-DEBUGPRINT (( stderr , "ZIP_ReadFirstFile new filename=%s\n", FileName ));
+DEBUGPRINT (( stderr , "Archive_ReadFirstFile new filename=%s\n", FileName ));
 	*pImageSize = 0;
 
 	/* Locate the first file in the archive */
-	ArchivePath = ZIP_FirstFile ( FileName, Exts );
+	ArchivePath = Archive_FirstFile ( FileName, Exts );
 	if ( ArchivePath == NULL )
 	{
 		Log_Printf(LOG_ERROR, "Failed to locate first file in '%s'\n", FileName);
@@ -696,7 +696,7 @@ DEBUGPRINT (( stderr , "ZIP_ReadFirstFile new filename=%s\n", FileName ));
 	r = archive_read_open_filename ( arc, FileName, ARCHIVE_READ_BLOCK );
 	if ( r != ARCHIVE_OK )
 	{
-		Log_Printf(LOG_ERROR, "ZIP_ReadFirstFile: Cannot open %s\n", FileName);
+		Log_Printf(LOG_ERROR, "Archive_ReadFirstFile: Cannot open %s\n", FileName);
 		return NULL;
 	}
 
@@ -708,8 +708,8 @@ DEBUGPRINT (( stderr , "ZIP_ReadFirstFile new filename=%s\n", FileName ));
 	}
 	uncompressed_size = archive_entry_size ( arc_entry );
 
-	/* Extract the current archive entry set by ZIP_CheckImageFile */
-	pBuffer = ZIP_ExtractFile ( arc, uncompressed_size );
+	/* Extract the current archive entry set by Archive_CheckImageFile */
+	pBuffer = Archive_ExtractFile ( arc, uncompressed_size );
 	if ( pBuffer )
 		*pImageSize = uncompressed_size;
 
@@ -725,23 +725,23 @@ cleanup:
 
 /* Define some empty functions to compile "hmsa" in case libarchive is not found */
 
-bool ZIP_FileNameIsZIP(const char *pszFileName)
+bool		Archive_FileNameIsSupported ( const char *FileName )
 {
 	return false;
 }
-uint8_t *ZIP_ReadDisk(int Drive, const char *name, const char *path, long *size , int *pImageType)
+uint8_t 	*Archive_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath, long *pImageSize, int *pImageType )
 {
 	return NULL;
 }
-struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entries)
+struct dirent	**Archive_GetFilesDir ( const archive_dir *pArcDir, const char *dir, int *pEntries )
 {
 	return NULL;
 }
-zip_dir *ZIP_GetFiles(const char *pszFileName)
+archive_dir	*Archive_GetFiles(const char *pszFileName)
 {
 	return NULL;
 }
-void ZIP_FreeZipDir(zip_dir *f_zd)
+void		Archive_FreeArcDir ( archive_dir *pArcDir )
 {
 }
 
@@ -751,11 +751,11 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
 
 
 /**
- * Save .ZIP file from memory buffer. Returns true if all is OK.
+ * Save archive file from memory buffer. Returns true if all is OK.
  *
  * Not yet implemented.
  */
-bool ZIP_WriteDisk(int Drive, const char *pszFileName,unsigned char *pBuffer,int ImageSize)
+bool	Archive_WriteDisk ( int Drive, const char *FileName, unsigned char *pBuffer, int ImageSize)
 {
 	return false;
 }

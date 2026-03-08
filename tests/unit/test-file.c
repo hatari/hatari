@@ -15,7 +15,7 @@ bool DlgAlert_Query(const char *text)
 	return true;
 }
 
-uint8_t *ZIP_ReadFirstFile(const char *pName, long *pSize, const char * const pExts[])
+uint8_t *Archive_ReadFirstFile(const char *pName, long *pSize, const char * const pExts[])
 {
 	return NULL;
 }

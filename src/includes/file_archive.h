@@ -1,12 +1,12 @@
 /*
-  Hatari - zip.h
+  Hatari - file_archive.h
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef HATARI_ZIP_H
-#define HATARI_ZIP_H
+#ifndef HATARI_FILE_ARCHIVE_H
+#define HATARI_FILE_ARCHIVE_H
 
 
 #include <dirent.h>
@@ -15,15 +15,15 @@ typedef struct
 {
 	char **names;
 	int nfiles;
-} zip_dir;
+} archive_dir;
 
-extern bool ZIP_FileNameIsZIP(const char *pszFileName);
-extern struct dirent **ZIP_GetFilesDir(const zip_dir *files, const char *dir, int *entries);
-extern void ZIP_FreeZipDir(zip_dir *zd);
-extern zip_dir *ZIP_GetFiles(const char *pszFileName);
-extern uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType);
-extern bool ZIP_WriteDisk(int Drive, const char *pszFileName, unsigned char *pBuffer, int ImageSize);
-extern uint8_t *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[]);
+extern bool		Archive_FileNameIsSupported ( const char *FileName );
+extern struct dirent	**Archive_GetFilesDir ( const archive_dir *pArcDir, const char *dir, int *pEntries );
+extern void		Archive_FreeArcDir ( archive_dir *pArcDir );
+extern archive_dir	*Archive_GetFiles ( const char *FileName );
+extern uint8_t		*Archive_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath, long *pImageSize, int *pImageType );
+extern bool		Archive_WriteDisk ( int Drive, const char *FileName, unsigned char *pBuffer, int ImageSize);
+extern uint8_t		*Archive_ReadFirstFile ( const char *FileName, long *pImageSize, const char * const Exts[] );
 
 
-#endif  /* HATARI_ZIP_H */
+#endif  /* HATARI_FILE_ARCHIVE_H */

@@ -297,7 +297,7 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
 	{
 		/* It is a .ZIP file! -> Try to load the first file in the archive */
-		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
+		pFile = Archive_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
 #endif
 	else
