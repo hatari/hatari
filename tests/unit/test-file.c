@@ -7,7 +7,7 @@
 #include "main.h"
 #include "file.h"
 #include "dialog.h"
-#include "zip.h"
+#include "file_archive.h"
 
 /* Fake functions that is required for linking */
 bool DlgAlert_Query(const char *text)

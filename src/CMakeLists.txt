@@ -67,7 +67,7 @@ set(SOURCES
 	ymFormat.c)
 
 # Some code is shared with the hmsa tool, so we list this separately:
-set(SOURCES_HMSA createBlankImage.c dim.c file.c msa.c st.c zip.c utils.c)
+set(SOURCES_HMSA createBlankImage.c dim.c file.c msa.c st.c file_archive.c utils.c)
 
 file(GLOB TOS_IMG_FILE tos.img LIST_DIRECTORIES false)
 

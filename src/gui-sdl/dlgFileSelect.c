@@ -30,7 +30,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #include "file.h"
 #include "paths.h"
 #include "str.h"
-#include "zip.h"
+#include "file_archive.h"
 #include "log.h"
 
 

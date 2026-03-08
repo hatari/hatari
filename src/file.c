@@ -28,7 +28,7 @@ const char File_fileid[] = "Hatari file.c";
 #include "dialog.h"
 #include "file.h"
 #include "str.h"
-#include "zip.h"
+#include "file_archive.h"
 
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
@@ -293,11 +293,13 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 	{
 		pFile = File_ZlibRead(filepath, &FileSize);
 	}
+#if HAVE_LIBARCHIVE
 	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
 	{
 		/* It is a .ZIP file! -> Try to load the first file in the archive */
 		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
+#endif
 	else
 #endif  /* HAVE_LIBZ */
 	{

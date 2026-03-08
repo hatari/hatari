@@ -1,20 +1,19 @@
 /*
-  Hatari - zip.c
+  Hatari - file_archive.c
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  Zipped disk support, uses zlib
+  2026/03/08	Nicolas Pomarède
+    Drop zlib's codepath and use libarchive instead to handle all kinds of archives (zip, rar, 7z, ...)
 */
-const char ZIP_fileid[] = "Hatari zip.c";
+const char File_Archive_fileid[] = "Hatari file_archive.c";
 
 #include "main.h"
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
-#if HAVE_ZLIB_H
-#include <zlib.h>
-#endif
+
 #if HAVE_LIBARCHIVE
 #include <archive.h>
 #include <archive_entry.h>
@@ -30,8 +29,7 @@ const char ZIP_fileid[] = "Hatari zip.c";
 #include "msa.h"
 #include "st.h"
 #include "str.h"
-#include "unzip.h"
-#include "zip.h"
+#include "file_archive.h"
 
 #ifdef QNX
 #include <sys/dir.h>
@@ -42,24 +40,10 @@ const char ZIP_fileid[] = "Hatari zip.c";
 
 #define ZIP_PATH_MAX  256
 
-#if HAVE_LIBZ
-
-/* Possible disk image extensions to scan for */
-static const char * const pszDiskNameExts[] =
-{
-	".msa",
-	".st",
-	".dim",
-	".ipf",
-	".raw",
-	".ctr",
-	".stx",
-	NULL
-};
-
 
 
 #if HAVE_LIBARCHIVE
+
 /* Possible file extensions to handle with libarchive */
 static const char * const ArchiveExts[] =
 {
@@ -74,7 +58,20 @@ static const char * const ArchiveExts[] =
 	".tbz",
 	NULL
 };
-#endif
+
+/* Possible disk image extensions to scan for inside an archive */
+static const char * const pszDiskNameExts[] =
+{
+	".msa",
+	".st",
+	".dim",
+	".ipf",
+	".raw",
+	".ctr",
+	".stx",
+	NULL
+};
+
 
 
 //#define DEBUGPRINT(x) fprintf x
@@ -323,7 +320,6 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 
 
 
-#if HAVE_LIBARCHIVE
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -555,7 +551,7 @@ uint8_t *ZIP_ReadDisk ( int Drive, const char *FileName, const char *ArchivePath
 {
 	struct archive	*arc;
 	int		r;
-	uLong		ImageSize = 0;
+	long		ImageSize = 0;
 	uint8_t		*buf;
 	char		*path;
 	uint8_t		*pDiskBuffer = NULL;
@@ -725,404 +721,9 @@ cleanup:
 }
 
 
+#else		/* ! HAVE_LIBARCHIVE */
 
-#else	// ! HAVE_LIBARCHIVE
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Does filename end with a .ZIP extension? If so, return true.
- */
-bool ZIP_FileNameIsZIP(const char *pszFileName)
-{
-	return File_DoesFileExtensionMatch(pszFileName,".zip");
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Returns a list of files from a zip file. returns NULL on failure,
- * returns a pointer to an array of strings if successful. Sets nfiles
- * to the number of files.
- */
-zip_dir *ZIP_GetFiles(const char *pszFileName)
-{
-	int nfiles;
-	unsigned int i;
-	unz_global_info gi;
-	int err;
-	unzFile uf;
-	char **filelist;
-	unz_file_info file_info;
-	char filename_inzip[ZIP_PATH_MAX];
-	zip_dir *zd = NULL;
-
-	uf = unzOpen(pszFileName);
-	if (uf == NULL)
-	{
-		Log_Printf(LOG_ERROR, "ZIP_GetFiles: Cannot open %s\n", pszFileName);
-		return NULL;
-	}
-
-	err = unzGetGlobalInfo(uf,&gi);
-	if (err != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Error %d with zipfile in unzGetGlobalInfo \n",err);
-		return NULL;
-	}
-
-	/* allocate a file list */
-	filelist = (char **)malloc(gi.number_entry*sizeof(char *));
-	if (!filelist)
-	{
-		perror("ZIP_GetFiles");
-		unzClose(uf);
-		return NULL;
-	}
-
-	nfiles = gi.number_entry;  /* set the number of files */
-
-	for (i = 0; i < gi.number_entry; i++)
-	{
-		err = unzGetCurrentFileInfo(uf, &file_info, filename_inzip, ZIP_PATH_MAX, NULL, 0, NULL, 0);
-		if (err != UNZ_OK)
-		{
-			Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
-			goto cleanup;
-		}
-
-		filelist[i] = (char *)malloc(strlen(filename_inzip) + 1);
-DEBUGPRINT (( stderr ,  "zip old : i=%d nfiles=%d %s\n" , i , nfiles, filename_inzip ));
-		if (!filelist[i])
-		{
-			perror("ZIP_GetFiles");
-			goto cleanup;
-		}
-
-		strcpy(filelist[i], filename_inzip);
-		if ((i+1) < gi.number_entry)
-		{
-			err = unzGoToNextFile(uf);
-			if (err != UNZ_OK)
-			{
-				Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
-				goto cleanup;
-			}
-		}
-	}
-
-	zd = (zip_dir *)malloc(sizeof(zip_dir));
-	if (zd)
-	{
-		zd->names = filelist;
-		zd->nfiles = nfiles;
-	}
-	else
-	{
-		perror("ZIP_GetFiles");
-	}
-
-cleanup:
-	unzClose(uf);
-	if (!zd && filelist)
-	{
-		/* deallocate memory */
-		for (; i > 0; i--)
-			free(filelist[i]);
-		free(filelist);
-	}
-
-	return zd;
-}
-
-
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pImageType)
-{
-	unz_file_info file_info;
-
-DEBUGPRINT (( stderr , "ZIP_CheckImageFile file=%s namelen=%d\n", filename , namelen ));
-
-	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", filename);
-		return -1;
-	}
-
-	if (unzGetCurrentFileInfo(uf, &file_info, filename, namelen, NULL, 0, NULL, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo\n");
-		return -1;
-	}
-
-	/* check for .stx, .ipf, .msa, .dim or .st extension */
-	if (STX_FileNameIsSTX(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_STX;
-		return file_info.uncompressed_size;
-	}
-
-	if (IPF_FileNameIsIPF(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
-		return file_info.uncompressed_size;
-	}
-
-	if (MSA_FileNameIsMSA(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
-		return file_info.uncompressed_size;
-	}
-
-	if (ST_FileNameIsST(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_ST;
-		return file_info.uncompressed_size;
-	}
-
-	if (DIM_FileNameIsDIM(filename, false))
-	{
-		*pImageType = FLOPPY_IMAGE_TYPE_DIM;
-		return file_info.uncompressed_size;
-	}
-
-	Log_Printf(LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n");
-	return 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Extract a file (filename) from a ZIP-file (uf), the number of 
- * bytes to uncompress is size. Returns a pointer to a buffer containing
- * the uncompressed data, or NULL.
- */
-static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
-{
-	int err = UNZ_OK;
-	char filename_inzip[ZIP_PATH_MAX];
-	void* buf;
-	uInt size_buf;
-	unz_file_info file_info;
-
-
-	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not find file in archive\n");
-		return NULL;
-	}
-
-	err = unzGetCurrentFileInfo(uf,&file_info,filename_inzip,sizeof(filename_inzip),NULL,0,NULL,0);
-
-	if (err != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not get file info\n");
-		return NULL;
-	}
-
-	size_buf = size;
-	buf = malloc(size_buf);
-	if (!buf)
-	{
-		perror("ZIP_ExtractFile");
-		return NULL;
-	}
-
-	err = unzOpenCurrentFile(uf);
-	if (err != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not open file\n");
-		free(buf);
-		return NULL;
-	}
-
-	do
-	{
-		err = unzReadCurrentFile(uf,buf,size_buf);
-		if (err < 0)
-		{
-			Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not read file\n");
-			free(buf);
-			return NULL;
-		}
-	}
-	while (err > 0);
-
-	return buf;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Load disk image from a .ZIP archive into memory, set the number
- * of bytes loaded into pImageSize and return the data or NULL on error.
- */
-uint8_t *ZIP_ReadDisk(int Drive, const char *pszFileName, const char *pszZipPath, long *pImageSize, int *pImageType)
-{
-	uLong ImageSize=0;
-	unzFile uf=NULL;
-	uint8_t *buf;
-	char *path;
-	uint8_t *pDiskBuffer = NULL;
-
-	*pImageSize = 0;
-	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
-
-	uf = unzOpen(pszFileName);
-	if (uf == NULL)
-	{
-		Log_Printf(LOG_ERROR, "Cannot open %s\n", pszFileName);
-		return NULL;
-	}
-
-	if (pszZipPath == NULL || pszZipPath[0] == 0)
-	{
-DEBUGPRINT (( stderr , "ZIP_ReadDisk first filename=%s\n" , pszFileName ));
-		path = ZIP_FirstFile(pszFileName, pszDiskNameExts);
-		if (path == NULL)
-		{
-			Log_Printf(LOG_ERROR, "Cannot open %s\n", pszFileName);
-			unzClose(uf);
-			return NULL;
-		}
-	}
-	else
-	{
-DEBUGPRINT (( stderr , "ZIP_ReadDisk path=%s filename=%s\n" , pszZipPath , pszFileName ));
-		path = malloc(ZIP_PATH_MAX);
-		if (path == NULL)
-		{
-			perror("ZIP_ReadDisk");
-			unzClose(uf);
-			return NULL;
-		}
-		strncpy(path, pszZipPath, ZIP_PATH_MAX - 1);
-		path[ZIP_PATH_MAX-1] = '\0';
-	}
-
-	ImageSize = ZIP_CheckImageFile(uf, path, ZIP_PATH_MAX, pImageType);
-	if (ImageSize <= 0)
-	{
-		unzClose(uf);
-		free(path);
-		return NULL;
-	}
-
-	/* extract to buf */
-	buf = ZIP_ExtractFile(uf, path, ImageSize);
-
-	unzCloseCurrentFile(uf);
-	unzClose(uf);
-	free(path);
-	path = NULL;
-
-	if (buf == NULL)
-	{
-		return NULL;  /* failed extraction, return error */
-	}
-
-	switch(*pImageType) {
-	case FLOPPY_IMAGE_TYPE_IPF:
-#ifndef HAVE_CAPSIMAGE
-		Log_AlertDlg(LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled.");
-		return NULL;
-#else
-		/* return buffer */
-		pDiskBuffer = buf;
-		break;
-#endif
-	case FLOPPY_IMAGE_TYPE_STX:
-		/* return buffer */
-		pDiskBuffer = buf;
-		break;
-	case FLOPPY_IMAGE_TYPE_MSA:
-		/* uncompress the MSA file */
-		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize, ImageSize);
-		free(buf);
-		buf = NULL;
-		break;
-	case FLOPPY_IMAGE_TYPE_DIM:
-		/* Skip DIM header */
-		ImageSize -= 32;
-		memmove(buf, buf+32, ImageSize);
-		/* return buffer */
-		pDiskBuffer = buf;
-		break;
-	case FLOPPY_IMAGE_TYPE_ST:
-		/* ST image => return buffer directly */
-		pDiskBuffer = buf;
-		break;
-	}
-	
-	if (pDiskBuffer)
-	{
-		*pImageSize = ImageSize;
-	}
-	return pDiskBuffer;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Load first file from a .ZIP archive into memory, and return the number
- * of bytes loaded.
- */
-uint8_t *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[])
-{
-	unzFile uf = NULL;
-	uint8_t *pBuffer = NULL;
-	char *pszZipPath;
-	unz_file_info file_info;
-
-DEBUGPRINT (( stderr , "ZIP_ReadFirstFile old filename=%s\n", pszFileName ));
-	*pImageSize = 0;
-
-	/* Open the ZIP file */
-	uf = unzOpen(pszFileName);
-	if (uf == NULL)
-	{
-		Log_Printf(LOG_ERROR, "Cannot open '%s'\n", pszFileName);
-		return NULL;
-	}
-
-	/* Locate the first file in the ZIP archive */
-	pszZipPath = ZIP_FirstFile(pszFileName, ppszExts);
-	if (pszZipPath == NULL)
-	{
-		Log_Printf(LOG_ERROR, "Failed to locate first file in '%s'\n", pszFileName);
-		unzClose(uf);
-		return NULL;
-	}
-
-	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Can not locate '%s' in the archive!\n", pszZipPath);
-		goto cleanup;
-	}
-
-	/* Get file information (file size!) */
-	if (unzGetCurrentFileInfo(uf, &file_info, pszZipPath, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
-	{
-		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo.\n");
-		goto cleanup;
-	}
-
-	/* Extract to buffer */
-	pBuffer = ZIP_ExtractFile(uf, pszZipPath, file_info.uncompressed_size);
-	if (pBuffer)
-		*pImageSize = file_info.uncompressed_size;
-
-	/* And close the file */
-	unzCloseCurrentFile(uf);
-cleanup:
-	unzClose(uf);
-	free(pszZipPath);
-
-	return pBuffer;
-}
-
-#endif		// ! HAVE_LIBARCHIVE
-
-#else		// ! HAVE_LIBZ
+/* Define some empty functions to compile "hmsa" in case libarchive is not found */
 
 bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
@@ -1144,7 +745,10 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
 {
 }
 
-#endif  /* HAVE_LIBZ */
+#endif		/* HAVE_LIBARCHIVE */
+
+
+
 
 /**
  * Save .ZIP file from memory buffer. Returns true if all is OK.
