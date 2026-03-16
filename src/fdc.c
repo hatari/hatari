@@ -679,6 +679,7 @@ static void	FDC_AM_Detector_Reset ( void );
 static int	FDC_MFM_Process_Bit ( struct mfm_stream *s , bool Skip_Bit );
 static int	FDC_MFM_Process_MultiBits ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns );
 static int	FDC_MFM_Process_MultiBits_Index ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex );
+static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int *pFdcCycles );
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
 static uint8_t	FDC_NextSectorID_TR_MFM ( void );
 static uint8_t	FDC_NextSectorID_SR_MFM ( void );
@@ -3575,7 +3576,10 @@ static int FDC_UpdateReadTrackCmd ( void )
 					FdcCycles = FDC_DELAY_CYCLE_COMMAND_COMPLETE;
 					break;
 				}
+				/* In case this track was already loaded by a previous fdc command, we need to process the MFM stream */
+				/* until we reach the next index */
 				FDC_DRIVES[ FDC.DriveSelSignal ].IndexPulse_Mode = FDC_INDEX_PULSE_MODE_BIT_STREAM;
+				FDC_NextIndexPulse_FdcCycles_MFM ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack , FDC.SideSignal , &FdcCycles );
 			}
 			FDC.CommandState = FDCEMU_RUN_READTRACK_INDEX;
 		}
@@ -5992,6 +5996,47 @@ static int	FDC_MFM_Process_MultiBits_Index ( struct mfm_stream *s , uint16_t AM_
  * entirely in one go ; this should be replaced later by a more accurate method that reads
  * bytes one by one, as real HW does.
  */
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Wait for the next Index signal.
+ * We read bytes in DR (and ignore them) until the index signal is set
+ * *pFdcCycles will contain the number of elapsed cycles before the index signal
+ */
+static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int *pFdcCycles )
+{
+	struct mfm_stream *s;
+	uint64_t	Time_ns;
+	uint16_t	StatusMask;
+	int		Res;
+	int		FdcCycles;
+	int		i = 0;
+
+	s = &(MFM_STREAMS[ Drive ]);
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
+
+	Time_ns = 0;
+
+	while ( 1 )
+	{
+		StatusMask = FDC_AM_DET_STATUS_DR_READY;
+		Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , true );
+
+		if ( Res != FDCEMU_RETURN_OK )
+			return FDC_STR_BIT_RNF;
+
+		/* If an Index pulse is received then we exit */
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+			break;
+	}
+
+	FdcCycles = FDC_NsToFdcCycles ( Time_ns );
+	return 0;
+}
+
+
 
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
 {
