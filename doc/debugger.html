@@ -647,18 +647,23 @@ starting with '#' (comments) are ignored.
 <p>
 Debugger will automatically "relocate" the symbol addresses when it
 loads them from a program binary, but with ASCII symbol files
-relocation offset(s) need to be specified separately, unless the
+relocation offset needs to be specified separately, unless the
 symbol names are for fixed addresses (like is the case e.g. with
 EmuTOS):
 </p>
 <pre>
-symbols program.sym TEXT DATA BSS
+symbols program.sym TEXT
 </pre>
 <p>
-When only code symbols are needed, DATA and BSS offsets can be left
-out (the values of the above virtual debugger variables like TEXT come
-from the currently loaded program's basepage, they're set after the
-program is loaded by TOS, see "info basepage" output).
+If there are symbols for DATA and BSS sections, they are also assumed
+to have TEXT address offsets.  This is the case both with "gst2ascii"
+tool, and "nm" output for (at least GCC generated) binaries.
+</p>
+
+<p>
+(TEXT, DATA and BSS are virtual debugger variables which values come
+from the currently loaded program's basepage. They're set after the
+program is loaded by TOS, see "info basepage" output.)
 </p>
 
 

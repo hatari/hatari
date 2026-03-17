@@ -197,6 +197,12 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, const uint32_t *offsets, uint
 		assert(list->names[count].name);
 		count++;
 	}
+#if 0
+	if (ignore.invalid > 0) {
+		fprintf(stderr, "offsets =\n- T: 0x%x\n- D: 0x%x\n- B: 0x%x,\n- Max: 0x%x\n",
+			offsets[0], offsets[1], offsets[2], maxaddr);
+	}
+#endif
 	show_ignored(&ignore);
 	list->symbols = symbols;
 	list->namecount = count;
@@ -278,8 +284,7 @@ static void symbols_split_addresses(symbol_list_t* list)
 
 /**
  * Set sections to match running process by adding TEXT/DATA/BSS
- * start addresses to section offsets and ends.  If explicit section
- *offsets are not given, they are taken from the program basepage.
+ * start addresses to section offsets and ends.
  * Return true if results match it.
  */
 static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
@@ -287,28 +292,17 @@ static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
 	uint32_t start;
 
-	if (offsets) {
-		start = offsets[0];
-	} else {
-		start = DebugInfo_GetTEXT();
-	}
+	assert(offsets);
+
+	start = offsets[0];
 	if (!start) {
 		fprintf(stderr, "ERROR: program TEXT address invalid!\n");
 		return false;
 	}
 	sections[0].offset = start;
 	sections[0].end += start;
-	if (!offsets && sections[0].end != DebugInfo_GetTEXTEnd()) {
-		fprintf(stderr, "ERROR: given program TEXT end (0x%x) does not match basepage info (0x%x)!\n",
-			sections[0].end, DebugInfo_GetTEXTEnd());
-		return false;
-	}
 
-	if (offsets) {
-		start = offsets[1];
-	} else {
-		start = DebugInfo_GetDATA();
-	}
+	start = offsets[1];
 	if (start != sections[0].end) {
 		fprintf(stderr, "WARNING: program DATA start (0x%x) doesn't match TEXT start + size (0x%x)!\n",
 			start, sections[0].end);
@@ -316,11 +310,7 @@ static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
 	sections[1].offset = start;
 	sections[1].end += start;
 
-	if (offsets) {
-		start = offsets[2];
-	} else {
-		start = DebugInfo_GetBSS();
-	}
+	start = offsets[2];
 	if (start != sections[1].end) {
 		fprintf(stderr, "WARNING: program BSS start (0x%x) doesn't match DATA start + size (0x%x)!\n",
 			start, sections[1].end);
@@ -331,6 +321,42 @@ static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
 	return true;
 }
 
+
+typedef enum {
+	OFFSET_TYPE_PROGRAM,
+	OFFSET_TYPE_ASCII
+} offsets_type_t;
+
+/**
+ * Return TEXT/DATA/BSS offsets table suitable for given symbol file type,
+ * based on input offset values
+ */
+static const uint32_t *get_offsets(const uint32_t *in_offsets, uint32_t *out_offsets, offsets_type_t t) {
+	if (in_offsets) {
+		out_offsets[0] = in_offsets[0];
+		out_offsets[1] = in_offsets[1];
+		out_offsets[2] = in_offsets[2];
+	} else {
+		out_offsets[0] = DebugInfo_GetTEXT();
+		out_offsets[1] = DebugInfo_GetDATA();
+		out_offsets[2] = DebugInfo_GetBSS();
+	}
+	/* while (DRI) symbol offsets within program binary
+	 * are relative to given section, symbol offsets in
+	 * ASCII files are from TEXT start
+	 */
+	if (t == OFFSET_TYPE_ASCII) {
+		if (out_offsets[1] != out_offsets[0] ||
+		    out_offsets[2] != out_offsets[0]) {
+			fprintf(stderr, "WARNING: for ASCII symbols files using TEXT section offset (0x%x) also for DATA/BSS symbols, not specified offsets (0x%x/0x%x)\n",
+			       out_offsets[0], out_offsets[1], out_offsets[2]);
+		}
+		out_offsets[1] = out_offsets[0];
+		out_offsets[2] = out_offsets[0];
+	}
+	return out_offsets;
+}
+
 /**
  * Load symbols of given type and the symbol address addresses from
  * the given file and add given offsets to the addresses.
@@ -339,6 +365,7 @@ static bool update_sections(const uint32_t *offsets, prg_section_t *sections)
  */
 static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets, uint32_t maxaddr, symtype_t gettype)
 {
+	uint32_t off_buffer[3];
 	symbol_list_t *list;
 	symbol_opts_t opts;
 	int changed, dups;
@@ -363,22 +390,12 @@ static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets
 		}
 		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
 		fp = fopen(filename, "rb");
+		offsets = get_offsets(offsets, off_buffer, OFFSET_TYPE_PROGRAM);
 		list = symbols_load_binary(fp, offsets, update_sections, &opts);
 	} else {
-		uint32_t prg_offsets[3];
-		if (!offsets) {
-			/* while symbol offsets within program binary are
-			 * relative to given section, symbol offsets in
-			 * ASCII files are all from TEXT start
-			 */
-			uint32_t textAddr =  DebugInfo_GetTEXT();
-			prg_offsets[0] = textAddr;
-			prg_offsets[1] = textAddr;
-			prg_offsets[2] = textAddr;
-			offsets = prg_offsets;
-		}
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
+		offsets = get_offsets(offsets, off_buffer, OFFSET_TYPE_ASCII);
 		list = symbols_load_ascii(fp, offsets, maxaddr, gettype, &opts);
 	}
 	fclose(fp);
@@ -1050,7 +1067,7 @@ const char Symbols_Description[] =
 	"\n"
 	"\tSubcommands:\n"
 	"\t- prg -- load symbols from current GEMDOS HD program\n"
-	"\t- <file> [<T offset> [<D offset> <B offset>]] -- load symbols from <file>\n"
+	"\t- <file> [<TEXT offset>] -- load symbols from <file>\n"
 	"\t- autoload <exec|debugger|off> -- program symbols autoload mode\n"
 	"\t- <code|data|name> [find] -- list symbols containing 'find'\n"
 	"\t- match -- toggle what symbols TAB completion matches\n"
@@ -1068,9 +1085,9 @@ const char Symbols_Description[] =
 	"\tan unstripped version of the binary. Or from an ASCII symbols\n"
 	"\t<file> produced by the 'nm' and (Hatari) 'gst2ascii' tools.\n"
 	"\n"
-	"\tWith ASCII symbols files, given non-zero offset(s) are added to\n"
-	"\tthe text (T), data (D) and BSS (B) symbols.  Typically one uses\n"
-	"\tTEXT variable, sometimes also DATA & BSS, variables for this.\n"
+	"\tWith ASCII symbols files, given non-zero offset is added to\n"
+	"\tthe text (T), data (D) and BSS (B) symbols.  Normally one would\n"
+	"\tuse debugger TEXT variable for that.\n"
 	"\n"
 	"\t'autoload' command sets the GEMDOS HD program symbols autoloading\n"
 	"\tmode: 'exec' loads symbols when program is executed, 'debugger' when\n"
