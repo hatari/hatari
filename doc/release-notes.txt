@@ -83,7 +83,6 @@ Emulator improvements:
   - String arguments (e.g. to echo/struct commands) can be quoted
     with double quotes ("")
   - Add ':print' option for annotating conditional breakpoints
-  - Open Windows console automatically for debugger
   - Debugger input file commands can be split to multiple lines
     by adding '\' to end of line to continue it
   - Increase max lenght of accepted debugger file commands to 4k
@@ -91,8 +90,13 @@ Emulator improvements:
   - Add "--memconv" option to enable locale conversion for non-ASCII
     Atari chars in memory output from the debugger commands, and
     for "--conout" output
-Mac:
-- AVI recordings & screenshots default to same dir like on other OSes
+  - Symbol autoloading loads all symbol types, not just TEXT symbols
+  - Symbol offsets for "symbols prg" are taken from program basepage
+    (user given values are ignored)
+- Mac:
+  - AVI recordings & screenshots default to same dir like on other OSes
+- Windows:
+  - Open Windows console automatically for debugger
 
 Testing additions:
 - Test for verifying parsing of all Hatari options
