@@ -4597,7 +4597,7 @@ void GemDOS_PexecBpCreated(void)
 		/* whether to immediately load symbols for the executed program */
 		if (ConfigureParams.Debugger.nSymbolsAutoLoad == SYM_AUTOLOAD_EXEC)
 		{
-			Symbols_LoadCurrentProgram(offsets, bssEnd);
+			Symbols_AutoLoadCurrentProgram(offsets, bssEnd);
 		}
 
 		/* do user-configured program exec "event" actions */

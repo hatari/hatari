@@ -93,6 +93,7 @@ Emulator improvements:
   - Symbol autoloading loads all symbol types, not just TEXT symbols
   - Symbol offsets for "symbols prg" are taken from program basepage
     (user given values are ignored)
+  - *.sym files supported also with "symbols prg" command
 - Mac:
   - AVI recordings & screenshots default to same dir like on other OSes
 - Windows:

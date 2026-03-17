@@ -439,6 +439,7 @@ static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets
 	/* skip more verbose output when symbols are auto-loaded */
 	if (ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		fprintf(stderr, "Skipping detailed duplicate symbols reporting when autoload is enabled.\n");
+		AutoLoadFailed = false;
 	} else {
 		/* check for duplicate addresses? */
 		if (!opts.no_dups) {
@@ -457,6 +458,7 @@ static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets
 
 	fprintf(stderr, "Loaded %d symbols (%d for code) from '%s'.\n",
 		list->namecount, list->codecount, filename);
+
 	return list;
 }
 
@@ -940,17 +942,49 @@ static symbol_list_t *loadSymFile(const char *path, const uint32_t *offsets,
 }
 
 /**
- * Load symbols for last opened program when symbol autoloading is enabled.
+ * Load symbols for last opened program.
  *
  * When program section 'offsets' is NULL, basepage values are used instead.
  *
  * If there's file with same name as the program, but with '.sym'
  * extension, that overrides / is loaded instead of the symbol table
  * in the program.
- *
- * Called when debugger is invoked.
  */
-void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t maxaddr)
+static bool Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t maxaddr)
+{
+	if (!offsets) {
+		maxaddr = DebugInfo_GetBSSEnd();
+	}
+
+	symbol_list_t *symbols;
+	symbols = loadSymFile(CurrentProgramPath, offsets, maxaddr, SYMTYPE_ALL);
+	if (symbols) {
+		fprintf(stderr, "Symbols override file loaded for: %s\n", CurrentProgramPath);
+	} else {
+		symbols = Symbols_Load(CurrentProgramPath, offsets, maxaddr,
+				       SYMTYPE_ALL);
+	}
+	if (!symbols) {
+		return false;
+	}
+
+	/* profiler reset avoids (per-instruction) complaints
+	 * about (symbol) callsites count having changed,
+	 * no-op when profiling is disabled.
+	 */
+	Profile_CpuStop();
+	Symbols_UpdateCpu(symbols, SYMBOLS_FOR_PROGRAM);
+	Profile_CpuStart();
+	return true;
+}
+
+/**
+ * Load symbols for last opened program when symbol autoloading is enabled.
+ *
+ * Called when debugger is invoked and by GEMDOS HD when "exec" symload
+ * is requested.
+ */
+void Symbols_AutoLoadCurrentProgram(const uint32_t *offsets, uint32_t maxaddr)
 {
 	if (!ConfigureParams.Debugger.nSymbolsAutoLoad) {
 		return;
@@ -967,31 +1001,11 @@ void Symbols_LoadCurrentProgram(const uint32_t *offsets, uint32_t maxaddr)
 		return;
 	}
 
-	if (!offsets) {
-		maxaddr = DebugInfo_GetBSSEnd();
-	}
-
-	symbol_list_t *symbols;
-	symbols = loadSymFile(CurrentProgramPath, offsets, maxaddr, SYMTYPE_ALL);
-	if (symbols) {
-		fprintf(stderr, "Symbols override file loaded for: %s\n", CurrentProgramPath);
+	if (Symbols_LoadCurrentProgram(offsets, maxaddr)) {
+		AutoLoadFailed = false;
 	} else {
-		symbols = Symbols_Load(CurrentProgramPath, offsets, maxaddr,
-				       SYMTYPE_ALL);
-	}
-	if (!symbols) {
 		AutoLoadFailed = true;
-		return;
 	}
-
-	/* profiler reset avoids (per-instruction) complaints
-	 * about (symbol) callsites count having changed,
-	 * no-op when profiling is disabled.
-	 */
-	Profile_CpuStop();
-	Symbols_UpdateCpu(symbols, SYMBOLS_FOR_PROGRAM);
-	AutoLoadFailed = false;
-	Profile_CpuStart();
 }
 
 /**
@@ -1111,7 +1125,7 @@ const char Symbols_Description[] =
 int Symbols_Command(int nArgc, char *psArgs[])
 {
 	enum { TYPE_CPU, TYPE_DSP } listtype;
-	uint32_t addrs[3], *offsets, maxaddr;
+	uint32_t offsets[3], maxaddr;
 	symbol_list_t *list;
 	const char *file;
 	int i;
@@ -1186,29 +1200,29 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	/* get section offsets */
-	addrs[0] = 0;
-	for (i = 0; i < ARRAY_SIZE(addrs); i++) {
-		if (i+2 < nArgc) {
-			int dummy;
-			Eval_Expression(psArgs[i+2], &(addrs[i]), &dummy, listtype==TYPE_DSP);
-		} else {
-			/* default to first (text) offset */
-			addrs[i] = addrs[0];
-		}
-	}
-
 	/* load symbols from GEMDOS HD program? */
 	if (listtype == TYPE_CPU && strcmp(file, "prg") == 0) {
-		file = CurrentProgramPath;
-		if (!file) {
+		if (!CurrentProgramPath) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;
 		}
-		/* use basepage */
-		offsets = NULL;
-	} else {
-		offsets = addrs;
+		/* use basepage info */
+		if (!Symbols_LoadCurrentProgram(NULL, 0)) {
+			fprintf(stderr, "Symbol loading for program failed: %s\n", CurrentProgramPath);
+		}
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* get section offsets */
+	offsets[0] = 0;
+	for (i = 0; i < ARRAY_SIZE(offsets); i++) {
+		if (i+2 < nArgc) {
+			int dummy;
+			Eval_Expression(psArgs[i+2], &(offsets[i]), &dummy, listtype==TYPE_DSP);
+		} else {
+			/* default to first (text) offset */
+			offsets[i] = offsets[0];
+		}
 	}
 
 	/* do actual loading */
