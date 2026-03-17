@@ -365,6 +365,18 @@ static symbol_list_t* Symbols_Load(const char *filename, const uint32_t *offsets
 		fp = fopen(filename, "rb");
 		list = symbols_load_binary(fp, offsets, update_sections, &opts);
 	} else {
+		uint32_t prg_offsets[3];
+		if (!offsets) {
+			/* while symbol offsets within program binary are
+			 * relative to given section, symbol offsets in
+			 * ASCII files are all from TEXT start
+			 */
+			uint32_t textAddr =  DebugInfo_GetTEXT();
+			prg_offsets[0] = textAddr;
+			prg_offsets[1] = textAddr;
+			prg_offsets[2] = textAddr;
+			offsets = prg_offsets;
+		}
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
 		fp = fopen(filename, "r");
 		list = symbols_load_ascii(fp, offsets, maxaddr, gettype, &opts);
