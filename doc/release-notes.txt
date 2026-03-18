@@ -104,6 +104,10 @@ Testing additions:
 - Test for verifying profiling & breakpoint chaining functionality,
   and output from the "uae" + "ext" disassembly engines
 
+Tools:
+- Profile post-processor accepts "fnmatch" patterns for all
+  options that take symbol names
+
 Documentation:
 - (Very) obsolete French manual page removed
 

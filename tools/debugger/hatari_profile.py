@@ -121,7 +121,7 @@ Nodes with subroutine costs are shown as diamonds in the callgraphs.
 
 Call information filtering options:
         --no-calls <[bersux]+>	remove calls of given types, default = 'rux'
-	--ignore-to <list>	ignore calls to these symbols
+	--ignore-to <list>	ignore calls to these symbols [1]
 	--compact		leave only single connection between symbols
         			which are connected through single node path
 
@@ -139,13 +139,9 @@ to see just nodes with costs specific to -p option, use "--no-calls
 berux" option.
 
 If default "--no-calls" type removal doesn't remove all interrupt
-handling switches [1], give handler names to "--ignore-to" option.
+handling switches [2], give handler names to "--ignore-to" option.
 In callgraphs, one can then investigate them separately using
 "--no-calls '' --only <name>" options.
-
-[1] CPU being interrupted by an interrupt handler gets recorded as
-    "a call" to that handler by the profiler, and because such "calls"
-    can happen at any time, then can mess graphs badly
 
 NOTE: costs shown with "-p" option include costs of exception handling
 code that interrupts the function calls.  Normally effect of this
@@ -163,12 +159,9 @@ Callgraph filtering options to remove nodes and edges from the graph:
 	--no-orphans		remove unconnected nodes
 				(regardless of their cost)
 	--only-subroutines	remove non-subroutine nodes below -l limit
-	--ignore <list>		no nodes for these symbols [2]
-	--ignore-from <list>	no arrows from these symbols [2]
-        --only <list>		only these symbols and their callers [2]
-
-[2] symbol matching uses shell patterns:
-    https://docs.python.org/3/library/fnmatch.html
+	--ignore <list>		no nodes for these symbols [1]
+	--ignore-from <list>	no arrows from these symbols [1]
+        --only <list>		only these symbols and their callers [1]
 
 NOTE: leaf and intermediate node removal options remove only nodes which
 own costs fall below limit given with the "--limit" option.  So remember
@@ -178,6 +171,13 @@ Functions which are called from everywhere (like malloc), may be good
 candidates for '--ignore' option when one wants a more readable graph.
 One can then investigate them separately with the '--only <function>'
 option.
+
+[1] symbol matching uses shell patterns:
+    https://docs.python.org/3/library/fnmatch.html
+
+[2] CPU being interrupted by an interrupt handler gets recorded as
+    "a call" to that handler by the profiler, and because such "calls"
+    can happen from anywhere, they can mess graphs badly
 
 
 Callgraph visualization options:
@@ -885,7 +885,7 @@ class ProfileCallers(Output):
         # go through called (child) functions...
         for caddr, callinfo in self.callinfo.items():
             child = profile[caddr]
-            if child.name in self.ignore_to:
+            if name_fnmatch(self.ignore_to, child.name):
                 continue
             # ...and their callers (parents)
             switches, ignored = self._complete_child(profile, callinfo, child, caddr)
