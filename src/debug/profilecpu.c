@@ -46,7 +46,6 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c";
 #define DEBUG 0
 #if DEBUG
 #include "debugui.h"
-static bool skip_assert;
 #endif
 
 /* whether to track & show all cache stats for all instructions */
@@ -75,7 +74,7 @@ typedef struct {
 #define MAX_D_HITS   32
 #define MAX_D_MISSES 20
 
-static struct {
+typedef struct {
 	counters_t all;       /* total counts for all areas */
 	cpu_profile_item_t *data; /* profile data items */
 	uint32_t size;          /* number of allocated profile data items */
@@ -99,7 +98,8 @@ static struct {
 	uint32_t d_miss_counts[MAX_D_MISSES]; /* D-cache miss counts */
 	bool processed;	      /* true when data is already processed */
 	bool enabled;         /* true when profiling enabled */
-} cpu_profile;
+} cpu_profile_t;
+static cpu_profile_t cpu_profile;
 
 /* full counts for warnings that are printed without rate-limiting */
 typedef struct {
@@ -133,7 +133,6 @@ static inline uint32_t address2index(uint32_t pc)
 			}
 		}
 #if DEBUG
-		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
 #endif
 	}
@@ -166,7 +165,6 @@ static inline uint32_t address2index(uint32_t pc)
 		/* extra entry at end is reserved for invalid PC values */
 		pc = STRamEnd + TosSize + CART_SIZE;
 #if DEBUG
-		skip_assert = true;
 		DebugUI(REASON_CPU_EXCEPTION);
 #endif
 	}
@@ -1065,7 +1063,6 @@ static void collect_calls(uint32_t pc, counters_t *counters)
 					}
 				}
 #if DEBUG
-				skip_assert = true;
 				DebugUI(REASON_CPU_EXCEPTION);
 #endif
 			} else {
@@ -1115,7 +1112,6 @@ static uint32_t warn_too_large(const char *name, const int value, const int limi
 		}
 	}
 #if DEBUG
-	skip_assert = true;
 	DebugUI(REASON_CPU_EXCEPTION);
 #endif
 	return limit - 1;
@@ -1331,6 +1327,44 @@ static uint32_t* index_area(profile_area_t *area, uint32_t *sort_arr)
 }
 
 /**
+ * Helper to check that totals match, and print errors if not
+ */
+static void check_total_matches(const cpu_profile_t *profile)
+{
+	const char *msg =
+#if DEBUG
+	"(If there was debugger invocation from profiling before this, that explains it.)\n";
+#else
+	"Try with DEBUG enabled in profilecpu.c for more info.\n";
+#endif
+
+	if (profile->all.count != profile->ttram.counters.count + profile->ram.counters.count + profile->tos.counters.count + profile->rom.counters.count) {
+		fprintf(stderr, "ERROR, instruction COUNT mismatch (overflow?):\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
+			profile->all.count, profile->ttram.counters.count, profile->ram.counters.count,
+			profile->tos.counters.count, profile->rom.counters.count);
+		fputs(msg, stderr);
+	}
+	if (profile->all.cycles != profile->ttram.counters.cycles + profile->ram.counters.cycles + profile->tos.counters.cycles + profile->rom.counters.cycles) {
+		fprintf(stderr, "ERROR, instruction CYCLES mismatch (overflow?):\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
+			profile->all.cycles, profile->ttram.counters.cycles, profile->ram.counters.cycles,
+			profile->tos.counters.cycles, profile->rom.counters.cycles);
+		fputs(msg, stderr);
+	}
+	if (profile->all.i_misses != profile->ttram.counters.i_misses + profile->ram.counters.i_misses + profile->tos.counters.i_misses + profile->rom.counters.i_misses) {
+		fprintf(stderr, "ERROR, instruction cache MISSES mismatch (overflow?):\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
+			profile->all.i_misses, profile->ttram.counters.i_misses, profile->ram.counters.i_misses,
+			profile->tos.counters.i_misses, profile->rom.counters.i_misses);
+		fputs(msg, stderr);
+	}
+	if (profile->all.d_hits != profile->ttram.counters.d_hits + profile->ram.counters.d_hits + profile->tos.counters.d_hits + profile->rom.counters.d_hits) {
+		fprintf(stderr, "ERROR, data cache HITS mismatch (overflow?):\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
+			profile->all.d_hits, profile->ttram.counters.d_hits, profile->ram.counters.d_hits,
+			profile->tos.counters.d_hits, profile->rom.counters.d_hits);
+		fputs(msg, stderr);
+	}
+}
+
+/**
  * Stop and process the CPU profiling data; collect stats and
  * prepare for more optimal sorting.
  */
@@ -1375,25 +1409,8 @@ void Profile_CpuStop(void)
 	next = update_area(&cpu_profile.ttram, next, size);
 	assert(next == size);
 
-#if DEBUG
-	if (skip_assert) {
-		skip_assert = false;
-	} else
-#endif
-	{
-#if DEBUG
-		if (cpu_profile.all.count != cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count) {
-			fprintf(stderr, "ERROR, instruction count mismatch:\n\t%"PRIu64" != %"PRIu64" + %"PRIu64" + %"PRIu64" + %"PRIu64"?\n",
-				cpu_profile.all.count, cpu_profile.ttram.counters.count, cpu_profile.ram.counters.count,
-				cpu_profile.tos.counters.count, cpu_profile.rom.counters.count);
-			fprintf(stderr, "If there was debugger invocation from profiling before this, try with profiler DEBUG define disabled!!!\n");
-		}
-#endif
-		assert(cpu_profile.all.count == cpu_profile.ttram.counters.count + cpu_profile.ram.counters.count + cpu_profile.tos.counters.count + cpu_profile.rom.counters.count);
-		assert(cpu_profile.all.cycles == cpu_profile.ttram.counters.cycles + cpu_profile.ram.counters.cycles + cpu_profile.tos.counters.cycles + cpu_profile.rom.counters.cycles);
-		assert(cpu_profile.all.i_misses == cpu_profile.ttram.counters.i_misses + cpu_profile.ram.counters.i_misses + cpu_profile.tos.counters.i_misses + cpu_profile.rom.counters.i_misses);
-		assert(cpu_profile.all.d_hits == cpu_profile.ttram.counters.d_hits + cpu_profile.ram.counters.d_hits + cpu_profile.tos.counters.d_hits + cpu_profile.rom.counters.d_hits);
-	}
+	/* after area updates, check that totals match */
+	check_total_matches(&cpu_profile);
 
 	/* allocate address array for sorting */
 	active = cpu_profile.ttram.active + cpu_profile.ram.active + cpu_profile.rom.active + cpu_profile.tos.active;
