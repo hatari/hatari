@@ -1,7 +1,7 @@
 /*
  * Hatari - profilecpu.c
  * 
- * Copyright (C) 2010-2019 by Eero Tamminen
+ * Copyright (C) 2010-2026 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -1338,7 +1338,7 @@ void Profile_CpuStop(void)
 {
 	uint32_t *sort_arr, next;
 	unsigned int size, stsize;
-	int active;
+	int active, depth;
 
 	if (cpu_profile.processed || !cpu_profile.enabled) {
 		return;
@@ -1356,6 +1356,7 @@ void Profile_CpuStop(void)
 	}
 	assert(cpu_profile.size == size);
 
+	depth = cpu_callinfo.depth;
 	Profile_FinalizeCalls(M68000_GetPC(),
 			      &(cpu_callinfo),
 			      &(cpu_profile.all),
@@ -1417,7 +1418,13 @@ void Profile_CpuStop(void)
 	assert(sort_arr == cpu_profile.sort_arr + cpu_profile.active);
 	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 
-	Profile_CpuShowStats();
+	/* if callstack shown, skip profile stats showing */
+	if (depth) {
+		show_cpu_warnings();
+	} else {
+		Profile_CpuShowStats();
+	}
+
 	cpu_profile.processed = true;
 }
 
