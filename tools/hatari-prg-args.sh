@@ -8,9 +8,6 @@
 
 set -e
 
-# name (including path if necessary) of the hatari executable
-hatari=hatari
-
 usage ()
 {
 	name=${0##*/}
@@ -42,6 +39,13 @@ usage ()
 	echo "ERROR: $1!"
 	exit 1
 }
+
+# name (including path if necessary) of the hatari executable
+hatari=$(which hatari)
+
+if [ -z "$hatari" ]; then
+	usage '"hatari" missing (from $PATH)'
+fi
 
 # --------- argument parsing --------
 
@@ -128,24 +132,17 @@ fi
 
 # --------- debugger scripts --------
 
-# until TOS has started, it's not possible to set breakpoint
-# to program startup, there's no valid basepage and therefore
-# no valid TEXT variable.  So set breakpoint on Pexec(0,...)
-cat > "$dir/pexec.ini" << EOF
-b GemdosOpcode = 0x4B && OsCallParam = 0x0 :once :quiet :trace :file $dir/start.ini
-EOF
-
-# real work can be done when program starts,
-# i.e. PC is at TEXT section beginning
+# real work can be done when program basepage is available,
+# i.e. when PC is at program TEXT section beginning
 cat > "$dir/start.ini" << EOF
 b pc = text :once :trace :quiet :file $dir/basepage.ini
 EOF
 
-# add command line args args to program basepage
+# add command line args to program basepage
 cat > "$dir/basepage.ini" << EOF
 setopt dec
-w "basepage+0x80" $cmdlen
-l $args "basepage+0x81"
+w 'basepage+0x80' $cmdlen
+l $args 'basepage+0x81'
 # info basepage
 EOF
 
@@ -165,9 +162,9 @@ fi
 head "$dir"/*
 
 # run Hatari
-echo "$hatari --parse $dir/pexec.ini $hargs $prg"
+echo "$hatari --parse prg:$dir/start.ini $hargs $prg"
 # shellcheck disable=SC2086 # options must be split to work
-$hatari --parse "$dir/pexec.ini" $hargs "$prg"
+$hatari --parse "prg:$dir/start.ini" $hargs "$prg"
 
 # cleanup
 rm -r "$dir"
