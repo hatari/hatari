@@ -283,7 +283,9 @@ int Profile_CpuAddr_DataStr(char *buffer, int maxlen, uint32_t addr)
 static void show_cpu_warnings(void)
 {
 	cpu_warnings_t warnings;
+	/* set to CPU warnings initial state */
 	memset(&warnings, 0, sizeof(warnings));
+	warnings.multireturn = MAX_MULTI_RETURN;
 	if (memcmp(&cpu_warnings, &warnings, sizeof(warnings)) == 0) {
 		return;
 	}
