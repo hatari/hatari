@@ -235,6 +235,16 @@ ACSI DMA and Floppy Disk Controller(FDC)
 
 /*-----------------------------------------------------------------------*/
 
+
+
+//#define FDC_DPLL_DEBUG				/* uncomment to print dpll infos */
+
+#define	FDC_DEBUG_MFM_BIT		0	/* 0 or 1 */
+
+
+
+
+
 /* Status register */
 #define	FDC_STR_BIT_BUSY			0x01
 #define	FDC_STR_BIT_INDEX			0x02		/* type I */
@@ -462,6 +472,158 @@ int FDC_StepRate_ms[] = { 6 , 12 , 2 , 3 };			/* Controlled by bits 1 and 0 (r1/
 #define FDC_INDEX_PULSE_MODE_BIT_STREAM		2		/* Index pulse is updated using the MFM bit stream */
 
 
+
+/*
+ * Digital PLL variables
+ */
+
+#define FDC_PLL_TYPE_ANALOG			1		/* libdisk's pll */
+#define FDC_PLL_TYPE_DIGITAL			2		/* dpll based on patent US4808884 */
+
+#define DPLL_STATE_DURATION_NS			125		/* 125 ns per state */
+
+#define DPLL_WINDOW_TYPE_NOMINAL		0		/* 16 states, 2000 ns */
+#define DPLL_WINDOW_TYPE_SLOW			1		/* 17 states, 2125 ns */
+#define DPLL_WINDOW_TYPE_FAST			2		/* 15 states, 1875 ns */
+
+
+typedef struct {
+	uint16_t	States_Count;				/* 16, 17 or 15 */
+	uint16_t	Duration_ns;				/* 2000, 2125 or 1875 ns */
+} DPLL_WINDOW_INFOS;
+
+
+static DPLL_WINDOW_INFOS	DPLL_Window_Infos [ 3 ] = {
+	{ 16 , 2000 } ,						/* DPLL_WINDOW_TYPE_NOMINAL */
+	{ 17 , 2125 } ,						/* DPLL_WINDOW_TYPE_SLOW */
+	{ 15 , 1875 } 						/* DPLL_WINDOW_TYPE_FAST */
+	};
+
+typedef struct {
+	uint8_t		State;
+	int		Weight;
+} DPLL_WINDOW_STATE;
+
+#define DPLL_STATE_0				0
+#define DPLL_STATE_1				1
+#define DPLL_STATE_2				2
+#define DPLL_STATE_3				3
+#define DPLL_STATE_4				4
+#define DPLL_STATE_5				5
+#define DPLL_STATE_6				6
+#define DPLL_STATE_7				7
+#define DPLL_STATE_8				8
+#define DPLL_STATE_9				9
+#define DPLL_STATE_A				0xA
+#define DPLL_STATE_B				0xB
+#define DPLL_STATE_C				0xC
+#define DPLL_STATE_D				0xD
+#define DPLL_STATE_E				0xE
+#define DPLL_STATE_F				0xF
+#define DPLL_STATE_X				0x10
+
+static DPLL_WINDOW_STATE	DPLL_Window_Nominal[ 16 ] = {
+	{ DPLL_STATE_8 , -3 } ,
+	{ DPLL_STATE_9 , -2 } ,
+	{ DPLL_STATE_A , -2 } ,
+	{ DPLL_STATE_B , -1 } ,
+	{ DPLL_STATE_C , -1 } ,
+	{ DPLL_STATE_D ,  0 } ,
+	{ DPLL_STATE_E ,  0 } ,
+	{ DPLL_STATE_F ,  0 } ,
+	{ DPLL_STATE_0 ,  0 } ,
+	{ DPLL_STATE_1 ,  0 } ,
+	{ DPLL_STATE_2 ,  0 } ,
+	{ DPLL_STATE_3 ,  1 } ,
+	{ DPLL_STATE_4 ,  1 } ,
+	{ DPLL_STATE_5 ,  2 } ,
+	{ DPLL_STATE_6 ,  2 } ,
+	{ DPLL_STATE_7 ,  3 }
+};
+
+static DPLL_WINDOW_STATE	DPLL_Window_Slow[ 17 ] = {
+	{ DPLL_STATE_8 , -3 } ,
+	{ DPLL_STATE_9 , -3 } ,
+	{ DPLL_STATE_A , -2 } ,
+	{ DPLL_STATE_B , -2 } ,
+	{ DPLL_STATE_C , -1 } ,
+	{ DPLL_STATE_D , -1 } ,
+	{ DPLL_STATE_E ,  0 } ,
+	{ DPLL_STATE_F ,  0 } ,
+	{ DPLL_STATE_0 ,  0 } ,
+	{ DPLL_STATE_1 ,  0 } ,
+	{ DPLL_STATE_2 ,  0 } ,
+	{ DPLL_STATE_3 ,  1 } ,
+	{ DPLL_STATE_4 ,  1 } ,
+	{ DPLL_STATE_5 ,  2 } ,
+	{ DPLL_STATE_6 ,  2 } ,
+	{ DPLL_STATE_7 ,  3 } ,
+	{ DPLL_STATE_X ,  3 }
+};
+
+static DPLL_WINDOW_STATE	DPLL_Window_Fast[ 15 ] = {
+	{ DPLL_STATE_9 , -3 } ,
+	{ DPLL_STATE_A , -2 } ,
+	{ DPLL_STATE_B , -2 } ,
+	{ DPLL_STATE_C , -1 } ,
+	{ DPLL_STATE_D , -1 } ,
+	{ DPLL_STATE_E ,  0 } ,
+	{ DPLL_STATE_F ,  0 } ,
+	{ DPLL_STATE_0 ,  0 } ,
+	{ DPLL_STATE_1 ,  0 } ,
+	{ DPLL_STATE_2 ,  0 } ,
+	{ DPLL_STATE_3 ,  1 } ,
+	{ DPLL_STATE_4 ,  1 } ,
+	{ DPLL_STATE_5 ,  2 } ,
+	{ DPLL_STATE_6 ,  2 } ,
+	{ DPLL_STATE_7 ,  3 }
+};
+
+
+
+typedef struct {
+	int		Size;
+	uint16_t	Window_Types[ 6 ];
+} DPLL_WINDOW_FREQ_SEQ;
+
+
+static DPLL_WINDOW_FREQ_SEQ		DPLL_Windows_Freq_Seq[ 13 ] = {
+	/* 6% slow */
+	{ 1 , { DPLL_WINDOW_TYPE_SLOW } } ,
+	/* 5% slow */
+	{ 6 , { DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_SLOW } } ,
+	/* 4% slow */
+	{ 3 , { DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_SLOW } } ,
+	/* 3% slow */
+	{ 2 , { DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_NOMINAL } } ,
+	/* 2% slow */
+	{ 3 , { DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL } } ,
+	/* 1% slow */
+	{ 6 , { DPLL_WINDOW_TYPE_SLOW , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL } } ,
+
+	/* Nominal 0% */
+	{ 1 , { DPLL_WINDOW_TYPE_NOMINAL } } ,
+
+	/* 1% fast */
+	{ 6 , { DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL } } ,
+	/* 2% fast */
+	{ 3 , { DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_NOMINAL } } ,
+	/* 3% fast */
+	{ 2 , { DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_NOMINAL } } ,
+	/* 4% fast */
+	{ 3 , { DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_FAST } } ,
+	/* 5% fast */
+	{ 6 , { DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_NOMINAL , DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_FAST , DPLL_WINDOW_TYPE_FAST } } ,
+	/* 6% fast */
+	{ 1 , { DPLL_WINDOW_TYPE_FAST  } }
+};
+
+
+
+/*
+ * Main structure for all the WD1772 variables
+ */
+
 typedef struct {
 	/* WD1772 internal registers */
 	uint8_t		DR;					/* Data Register */
@@ -495,7 +657,26 @@ typedef struct {
 	int		Sync_A1_Count;
 
 
-	/* Flux decoding */
+	/* DPLL / Flux decoding */
+	uint16_t	PLL_Type;
+	int		DPLL_Freq_Seq_Nbr;
+	int		DPLL_Window_Seq_Nbr;
+
+	uint16_t	DPLL_Window_State_Pos_ns;		/* 0 .. Window's duration - 1 in ns */
+	uint16_t	DPLL_Window_State_Pos;			/* 0 .. DPLL_Window_States_Count */
+	uint8_t		DPLL_IF;				/* Increment frequency true/false */
+	uint8_t		DPLL_DF;				/* Decrement frequency true/false */
+	uint8_t		DPLL_UPC;				/* Up Phase Correction true/false */
+	uint8_t		DPLL_DPC;				/* Down Phase Correction true/false */
+	uint8_t		DPLL_IPC;				/* Instantaneous Phase Correction true/false */
+	uint8_t		DPLL_CIFCNT;				/* Consecutive Increment Frequency Counter */
+	uint8_t		DPLL_AIFCNT;				/* Accumulative Increment Frequency Counter */
+	uint8_t		DPLL_CDFCNT;				/* Consecutive Decrement Frequency Counter */
+	uint8_t		DPLL_ADFCNT;				/* Accumulative Decrement Frequency Counter */
+	uint8_t		DPLL_UPCCNT;				/* Up Phase Correction Counter */
+	uint8_t		DPLL_DPCCNT;				/* Down Phase Correction Counter */
+	uint8_t		DPLL_Last_Bit;				/* Value of last bit returned by the DPLL */
+
 	uint64_t	FD_Latency_prev;
 	uint64_t	FD_DR_time;
 
@@ -522,6 +703,11 @@ typedef struct {
 } FDC_STRUCT;
 
 
+
+/*
+ * Variables used to emulate the FDC/HDC DMA access
+ */
+
 typedef struct {
 	/* DMA internal registers */
 	uint16_t	Status;
@@ -542,6 +728,11 @@ typedef struct {
 	int		BytesToTransfer;
 } FDC_DMA_STRUCT;
 
+
+
+/*
+ * Variables used to emulate a floppy drive
+ */
 
 typedef struct {
 	bool		Enabled;
@@ -566,6 +757,7 @@ typedef struct {
 } FDC_DRIVE_STRUCT;
 
 
+
 /**
  * Bytes to transfer with type II/III commands are stored in this buffer
  * which associates a specific delay to each byte. This allows to
@@ -581,6 +773,7 @@ typedef struct {
 		uint16_t	Timing;
 	} Data [ FDC_TRACK_BYTES_STANDARD*4+1000 ];
 } FDC_BUFFER_STRUCT;
+
 
 
 static FDC_STRUCT		FDC;				/* All variables related to the WD1772 emulation */
@@ -691,6 +884,7 @@ static uint8_t	FDC_ReadAddress_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sec
 static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side );
 static uint8_t	FDC_WriteTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
 
+static void	FDC_DPLL_Reset ( void );
 
 
 
@@ -1019,6 +1213,9 @@ void FDC_Reset ( bool bCold )
 	FDC_ResetDMA();
 
 	FDC_Buffer_Reset();
+
+//	FDC.PLL_Type = FDC_PLL_TYPE_ANALOG;
+	FDC.PLL_Type = FDC_PLL_TYPE_DIGITAL;
 
 	/* Also reset IPF emulation */
 	IPF_Reset( bCold );
@@ -2331,6 +2528,7 @@ static int FDC_UpdateMotorStop ( void )
 	 case FDCEMU_RUN_MOTOR_STOP_WAIT:
 		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_MOTOR_OFF )
 		{
+//fprintf( stderr , "motor stop %d\n" , FDC.IndexPulse_Counter );
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
@@ -5352,8 +5550,10 @@ void FDC_DensityMode_ReadWord ( void )
 /*-----------------------------------------------------------------------*/
 /*
  * Flux to MFM bit decoding - BEGIN
- * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities
+ * based on libdisk's code by Keir Fraser https://github.com/keirf/Disk-Utilities
  */
+
+/* Parameters used for libdisk's analog PLL */
 
 /* Flux-based streams */
 #define CLOCK_CENTRE  2000   /* 2000ns = 2us */
@@ -5434,6 +5634,10 @@ void mfm_stream_reset(struct mfm_stream *s)
 {
 	/* Reset the PLL clock, then allow 100 bit times for PLL lock. */
 	s->clock = s->clock_centre;
+
+	/* Reset the DPLL */
+	FDC_DPLL_Reset ();
+
 	_mfm_stream_reset(s);
 
 #if 0	// [NP] Don't adjust the PLL with the first 100 bits ; not needed for Hatari
@@ -5469,6 +5673,7 @@ int mfm_stream_next_bit(struct mfm_stream *s)
 	lat = s->latency - lat;
 	s->index_offset_ns += lat;
 	s->ns_to_index -= lat;
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "idx_off_bc=%d idx_off_ns=%d ns_to_idx=%d\n" , s->index_offset_bc , s->index_offset_ns , s->ns_to_index );
 	if (s->ns_to_index <= 0)
 	{
 		s->track_len_bc = s->index_offset_bc;
@@ -5508,7 +5713,12 @@ int mfm_stream_next_bytes(struct mfm_stream *s, void *p, unsigned int bytes)
 }
 
 
-static int mfm_flux_next_bit(struct mfm_stream *s)
+
+/*
+ * libdisk's PLL is similar to an analog PLL
+ */
+
+static int mfm_flux_next_bit_pll (struct mfm_stream *s)
 {
 	int new_flux;
 
@@ -5516,8 +5726,10 @@ static int mfm_flux_next_bit(struct mfm_stream *s)
 		if (s->type.next_flux(s) != 0)
 			return -1;
 
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%ld flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
 	s->latency += s->clock;
 	s->flux -= s->clock;
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 2 : lat=%ld flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
 
 	if (s->flux >= (s->clock/2))
 	{
@@ -5552,11 +5764,568 @@ static int mfm_flux_next_bit(struct mfm_stream *s)
 	return 1;
 }
 
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Digital PLL, based on patent US4808884 by Western Digital in 1985
+ *
+ * This implementation is written on purpose to be as close as possible
+ * to the patent, but some parts could be optimised with lookup tables
+ * or similar to give a shorter code.
+ *
+ * Some of the states/actions are using the same number as the steps in the patent
+ * to keep a better readability.
+ *
+ * NOTE : there's no full reverse engineering of the WD1772 at this time,
+ * so the DPLL method used is not known. But some analyses are considering
+ * that the DPLL in the WS1772 is based on this patent.
+ *
+ * The DPLL used in Hatari is a direct implementation of the patent US4808884,
+ * including the window's length, phase and frequency correction, ...
+ * This seems to give correct results, but the WD1772 might use some different
+ * parameters or some variations compared to the orignal patent
+ */
+
+
+
+/*
+ * Debug function used to print some internal DPLL variables, as well as a small
+ * text graph to show how the DPLL is currently centered (or not)
+ */
+
+#ifdef FDC_DPLL_DEBUG
+static char *FDC_DPLL_PrintState ( void )
+{
+	static char txt[200];
+	int	i;
+
+	sprintf ( txt , "Freq_seq=%d win_seq=%d IF=%d DF=%d UPC=%d DPC=%d IPC=%d state_pos=%-2d state_pos_ns=%-4d " ,
+		FDC.DPLL_Freq_Seq_Nbr, FDC.DPLL_Window_Seq_Nbr,
+		FDC.DPLL_IF , FDC.DPLL_DF , FDC.DPLL_UPC , FDC.DPLL_DPC , FDC.DPLL_IPC,
+		FDC.DPLL_Window_State_Pos , FDC.DPLL_Window_State_Pos_ns );
+
+	for ( i=0 ; i<=16 ; i++ )
+		if ( i == FDC.DPLL_Window_State_Pos )
+			sprintf ( txt+strlen(txt) , "|" );
+		else
+			sprintf ( txt+strlen(txt) , "." );
+
+	return txt;
+}
+#endif
+
+
+
+/*
+ * Reset all DPLL variables
+ */
+
+static void	FDC_DPLL_Reset ( void )
+{
+	FDC.DPLL_Freq_Seq_Nbr = 6;			/* Nominal 0% */
+	FDC.DPLL_Window_Seq_Nbr = 0;
+
+	FDC.DPLL_Window_State_Pos = 8;			/* State 0, middle of "window nominal" */
+	FDC.DPLL_Window_State_Pos_ns = 8 * DPLL_STATE_DURATION_NS;	/* State 0 in ns */
+
+	FDC.DPLL_IF = 0;
+	FDC.DPLL_DF = 0;
+	FDC.DPLL_UPC = 0;
+	FDC.DPLL_DPC = 0;
+	FDC.DPLL_IPC = 0;
+	FDC.DPLL_CIFCNT = 0;
+	FDC.DPLL_AIFCNT = 0;
+	FDC.DPLL_CDFCNT = 0;
+	FDC.DPLL_ADFCNT = 0;
+	FDC.DPLL_UPCCNT = 0;
+	FDC.DPLL_DPCCNT = 0;
+}
+
+
+
+/*
+ * Change window's type
+ *
+ * window fast		  9 A B C D E F 0 1 2 3 4 5 6 7
+ * window nominal	8 9 A B C D E F 0 1 2 3 4 5 6 7
+ * window slow		8 9 A B C D E F 0 1 2 3 4 5 6 7 X
+ *
+ * - "window fast" doesn't have the "8" state at pos=0, so we need to update DPLL_Window_State_Pos
+ *   to ensure for example that slow/nominal "0" at pos=8 state remains a "0" state at pos=7 when switching to "window fast"
+ * - only "window slow" has a "X" state, we replace it by "7" state when switching to fast/nominal 
+ * - window's type will change in case of frequency change in FDC_DPLL_Do_Change_Freq. As such, type can
+ *   change between fast/nominal and slow/nominal, but not directly between fast/slow.
+ */
+
+static void	FDC_DPLL_Change_Window_Type ( uint16_t Window_Type_old )
+{
+	uint16_t	Window_Type_new;
+
+	Window_Type_new = DPLL_Windows_Freq_Seq[ FDC.DPLL_Freq_Seq_Nbr ].Window_Types[ FDC.DPLL_Window_Seq_Nbr ];
+
+
+	if ( Window_Type_old == Window_Type_new )
+		return;
+
+	/* nominal -> fast : no "8" state */
+	if ( Window_Type_new == DPLL_WINDOW_TYPE_FAST )
+	{
+		FDC.DPLL_Window_State_Pos -= 1;		/* No "8" state, ensure all states remain the same */
+		FDC.DPLL_Window_State_Pos_ns -= DPLL_STATE_DURATION_NS;
+
+		if ( FDC.DPLL_Window_State_Pos < 0 )	/* Can happen if we were at "8" in slow/nominal */
+		{
+			FDC.DPLL_Window_State_Pos = 0;	/* We use "9" instead of non existing "8" in fast */
+			FDC.DPLL_Window_State_Pos_ns += DPLL_STATE_DURATION_NS;
+		}
+	}
+
+	/* fast -> nominal : add "8" state  */
+	else if ( Window_Type_old == DPLL_WINDOW_TYPE_FAST )
+	{
+		FDC.DPLL_Window_State_Pos += 1;		/* We have the "8" state in slow/nominal ensure all states remain the same */
+		FDC.DPLL_Window_State_Pos_ns += DPLL_STATE_DURATION_NS;
+	}
+
+	/* slow -> nominal : no "X" state */
+	else if ( Window_Type_old == DPLL_WINDOW_TYPE_SLOW )
+	{
+		if ( FDC.DPLL_Window_State_Pos == 16 )	/* We're at "X" state in slow mode */
+		{
+			FDC.DPLL_Window_State_Pos -= 1;	/* We use "7" instead in nominal */
+			FDC.DPLL_Window_State_Pos_ns -= DPLL_STATE_DURATION_NS;
+		}
+	}
+
+	/* nominal -> slow : add "X" state */
+	else if ( Window_Type_new == DPLL_WINDOW_TYPE_SLOW )
+	{
+		// nothing to do
+	}
+}
+
+
+
+static DPLL_WINDOW_STATE *	FDC_DPLL_Window_Get_State ( uint16_t Window_Type , int Pos )
+{
+	if ( Window_Type == DPLL_WINDOW_TYPE_NOMINAL )		return &DPLL_Window_Nominal[ Pos ];
+	else if ( Window_Type == DPLL_WINDOW_TYPE_SLOW )	return &DPLL_Window_Slow[ Pos ];
+	else							return &DPLL_Window_Fast[ Pos ];
+}
+
+
+
+/*
+ * Increase or decrease frequency by changing the sequence of windows
+ * When sequence is changed, restart with the first window of the new sequence
+ * (and keep the same state position if possible)
+ */
+
+static void	FDC_DPLL_Do_Change_Freq ( void )
+{
+	uint16_t	Window_Type_old;
+
+	Window_Type_old = DPLL_Windows_Freq_Seq[ FDC.DPLL_Freq_Seq_Nbr ].Window_Types[ FDC.DPLL_Window_Seq_Nbr ];
+
+#ifdef FDC_DPLL_DEBUG
+printf ( "freq change in if=%d df=%d freq_seq=%d win_type=%d\n" , FDC.DPLL_IF, FDC.DPLL_DF, FDC.DPLL_Freq_Seq_Nbr , Window_Type_old );
+#endif
+
+	/* Increase Freq if 6% fast not reached yet */
+	if ( ( FDC.DPLL_IF ) && ( FDC.DPLL_Freq_Seq_Nbr < 12 ) )
+	{
+		FDC.DPLL_Freq_Seq_Nbr++;
+		FDC.DPLL_Window_Seq_Nbr = 0;
+		FDC_DPLL_Change_Window_Type ( Window_Type_old );
+	}
+
+	/* Decrease Freq if 6% slow not reached yet */
+	else if ( ( FDC.DPLL_DF ) && ( FDC.DPLL_Freq_Seq_Nbr > 0 ) )
+	{
+		FDC.DPLL_Freq_Seq_Nbr--;
+		FDC.DPLL_Window_Seq_Nbr = 0;
+		FDC_DPLL_Change_Window_Type ( Window_Type_old );
+	}
+
+#ifdef FDC_DPLL_DEBUG
+printf ( "freq change out if=%d df=%d freq_seq=%d\n" , FDC.DPLL_IF, FDC.DPLL_DF, FDC.DPLL_Freq_Seq_Nbr );
+#endif
+}
+
+
+/*
+ * Apply phase correction by skipping one or more states, depending on the weight associated
+ * to each state.
+ * There's no correction in State "0" or in State "F" in Nominal window (= middle region)
+ * - C1 and C2 are mutually exclusive and have priority over C3
+ * - In C1 and C2 we skip one extra state compared to C3
+ */
+
+static void	FDC_DPLL_Do_Phase_Correction ( uint16_t Window_Type , uint8_t State , int Weight )
+{
+	uint8_t		C1, C2, C3;
+	int		Pos_Change;
+
+#ifdef FDC_DPLL_DEBUG
+C1=C2=C3=0;
+printf ( "phase corr in pos=%d type=%d state=%X weight=%d\n" , FDC.DPLL_Window_State_Pos , Window_Type , State , Weight );
+#endif
+
+	if ( ( State != DPLL_STATE_0 )
+	  || ( ( State == DPLL_STATE_F ) && ( Window_Type != DPLL_WINDOW_TYPE_NOMINAL ) ) )
+	{
+		C1 = FDC.DPLL_IF | FDC.DPLL_UPC;		/* shortening of the window */
+		C2 = FDC.DPLL_DF | FDC.DPLL_DPC;		/* lengthening of the window */
+		C3 = FDC.DPLL_IPC;				/* shorten/lengthen instantaneous */
+
+		Pos_Change = 0;
+
+		if ( C1 )					/* change in Up region, Weight < 0 */
+		{
+			Pos_Change = -Weight + 1 + 1;
+		}
+		else if ( C2 )					/* change in Down region, Weight > 0 */
+		{
+			Pos_Change = -( Weight + 1 );
+		}
+		else if ( C3 )					/* change can be in both Up/Down regions */
+		{
+			if ( Weight < 0 )			/* change in Up region */
+			{
+				Pos_Change = -Weight + 1;
+			}
+			else if ( Weight > 0 )			/* change in Down region */
+			{
+				Pos_Change = -Weight;
+			}
+		}
+
+		if ( Pos_Change != 0 )
+		{
+			FDC.DPLL_Window_State_Pos += Pos_Change;
+			FDC.DPLL_Window_State_Pos_ns += Pos_Change * DPLL_STATE_DURATION_NS;
+		}
+	}
+
+#ifdef FDC_DPLL_DEBUG
+DPLL_WINDOW_STATE	*pState_struct = FDC_DPLL_Window_Get_State ( Window_Type , FDC.DPLL_Window_State_Pos );
+printf ( "phase corr out c1=%d c2=%d c3=%d pos_new=%d state_new=%X weight_new=%d\n" , C1, C2, C3, FDC.DPLL_Window_State_Pos , pState_struct->State , pState_struct->Weight );
+#endif
+}
+
+
+
+/*
+ * Main DPLL function
+ * - read flux from the disk image
+ * - adjust phase and frequency using the state machine
+ * - return a 0 or 1 MFM bit (clock or data)
+ */
+
+static int mfm_flux_next_bit_dpll ( struct mfm_stream *s )
+{
+	uint16_t		Window_Type_cur , Window_Duration_ns_cur;
+	uint16_t		Window_Type_next , Window_Duration_ns_next;
+	int			Window_Seq_Nbr_next;
+	uint16_t		Delay_End_Next_Window_ns;
+	uint16_t		Bit_Duration_ns;
+
+	DPLL_WINDOW_STATE	*pState_struct;
+	uint8_t			State;
+	int			Weight;
+	int			Action;
+
+	if ( s->flux == -1 )
+	{
+		if (s->type.next_flux(s) != 0)
+			return -1;
+#ifdef FDC_DPLL_DEBUG
+printf ( "\nnext_flux=%d %s\n" , s->flux  , s->flux < 3000 ? "short" : ""  );
+#endif
+	}
+
+
+	Window_Type_cur = DPLL_Windows_Freq_Seq[ FDC.DPLL_Freq_Seq_Nbr ].Window_Types[ FDC.DPLL_Window_Seq_Nbr ];
+	Window_Duration_ns_cur = DPLL_Window_Infos[ Window_Type_cur ].Duration_ns;
+
+	Window_Seq_Nbr_next = ( FDC.DPLL_Window_Seq_Nbr + 1 ) % DPLL_Windows_Freq_Seq[ FDC.DPLL_Freq_Seq_Nbr ].Size;
+	Window_Type_next = DPLL_Windows_Freq_Seq[ FDC.DPLL_Freq_Seq_Nbr ].Window_Types[ Window_Seq_Nbr_next ];
+	Window_Duration_ns_next = DPLL_Window_Infos[ Window_Type_next ].Duration_ns;
+
+#ifdef FDC_DPLL_DEBUG
+printf ( "\nflux_in=%-4d seq_nbr=%d win_seq_nbr=%d win_seq_nbr_next=%d w_pos=%d w_pos_ns=%-4d w_type_cur=%d w_dur_cur=%d w_type_next=%d w_dur_next=%d \t %s\n" ,
+	s->flux, FDC.DPLL_Freq_Seq_Nbr, FDC.DPLL_Window_Seq_Nbr, Window_Seq_Nbr_next, FDC.DPLL_Window_State_Pos , FDC.DPLL_Window_State_Pos_ns , Window_Type_cur, Window_Duration_ns_cur,
+	Window_Type_next, Window_Duration_ns_next , FDC_DPLL_PrintState() );
+#endif
+
+	/* No transition for more than one window after the current window -> output a "0" bit */
+	if ( FDC.DPLL_Window_State_Pos_ns + s->flux >= Window_Duration_ns_cur + Window_Duration_ns_next )
+	{
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 0 : lat=%ld flux=%d\n" , s->latency , s->flux );
+
+		/* Advance to the end of the next window to output a "0" bit */
+		/* and decrease s->flux accordingly */
+		Delay_End_Next_Window_ns = Window_Duration_ns_cur - FDC.DPLL_Window_State_Pos_ns + Window_Duration_ns_next - 1;
+
+		s->flux -= Delay_End_Next_Window_ns;
+
+		FDC.DPLL_Window_State_Pos_ns = Window_Duration_ns_next - 1;	/* End of next window */
+		FDC.DPLL_Window_Seq_Nbr = Window_Seq_Nbr_next;
+
+		s->latency += Delay_End_Next_Window_ns;		/* output a "0" at the end of the next window */
+		s->clocked_zeros++;
+
+#ifdef FDC_DPLL_DEBUG
+printf ( "bit=0 bit_ns=%-4d flux_out=%-4d w_pos=%d w_pos_ns=%-4d\n" ,
+	Delay_End_Next_Window_ns , s->flux , FDC.DPLL_Window_State_Pos , FDC.DPLL_Window_State_Pos_ns );
+#endif
+		FDC.DPLL_Last_Bit = 0;
+		return 0;
+	}
+
+
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%ld flux=%d\n" , s->latency , s->flux );
+
+	/* Current flux (or remainder) is in current window or in the next one
+	 *  -> we have a flux transition and a "1" bit
+	 *
+	 * NOTE : with this implementation, having a flux that stays in the current window
+	 * would mean having two "1" bits in the same window, which should not be possible
+	 * as this would not respect MFM encoding.
+	 * Also, having a transition in the next window if latest transition was in the current window
+	 * would not respect MFM encoding.
+	 * Both cases could happen with very short flux (less than 2000 ns) and can be used
+	 * in some protections
+	 *
+	 * Determine the position in the window of 15, 16 or 17 states
+	 * 1 state = 125 ns
+	 *   nominal window :	16 states, 2000 ns	DPLL_Window_State_Pos = 0..15
+	 *   slow window :	17 states, 2125 ns	DPLL_Window_State_Pos = 0..16
+	 *   fast window :	15 states, 1875 ns	DPLL_Window_State_Pos = 0..14
+         */
+
+	/* Duration since the previous output bit (previous bit should be a 0, except */
+	/* if current stream doesn't respect MFM encoding) */
+	Bit_Duration_ns = s->flux;
+
+	/* flux in the same window (this is not a standard behaviour) */
+	if ( FDC.DPLL_Window_State_Pos_ns + s->flux < Window_Duration_ns_cur )
+	{
+#ifdef FDC_DPLL_DEBUG
+printf ( "multiple flux in same window flux=%d w_pos_ns=%d w_dur_cur=%d\n" ,
+	s->flux , FDC.DPLL_Window_State_Pos_ns , Window_Duration_ns_cur );
+#endif
+		FDC.DPLL_Window_State_Pos_ns += s->flux;
+	}
+
+	else					/* flux in the next window */
+	{
+		if ( FDC.DPLL_Last_Bit == 1 )
+		{
+#ifdef FDC_DPLL_DEBUG
+printf ( "two consecutive 1 bits flux=%d w_pos_ns=%d w_dur_cur=%d\n" ,
+	s->flux , FDC.DPLL_Window_State_Pos_ns , Window_Duration_ns_cur );
+#endif
+		}
+
+		/* Complete current window */
+		s->flux -= ( Window_Duration_ns_cur - FDC.DPLL_Window_State_Pos_ns );
+		/* Use next window as the current one */
+		FDC.DPLL_Window_Seq_Nbr = Window_Seq_Nbr_next;
+		Window_Type_cur = Window_Type_next;
+		FDC.DPLL_Window_State_Pos_ns = s->flux;
+	}
+
+	FDC.DPLL_Window_State_Pos = FDC.DPLL_Window_State_Pos_ns / DPLL_STATE_DURATION_NS;
+
+	pState_struct = FDC_DPLL_Window_Get_State ( Window_Type_cur , FDC.DPLL_Window_State_Pos );
+	State = pState_struct->State;
+	Weight = pState_struct->Weight;
+
+
+	/*
+	 * Main state machine
+	 * The "Action" values are directly related to the number used
+	 * in the patent
+	 */
+
+	FDC.DPLL_IPC = 1;
+
+	/* Middle state "0" (and "F" in nominal) */
+	if ( ( State == DPLL_STATE_0 )
+	  || ( ( State == DPLL_STATE_F ) && ( Window_Type_cur == DPLL_WINDOW_TYPE_NOMINAL ) ) )
+		Action = 108;
+
+	/* Up region */
+	else if ( ( State == DPLL_STATE_B )
+		|| ( State == DPLL_STATE_C )
+		|| ( State == DPLL_STATE_D )
+		|| ( State == DPLL_STATE_E )
+		|| ( State == DPLL_STATE_F ) )
+	{
+		FDC.DPLL_UPCCNT +=1;
+		FDC.DPLL_DPCCNT = 0;
+		FDC.DPLL_CIFCNT +=1;
+		FDC.DPLL_CDFCNT = 0;
+
+		if ( FDC.DPLL_UPCCNT >= 2 )
+			Action = 122;
+		else if ( FDC.DPLL_CIFCNT >= 3 )
+			Action = 128;
+		else
+			Action = 108;
+	}
+
+	/* Up region, edge */
+	else if ( ( State == DPLL_STATE_8 )
+		|| ( State == DPLL_STATE_9 )
+		|| ( State == DPLL_STATE_A ) )
+	{
+		FDC.DPLL_AIFCNT +=1;
+		FDC.DPLL_UPCCNT +=1;
+		FDC.DPLL_DPCCNT = 0;
+		FDC.DPLL_CIFCNT +=1;
+		FDC.DPLL_CDFCNT = 0;
+
+		if ( ( FDC.DPLL_AIFCNT >= 3 ) || ( FDC.DPLL_CIFCNT >= 3 ) )
+			Action = 140;
+		else if ( FDC.DPLL_UPCCNT >= 2 )
+			Action = 122;
+		else
+			Action = 108;
+	}
+
+	/* Down region */
+	else if ( ( State == DPLL_STATE_1 )
+		|| ( State == DPLL_STATE_2 )
+		|| ( State == DPLL_STATE_3 )
+		|| ( State == DPLL_STATE_4 )
+		|| ( ( State == DPLL_STATE_5 ) && ( Window_Type_cur != DPLL_WINDOW_TYPE_NOMINAL ) ) )
+	{
+		FDC.DPLL_DPCCNT +=1;
+		FDC.DPLL_UPCCNT = 0;
+		FDC.DPLL_CDFCNT +=1;
+		FDC.DPLL_CIFCNT = 0;
+
+		if ( FDC.DPLL_DPCCNT >= 2 )
+			Action = 170;
+		else if ( FDC.DPLL_CDFCNT >= 3 )
+			Action = 162;
+		else
+			Action = 108;
+	}
+
+	/* Down region, edge */
+	else					/* States 6, 7, X and 5 in nominal */
+	{
+		FDC.DPLL_ADFCNT +=1;
+		FDC.DPLL_DPCCNT +=1;
+		FDC.DPLL_UPCCNT = 0;
+		FDC.DPLL_CDFCNT +=1;
+		FDC.DPLL_CIFCNT = 0;
+
+		if ( ( FDC.DPLL_ADFCNT >= 3 ) || ( FDC.DPLL_CDFCNT >= 3 ) )
+			Action = 180;
+		else if ( FDC.DPLL_DPCCNT >= 2 )
+			Action = 170;
+		else
+			Action = 108;
+	}
+
+
+	/* Process the actions decided by the above states */
+
+	/* Actions for middle region (states 0 or F in nominal window) */
+	if ( Action == 108 )
+	{
+		FDC_DPLL_Do_Phase_Correction ( Window_Type_cur , State , Weight );
+	}
+
+	/* Actions for Up region */
+	else if ( ( Action == 140 ) || ( Action == 128 ) )
+	{
+		FDC.DPLL_IF = 1;
+		FDC.DPLL_CIFCNT = 0;
+		FDC.DPLL_UPCCNT = 0;
+		FDC.DPLL_AIFCNT = 0;
+		FDC.DPLL_ADFCNT = 0;
+
+		FDC_DPLL_Do_Phase_Correction ( Window_Type_cur , State , Weight );
+		FDC_DPLL_Do_Change_Freq ();
+
+		FDC.DPLL_IF = 0;
+	}
+	else if ( Action == 122 )
+	{
+		FDC.DPLL_UPC = 1;
+		FDC.DPLL_UPCCNT = 0;
+
+		FDC_DPLL_Do_Phase_Correction ( Window_Type_cur , State , Weight );
+
+		FDC.DPLL_UPC = 0;
+	}
+
+	/* Actions for Down region */
+	else if ( ( Action == 162 ) || ( Action == 180 ) )
+	{
+		FDC.DPLL_DF = 1;
+		FDC.DPLL_CDFCNT = 0;
+		FDC.DPLL_DPCCNT = 0;
+		FDC.DPLL_AIFCNT = 0;
+		FDC.DPLL_ADFCNT = 0;
+
+		FDC_DPLL_Do_Phase_Correction ( Window_Type_cur , State , Weight );
+		FDC_DPLL_Do_Change_Freq ();
+
+		FDC.DPLL_DF = 0;
+	}
+	else if ( Action == 170 )
+	{
+		FDC.DPLL_DPC = 1;
+		FDC.DPLL_DPCCNT = 0;
+
+		FDC_DPLL_Do_Phase_Correction ( Window_Type_cur , State , Weight );
+
+		FDC.DPLL_DPC = 0;
+	}
+
+	FDC.DPLL_IPC = 0;
+
+	s->latency += Bit_Duration_ns;
+
+#ifdef FDC_DPLL_DEBUG
+printf ( "bit=1 bit_ns=%-4d flux_out=%-4d w_pos=%d w_pos_ns=%-4d \t\t\t\t\t\t\t\t\t\t\t\t %s\n" ,
+	Bit_Duration_ns , s->flux , FDC.DPLL_Window_State_Pos , FDC.DPLL_Window_State_Pos_ns ,
+	FDC_DPLL_PrintState() );
+#endif
+
+	s->flux = -1;					/* call next_flux() */
+	s->clocked_zeros = 0;
+	FDC.DPLL_Last_Bit = 1;
+	return 1;
+}
+
+/*
+ * End of DPLL implementation
+ */
+
+
 /*
  * Flux to MFM bit decoding - END
  */
 
 
+
+static int mfm_flux_next_bit(struct mfm_stream *s)
+{
+	if ( FDC.PLL_Type == FDC_PLL_TYPE_ANALOG )
+		return mfm_flux_next_bit_pll ( s );
+
+	else
+		return mfm_flux_next_bit_dpll ( s );
+}
 
 
 
@@ -5616,7 +6385,6 @@ static void	FDC_AM_Detector_Reset ( void )
 #define	FDC_AM_DET_MODE_ALWAYS_ON	1		/* AM Det is always ON (eg "read track") */
 #define	FDC_AM_DET_MODE_AUTO_OFF	2		/* AM Det is ON and goes OFF when AM is found */
 
-#define	FDC_DEBUG_MFM_BIT		0		/* 0 or 1 */
 
 
 /*
@@ -5627,6 +6395,7 @@ static void	FDC_AM_Detector_Reset ( void )
  *   into DSR bit 0 (this means the meaning of the latest read bit can "change" from clock to data)
  */
 
+#if 0			// older version, not complete
 static int	FDC_MFM_Process_Bit_delay_clock ( struct mfm_stream *s , bool Skip_Bit )
 {
 	int			bit;
@@ -5766,6 +6535,7 @@ static int	FDC_MFM_Process_Bit_delay_clock ( struct mfm_stream *s , bool Skip_Bi
 	FDC.Bit_Is_Data = !FDC.Bit_Is_Data;			/* toggle between data or clock bit */
 	return bit;
 }
+#endif
 
 
 
@@ -5940,7 +6710,10 @@ static int	FDC_MFM_Process_MultiBits ( struct mfm_stream *s , uint16_t AM_Detect
 		bit = FDC_MFM_Process_Bit ( s , false );
 
 		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_DR_READY )
+{
 			*pTime_ns += FDC.FD_DR_time;
+//fprintf ( stderr , "time %ld %ld\n" , FDC.FD_DR_time , *pTime_ns );
+}
 
 		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
 		{
@@ -6011,7 +6784,6 @@ static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track 
 	uint16_t	StatusMask;
 	int		Res;
 	int		FdcCycles;
-	int		i = 0;
 
 	s = &(MFM_STREAMS[ Drive ]);
 
@@ -6073,6 +6845,7 @@ static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHead
 
 	if ( ( FDC.DR & 0xFC ) != 0xFC )				/* 0xFE, but also 0xFC, 0xFD, 0xFF */
 	{
+//fprintf ( stderr , "A1 bad idam != FC-FF DR=%02X - %ld\n" , FDC.DR , Time_ns );
 		*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
 		return FDCEMU_RETURN_BAD_ID;
 	}
@@ -6241,6 +7014,7 @@ static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sect
 
 		/* Add the Byte to the buffer with its timing */
 		FDC_Buffer_Add_Timing ( FDC.DR , FdcCycles );
+// 	fprintf ( stderr , "DR %03d %x %d\n" , i , FDC.DR , FdcCycles );
 	}
 
 	/* Read 2 extra bytes for the CRC */
@@ -6358,10 +7132,13 @@ static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side 
 
 		/* Add the Byte to the buffer with its timing */
 		FDC_Buffer_Add_Timing ( FDC.DR , FdcCycles );
+//fprintf ( stderr , "DR %03d %x %d\n" , i , FDC.DR , FdcCycles );
 
 		/* If an Index pulse was received at the same time as this byte then we exit */
 		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
 			break;
+
+		i++;
 	}
 
 	return 0;
