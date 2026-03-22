@@ -7108,7 +7108,7 @@ static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side 
 	uint16_t	StatusMask;
 	int		Res;
 	int		FdcCycles;
-	int		i = 0;
+//	int		i = 0;
 
 	s = &(MFM_STREAMS[ Drive ]);
 
@@ -7134,13 +7134,11 @@ static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side 
 
 		/* Add the Byte to the buffer with its timing */
 		FDC_Buffer_Add_Timing ( FDC.DR , FdcCycles );
-//fprintf ( stderr , "DR %03d %x %d\n" , i , FDC.DR , FdcCycles );
+//fprintf ( stderr , "DR %03d %x %d\n" , i++ , FDC.DR , FdcCycles );
 
 		/* If an Index pulse was received at the same time as this byte then we exit */
 		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
 			break;
-
-		i++;
 	}
 
 	return 0;
