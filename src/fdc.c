@@ -5728,10 +5728,10 @@ static int mfm_flux_next_bit_pll (struct mfm_stream *s)
 		if (s->type.next_flux(s) != 0)
 			return -1;
 
-if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%ld flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%"PRIu64" flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
 	s->latency += s->clock;
 	s->flux -= s->clock;
-if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 2 : lat=%ld flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 2 : lat=%"PRIu64" flux=%d clock=%d\n" , s->latency , s->flux , s->clock );
 
 	if (s->flux >= (s->clock/2))
 	{
@@ -6065,7 +6065,7 @@ printf ( "\nflux_in=%-4d seq_nbr=%d win_seq_nbr=%d win_seq_nbr_next=%d w_pos=%d 
 	/* No transition for more than one window after the current window -> output a "0" bit */
 	if ( FDC.DPLL_Window_State_Pos_ns + s->flux >= Window_Duration_ns_cur + Window_Duration_ns_next )
 	{
-if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 0 : lat=%ld flux=%d\n" , s->latency , s->flux );
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 0 : lat=%"PRIu64" flux=%d\n" , s->latency , s->flux );
 
 		/* Advance to the end of the next window to output a "0" bit */
 		/* and decrease s->flux accordingly */
@@ -6088,7 +6088,7 @@ printf ( "bit=0 bit_ns=%-4d flux_out=%-4d w_pos=%d w_pos_ns=%-4d\n" ,
 	}
 
 
-if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%ld flux=%d\n" , s->latency , s->flux );
+if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 1 : lat=%"PRIu64" flux=%d\n" , s->latency , s->flux );
 
 	/* Current flux (or remainder) is in current window or in the next one
 	 *  -> we have a flux transition and a "1" bit
@@ -6897,7 +6897,7 @@ static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHead
 	FDC.NextSector_ID_Field_CRC_OK = ( FDC.CRC == 0 ) ? 1 : 0;
 
 
-fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x %ld\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
+fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x %"PRIu64"\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
 	FDC.NextSector_ID_Field_SR , FDC.NextSector_ID_Field_LEN , FDC.NextSector_ID_Field_CRC1 , FDC.NextSector_ID_Field_CRC2  , FDC.CRC , CyclesGlobalClockCounter );
 
 	/* Total number of FDC cycles */
