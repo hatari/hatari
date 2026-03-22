@@ -8,7 +8,6 @@
 #ifndef HATARI_AUDIO_H
 #define HATARI_AUDIO_H
 
-extern int nAudioFrequency;
 extern bool bSoundWorking;
 extern int SoundBufferSize;
 extern int SdlAudioBufferSize;
@@ -20,7 +19,6 @@ extern void Audio_UnInit(void);
 extern void Audio_Lock(void);
 extern void Audio_Unlock(void);
 extern void Audio_FreeSoundBuffer(void);
-extern void Audio_SetOutputAudioFreq(int Frequency);
 extern void Audio_EnableAudio(bool bEnable);
 
 #endif  /* HATARI_AUDIO_H */

@@ -1,6 +1,6 @@
 freebsd_task:
   freebsd_instance:
-    image_family: freebsd-14-2
+    image_family: freebsd-14-3
     cpu: 4
     memory: 4G
   install_script:
@@ -9,8 +9,9 @@ freebsd_task:
           devel/sdl20 devel/libedit
   script:
     - ./configure --enable-debug || { cat config.log; exit 1; }
-    - gmake -j4
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - gmake -j$(sysctl -n hw.ncpu)
+    - ctest -j$(sysctl -n hw.ncpu) test
+      || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 xcode_task:
   osx_instance:
@@ -49,7 +50,7 @@ xcode_task:
     # Download and install precompiled portmidi Framework
     - if [ ! -e dl_cache/portmidi.framework ]; then
         cd dl_cache ;
-        wget "https://hatari.tuxfamily.org/ci/portmidi.framework.zip" ;
+        wget "https://hatari.frama.io/ci-files/macos/portmidi.framework.zip" ;
         unzip portmidi.framework.zip ;
         mv license.txt portmidi-license.txt ;
         cd .. ;
@@ -58,7 +59,7 @@ xcode_task:
     # Download and install precompiled capsimage Framework
     - if [ ! -e dl_cache/capsimage_5.1_macos-x86_64-arm64 ]; then
         cd dl_cache ;
-        wget "https://hatari.tuxfamily.org/ci/capsimage_5.1_macos-x86_64-arm64_selfsigned.zip" ;
+        wget "https://hatari.frama.io/ci-files/macos/capsimage_5.1_macos-x86_64-arm64_selfsigned.zip" ;
         unzip capsimage_5.1_macos-x86_64-arm64_selfsigned.zip ;
         cd capsimage_5.1_macos-x86_64-arm64 ;
         mv LICENCE.txt DONATIONS.txt README.txt HISTORY.txt CAPSImage.framework ;
@@ -98,7 +99,8 @@ macos14_task:
     - ./configure --disable-osx-bundle --enable-debug
       || { cat config.log; exit 1; }
     - gmake -j$(sysctl -n hw.ncpu)
-    - gmake test || { cat Testing/Temporary/LastTest.log; exit 1; }
+    - ctest -j$(sysctl -n hw.ncpu) test
+      || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 cygwin_task:
   windows_container:
@@ -111,13 +113,14 @@ cygwin_task:
   install_script:
     - choco install -y --no-progress cygwin
     - C:\tools\cygwin\cygwinsetup.exe -q -P
-        make,cmake,gcc-core,pkg-config,zlib-devel,libSDL2-devel,libpng-devel
+        make,cmake,gcc-core,pkg-config,zlib-devel,libSDL3-devel,libpng-devel,libarchive-devel
   script:
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ;
-       CFLAGS='-Werror -Wno-error=char-subscripts' cmake -G 'Unix Makefiles' ."
+       CFLAGS='-Werror -Wno-error=char-subscripts'
+       cmake -G 'Unix Makefiles' ."
     - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; make -j4"
   test_script:
-    - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4"
+    - C:\tools\cygwin\bin\bash.exe -lc "cd '%cd%' ; ctest -j4 --output-on-failure"
 
 msys2_task:
   windows_container:
@@ -143,12 +146,13 @@ msys2_task:
          mingw-w64-x86_64-gcc
          mingw-w64-x86_64-SDL2
          mingw-w64-x86_64-libpng
-         mingw-w64-x86_64-portmidi"
+         mingw-w64-x86_64-portmidi
+         mingw-w64-x86_64-libarchive"
   script:
     - C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."
     - C:\tools\msys64\usr\bin\bash -lc "make -j4"
   test_script:
-    - C:\tools\msys64\usr\bin\bash -lc "ctest"
+    - C:\tools\msys64\usr\bin\bash -lc "ctest -j4 --output-on-failure"
 
 visualstudio_task:
   windows_container:

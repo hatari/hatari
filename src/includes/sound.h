@@ -14,7 +14,7 @@
 
 /* definitions common for all sound rendering engines */
 
-
+extern int nAudioFrequency;
 extern uint8_t SoundRegs[14];		/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
@@ -77,6 +77,6 @@ extern bool Sound_AreWeRecording(void);
 extern void Sound_SetYmVolumeMixing(void);
 extern ymsample Subsonic_IIR_HPF_Left(ymsample x0);
 extern ymsample Subsonic_IIR_HPF_Right(ymsample x0);
-
+extern void Sound_SetOutputAudioFreq(int Frequency);
 
 #endif  /* HATARI_SOUND_H */

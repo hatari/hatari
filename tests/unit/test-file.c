@@ -7,7 +7,7 @@
 #include "main.h"
 #include "file.h"
 #include "dialog.h"
-#include "zip.h"
+#include "file_archive.h"
 
 /* Fake functions that is required for linking */
 bool DlgAlert_Query(const char *text)
@@ -15,9 +15,13 @@ bool DlgAlert_Query(const char *text)
 	return true;
 }
 
-uint8_t *ZIP_ReadFirstFile(const char *pName, long *pSize, const char * const pExts[])
+uint8_t *Archive_ReadFirstFile(const char *pName, long *pSize, const char * const pExts[])
 {
 	return NULL;
+}
+bool	Archive_FileNameIsSupported ( const char *FileName )
+{
+	return false;
 }
 
 static void strcpy_path(char *dst, const char *src, int bufsize)

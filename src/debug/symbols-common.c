@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols-common.c
  *
- * Copyright (C) 2010-2025 by Eero Tamminen
+ * Copyright (C) 2010-2026 by Eero Tamminen
  * Copyright (C) 2017,2021,2023 by Thorsten Otto
  *
  * This file is distributed under the GNU General Public License, version 2
@@ -49,6 +49,7 @@ typedef struct {
 	int gccint;   /* GCC internal symbols */
 	int invalid;  /* invalid symbol types for addresses */
 	int locals;   /* unnamed / local symbols */
+	int noname;   /* symbols without a name */
 	int notypes;  /* explicitly disabled symbol types */
 	int undefined;/* undefined symbols */
 } ignore_counts_t;
@@ -374,7 +375,6 @@ static void symbol_list_free(symbol_list_t *list)
 	if (!list) {
 		return;
 	}
-	assert(list->namecount);
 	for (i = 0; i < list->namecount; i++) {
 		if (list->names[i].name_allocated) {
 			free(list->names[i].name);
@@ -650,6 +650,11 @@ static bool ignore_symbol(const char *name, symtype_t symtype, const symbol_opts
 			return true;
 		}
 	}
+	if (!name[0]) {
+		counts->noname++;
+		return true;
+	}
+
 	return false;
 }
 
@@ -678,6 +683,9 @@ static void show_ignored(const ignore_counts_t *counts)
 	if (counts->locals) {
 		fprintf(stderr, "NOTE: ignored %d unnamed / local symbols ('.L*').\n", counts->locals);
 	}
+	if (counts->noname) {
+		fprintf(stderr, "NOTE: ignored %d unnamed symbols.\n", counts->noname);
+	}
 	if (counts->notypes) {
 		fprintf(stderr, "NOTE: ignored %d symbols with unwanted types.\n", counts->notypes);
 	}
@@ -692,7 +700,7 @@ static void show_ignored(const ignore_counts_t *counts)
 /**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
- *	http://toshyp.atari.org/en/005005.html
+ *	https://freemint.github.io/tos.hyp/en/gemdos_programs.html
  * Return symbols list or NULL for failure.
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, const prg_section_t *sections, uint32_t tablesize, const symbol_opts_t *opts)
@@ -1385,8 +1393,9 @@ static bool symbols_print_prg_info(uint32_t tabletype, uint32_t prgflags, uint16
  *
  * Return symbols list or NULL for failure.
  */
-static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
-					  bool (*update_sections)(prg_section_t*))
+static symbol_list_t* symbols_load_binary(FILE *fp, const uint32_t *offsets,
+					  bool (*update_sections)(const uint32_t *, prg_section_t *),
+					  const symbol_opts_t *opts)
 {
 	uint32_t textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
@@ -1614,7 +1623,7 @@ static symbol_list_t* symbols_load_binary(FILE *fp, const symbol_opts_t *opts,
 	sections[1].end = datalen;
 	sections[2].end = bsslen;
 	/* add suitable offsets to section beginnings & ends, and validate them */
-	if (!update_sections(sections)) {
+	if (!update_sections(offsets, sections)) {
 		free(headers);
 		return NULL;
 	}

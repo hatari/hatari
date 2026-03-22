@@ -40,11 +40,11 @@ const char Statusbar_fileid[] = "Hatari statusbar.c";
 #include "screenSnapShot.h"
 #include "sdlgui.h"
 #include "statusbar.h"
+#include "statusbar_sdl.h"
 #include "tos.h"
-#include "screen.h"
+#include "screen_sdl.h"
 #include "video.h"
-#include "wavFormat.h"
-#include "ymFormat.h"
+#include "sound.h"
 #include "avi_record.h"
 #include "vdi.h"
 #include "fdc.h"
@@ -52,6 +52,10 @@ const char Statusbar_fileid[] = "Hatari statusbar.c";
 #include "blitter.h"
 #include "str.h"
 #include "lilo.h"
+
+#if !ENABLE_SDL3
+#define SDL_MapSurfaceRGB(s, r, g, b) SDL_MapRGB(s->format, r, g, b)
+#endif
 
 #define DEBUG 0
 #if DEBUG
@@ -276,7 +280,11 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 	if (OverlayUnderside && (
 	    OverlayUnderside->w != OverlayLedRect.w ||
 	    OverlayUnderside->h != OverlayLedRect.h ||
+#if ENABLE_SDL3
+	    OverlayUnderside->format != surf->format))
+#else
 	    OverlayUnderside->format->BitsPerPixel != surf->format->BitsPerPixel))
+#endif
 	{
 		SDL_FreeSurface(OverlayUnderside);
 		OverlayUnderside = NULL;
@@ -304,15 +312,15 @@ void Statusbar_Init(SDL_Surface *surf)
 	assert(surf);
 
 	/* dark green and light green for leds themselves */
-	LedColor[ LED_STATE_OFF ]	= SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
-	LedColor[ LED_STATE_ON ]	= SDL_MapRGB(surf->format, 0x00, 0xc0, 0x00);
-	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
-	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
-	BltColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
-	BltColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
-	RecColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
-	RecColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
-	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
+	LedColor[ LED_STATE_OFF ]	= SDL_MapSurfaceRGB(surf, 0x00, 0x40, 0x00);
+	LedColor[ LED_STATE_ON ]	= SDL_MapSurfaceRGB(surf, 0x00, 0xc0, 0x00);
+	LedColor[ LED_STATE_ON_BUSY ]	= SDL_MapSurfaceRGB(surf, 0x00, 0xe0, 0x00);
+	LedColorBg  = SDL_MapSurfaceRGB(surf, 0x00, 0x00, 0x00);
+	BltColorOff = SDL_MapSurfaceRGB(surf, 0x40, 0x00, 0x00);
+	BltColorOn  = SDL_MapSurfaceRGB(surf, 0xe0, 0x00, 0x00);
+	RecColorOff = SDL_MapSurfaceRGB(surf, 0x40, 0x00, 0x00);
+	RecColorOn  = SDL_MapSurfaceRGB(surf, 0xe0, 0x00, 0x00);
+	GrayBg      = SDL_MapSurfaceRGB(surf, 0xc0, 0xc0, 0xc0);
 
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++)
@@ -458,6 +466,59 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* and blit statusbar on screen */
 	Screen_UpdateRects(surf, 1, &FullRect);
 	DEBUGPRINT(("Drawn <- Statusbar_Init()\n"));
+}
+
+
+/**
+ * Set TOS etc information and initial help message
+ */
+void Statusbar_InitialSetup(void)
+{
+	struct {
+		const int id;
+		bool mod;
+		char *name;
+	} keys[] = {
+		{ SHORTCUT_OPTIONS, false, NULL },
+		{ SHORTCUT_MOUSEGRAB, false, NULL }
+	};
+	const char *name;
+	bool named;
+	SDL_Keycode key;
+	int i;
+
+	named = false;
+	for (i = 0; i < ARRAY_SIZE(keys); i++)
+	{
+		key = ConfigureParams.Shortcut.withoutModifier[keys[i].id];
+		if (!key)
+		{
+			key = ConfigureParams.Shortcut.withModifier[keys[i].id];
+			if (!key)
+				continue;
+			keys[i].mod = true;
+		}
+		name = SDL_GetKeyName(key);
+		if (!name)
+			continue;
+		keys[i].name = Str_ToUpper(strdup(name));
+		named = true;
+	}
+	if (named)
+	{
+		char message[60];
+		snprintf(message, sizeof(message), "Press %s%s for Options, %s%s for mouse grab toggle",
+			 keys[0].mod ? "AltGr+": "", keys[0].name,
+			 keys[1].mod ? "AltGr+": "", keys[1].name);
+		for (i = 0; i < ARRAY_SIZE(keys); i++)
+		{
+			if (keys[i].name)
+				free(keys[i].name);
+		}
+		Statusbar_AddMessage(message, 5000);
+	}
+	/* update information loaded by Main_Init() */
+	Statusbar_UpdateInfo();
 }
 
 
@@ -763,12 +824,17 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
 	if (!OverlayUnderside)
 	{
 		SDL_Surface *bak;
+#if ENABLE_SDL3
+		bak = SDL_CreateSurface(OverlayLedRect.w, OverlayLedRect.h,
+					surf->format);
+#else
 		SDL_PixelFormat *fmt = surf->format;
 		bak = SDL_CreateRGBSurface(surf->flags,
 					   OverlayLedRect.w, OverlayLedRect.h,
 					   fmt->BitsPerPixel,
 					   fmt->Rmask, fmt->Gmask, fmt->Bmask,
 					   fmt->Amask);
+#endif
 		assert(bak);
 		OverlayUnderside = bak;
 	}
@@ -834,7 +900,7 @@ static SDL_Rect* Statusbar_OverlayDraw(SDL_Surface *surf)
 	Uint32 currentticks = SDL_GetTicks();
 	int i;
 
-	if (bRecordingYM || bRecordingWav || Avi_AreWeRecording())
+	if (Sound_AreWeRecording() || Avi_AreWeRecording())
 	{
 		Statusbar_OverlayDrawLed(surf, RecColorOn);
 	}
@@ -1019,7 +1085,7 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf, bool do_update)
 		}
 	}
 
-	if ((bRecordingYM || bRecordingWav || Avi_AreWeRecording()) != bOldRecording)
+	if ((Sound_AreWeRecording() || Avi_AreWeRecording()) != bOldRecording)
 	{
 		bOldRecording = !bOldRecording;
 		if (bOldRecording)

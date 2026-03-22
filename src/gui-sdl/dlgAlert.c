@@ -22,7 +22,9 @@ const char DlgAlert_fileid[] = "Hatari dlgAlert.c";
 
 #include "main.h"
 #include "dialog.h"
+#include "gui_event.h"
 #include "screen.h"
+#include "screen_sdl.h"
 #include "sdlgui.h"
 #include "str.h"
 
@@ -133,9 +135,6 @@ static bool DlgAlert_ShowDlg(const char *text)
 	int nOldMouseX, nOldMouseY;
 	bool bWasEmuActive;
 
-	bool bOldMouseMode = SDL_GetRelativeMouseMode();
-	SDL_SetRelativeMouseMode(SDL_FALSE);
-
 	strcpy(t, text);
 	lines = DlgAlert_FormatTextToBox(t, maxlen, &len);
 	offset = (maxlen-len)/2;
@@ -163,16 +162,14 @@ static bool DlgAlert_ShowDlg(const char *text)
 
 	bWasEmuActive = Main_PauseEmulation(true);
 
-	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
-	bOldMouseVisibility = Main_ShowCursor(true);
+	Screen_GetMouseState(&nOldMouseX, &nOldMouseY);
+	bOldMouseVisibility = Screen_ShowCursor(true);
 
 	i = SDLGui_DoDialog(alertdlg);
 
 	Screen_UpdateRect(sdlscrn, 0,0, 0,0);
-	Main_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
-
-	SDL_SetRelativeMouseMode(bOldMouseMode);
+	Screen_ShowCursor(bOldMouseVisibility);
+	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	if (bWasEmuActive)
 		Main_UnPauseEmulation();

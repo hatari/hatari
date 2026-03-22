@@ -9,14 +9,16 @@
 const char HDC_fileid[] = "Hatari hdc.c";
 
 #include <errno.h>
-#include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "debugui.h"
+#include "endianswap.h"
 #include "file.h"
 #include "fdc.h"
 #include "hdc.h"
+#include "cycles.h"
+#include "cycInt.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -73,6 +75,11 @@ static unsigned char inquiry_bytes[] =
 	'H','a','r','d','d','i','s','k',    /* Product ID 2 */
 	'0','1','8','0',                    /* Revision */
 };
+
+
+/* Delay before setting IRQ after a tansfer is made with Acsi_DmaTransfer() */
+#define	ACSI_TRANSFER_MIN_CYCLES	1000			/* in CPU cycles */
+
 
 
 /*---------------------------------------------------------------------*/
@@ -231,7 +238,6 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	buf[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
 
 	buf[2] = dev->scsi_version;
-	buf[4] = count - 5;
 
 	ctr->status = HD_STATUS_OK;
 
@@ -788,8 +794,8 @@ int HDC_PartitionCount(FILE *fp, const uint64_t tracelevel, int *pIsByteSwapped)
 		{
 			boot = pinfo[0];
 			ptype = pinfo[4];
-			start = SDL_SwapLE32(*(uint32_t*)(pinfo+8));
-			sectors = SDL_SwapLE32(*(uint32_t*)(pinfo+12));
+			start = le_swap32(*(uint32_t*)(pinfo+8));
+			sectors = le_swap32(*(uint32_t*)(pinfo+12));
 			total += sectors;
 			LOG_TRACE_DIRECT_LEVEL(tracelevel,
 				"- Partition %d: type=0x%02x, start=0x%08x, size=%.1f MB %s%s\n",
@@ -936,6 +942,21 @@ int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf)
 	return 0;
 }
 
+/*---------------------------------------------------------------------*/
+/**
+ * HDC_UnInitDevice - close image file
+ */
+void HDC_UnInitDevice(SCSI_DEV *dev)
+{
+	if (dev->enabled)
+	{
+		File_UnLock(dev->image_file);
+		fclose(dev->image_file);
+		dev->image_file = NULL;
+		dev->enabled = false;
+	}
+}
+
 /**
  * Open the disk image files, set partitions.
  */
@@ -984,12 +1005,7 @@ void HDC_UnInit(void)
 
 	for (i = 0; bAcsiEmuOn && i < MAX_ACSI_DEVS; i++)
 	{
-		if (!AcsiBus.devs[i].enabled)
-			continue;
-		File_UnLock(AcsiBus.devs[i].image_file);
-		fclose(AcsiBus.devs[i].image_file);
-		AcsiBus.devs[i].image_file = NULL;
-		AcsiBus.devs[i].enabled = false;
+		HDC_UnInitDevice(&AcsiBus.devs[i]);
 	}
 	free(AcsiBus.buffer);
 	AcsiBus.buffer = NULL;
@@ -1138,7 +1154,13 @@ static void Acsi_DmaTransfer(void)
 	AcsiBus.data_len = 0;
 
 	FDC_SetDMAStatus(AcsiBus.bDmaError);	/* Mark DMA error */
-	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+
+	/* Although data transfer is made instantly above, some programsexpect the transfer to take */
+	/* a minimum delay before setting Hdc's IRQ (eg "Idris OS" in ACSI mode) */
+	/* For now we simulate this with a timer and a fixed delay, but this should be measured */
+	/* on real HW (depending on the read/write operation and the size of the transfer) */
+	FDC_ClearHdcIRQ();
+	CycInt_AddRelativeInterrupt(ACSI_TRANSFER_MIN_CYCLES, INT_CPU_CYCLE, INTERRUPT_HDC_ACSI);
 
 	/* For the MegaSTE, using the HDC DMA will flush the external cache */
 	if ( ConfigureParams.System.nMachineType == MACHINE_MEGA_STE )
@@ -1224,4 +1246,12 @@ void HDC_DmaTransfer(void)
 		Ncr5380_DmaTransfer_Falcon();
 	else if (bAcsiEmuOn)
 		Acsi_DmaTransfer();
+}
+
+
+
+void HDC_ACSI_InterruptHandler_Update ( void )
+{
+	CycInt_AcknowledgeInterrupt();
+	FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
 }

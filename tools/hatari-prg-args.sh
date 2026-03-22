@@ -8,40 +8,46 @@
 
 set -e
 
-# name (including path if necessary) of the hatari executable
-hatari=hatari
-
 usage ()
 {
 	name=${0##*/}
-	echo "usage: $name [-q] [Hatari args] -- <Atari program> <program args>"
-	echo
-	echo "Script for running Hatari so that it autostarts given Atari program"
-	echo "and inserts given arguments to program (to its basepage, with builtin"
-	echo "Hatari debugger facilities)."
-	echo
-	echo "Options:"
-	echo "    -q  Quit Hatari after Atari program exits"
-	echo
-	echo "If arguments have same (host) path prefix as given Atari program,"
-	echo "those prefixes are replaced with 'C:\', Unix path separators ('/')"
-	echo "are replaced with Atari ones ('\\') and whole filename upper-cased."
-	echo
-	echo "Other arguments are passed unmodified."
-	echo
-	echo "Examples:"
-	echo
-	echo "* program in host folder and input files in same folder:"
-	echo "	$name -m -- atari/sidplay.ttp atari/sids/test.sid"
-	echo
-	echo "* program on a disk image:"
-	echo "	$name -m -- 'A:\\SIDPLAY.TTP' 'SIDS\\TEST.SID'"
-	echo
-	echo "Note: argument quoting is needed with '\\' chars."
-	echo
-	echo "ERROR: $1!"
+	cat << EOF
+Usage: $name [-q] [Hatari args] -- <Atari program> <program args>
+
+Script for running Hatari so that it autostarts given Atari program
+and inserts given arguments to program (to its basepage, with builtin
+Hatari debugger facilities).
+
+Options:
+    -q  Quit Hatari after Atari program exits
+
+If arguments have same (host) path prefix as given Atari program,
+those prefixes are replaced with 'C:\\', Unix path separators ('/')
+are replaced with Atari ones ('\\') and whole filename upper-cased.
+
+Other arguments are passed unmodified.
+
+Examples:
+
+* program in host folder and input files in same folder:
+	$name -m -- atari/sidplay.ttp atari/sids/test.sid
+
+* program on a disk image:
+	$name -m -- 'A:\\SIDPLAY.TTP' 'SIDS\\TEST.SID'
+
+Note: argument quoting is needed with the'\\' chars.
+
+ERROR: $1!
+EOF
 	exit 1
 }
+
+# name (including path if necessary) of the hatari executable
+hatari=$(which hatari)
+
+if [ -z "$hatari" ]; then
+	usage "'hatari' missing (from PATH)"
+fi
 
 # --------- argument parsing --------
 
@@ -100,7 +106,7 @@ prefix=""
 drive="C:\\"
 path="${prg%/*}/"
 for arg in "$@"; do
-	if [ "${arg#$path}" != "$arg" ]; then
+	if [ "${arg#"$path"}" != "$arg" ]; then
 		# file path needing conversion
 		if [ ! -f "$arg" ]; then
 			usage "given file name '$arg' does not exist"
@@ -112,7 +118,7 @@ for arg in "$@"; do
 		# shellcheck disable=SC2018
 		# shellcheck disable=SC2019
 		# shellcheck disable=SC1003
-		$echo -n "${prefix}${drive}${arg#$path}" | tr a-z A-Z | tr '/' '\\' >> "$args"
+		$echo -n "${prefix}${drive}${arg#"$path"}" | tr a-z A-Z | tr '/' '\\' >> "$args"
 	else
 		$echo -n "${prefix}$arg" >> "$args"
 	fi
@@ -128,24 +134,17 @@ fi
 
 # --------- debugger scripts --------
 
-# until TOS has started, it's not possible to set breakpoint
-# to program startup, there's no valid basepage and therefore
-# no valid TEXT variable.  So set breakpoint on Pexec(0,...)
-cat > "$dir/pexec.ini" << EOF
-b GemdosOpcode = 0x4B && OsCallParam = 0x0 :once :quiet :trace :file $dir/start.ini
-EOF
-
-# real work can be done when program starts,
-# i.e. PC is at TEXT section beginning
+# real work can be done when program basepage is available,
+# i.e. when PC is at program TEXT section beginning
 cat > "$dir/start.ini" << EOF
 b pc = text :once :trace :quiet :file $dir/basepage.ini
 EOF
 
-# add command line args args to program basepage
+# add command line args to program basepage
 cat > "$dir/basepage.ini" << EOF
 setopt dec
-w "basepage+0x80" $cmdlen
-l $args "basepage+0x81"
+w 'basepage+0x80' $cmdlen
+l $args 'basepage+0x81'
 # info basepage
 EOF
 
@@ -165,9 +164,9 @@ fi
 head "$dir"/*
 
 # run Hatari
-echo "$hatari --parse $dir/pexec.ini $hargs $prg"
+echo "$hatari --parse prg:$dir/start.ini $hargs $prg"
 # shellcheck disable=SC2086 # options must be split to work
-$hatari --parse "$dir/pexec.ini" $hargs "$prg"
+$hatari --parse "prg:$dir/start.ini" $hargs "$prg"
 
 # cleanup
 rm -r "$dir"

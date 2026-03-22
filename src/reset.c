@@ -11,11 +11,14 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "main.h"
 #include "configuration.h"
 #include "cart.h"
+#include "conv_st.h"
 #include "dmaSnd.h"
 #include "crossbar.h"
+#include "event.h"
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "gui_event.h"
 #include "hdc.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -111,7 +114,7 @@ static int Reset_ST(bool bCold)
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else
-		Screen_Reset();		/* Reset screen */
+		ConvST_Reset();    /* Reset screen */
 
 	M68000_Reset(bCold);		/* Reset CPU */
 
@@ -123,6 +126,9 @@ static int Reset_ST(bool bCold)
 	/* Start HBL, Timer B and VBL interrupts with a 0 cycle delay */
 	Video_StartInterrupts( 0 );
 
+	/* do user-configured boot/reset "event" actions */
+	Event_DoResetActions();
+
 	return 0;
 }
 
@@ -133,8 +139,11 @@ static int Reset_ST(bool bCold)
  */
 int Reset_Cold(void)
 {
+	int w, h;
+
 	/* Set mouse pointer to the middle of the screen */
-	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2, false);
+	Screen_GetDimension(NULL, &w, &h, NULL);
+	GuiEvent_WarpMouse(w / 2, h / 2, false);
 
 	return Reset_ST(true);
 }

@@ -42,7 +42,7 @@ the EmuTOS website.
 
 Starting from Hatari 2.5.0, the "tos.img" file included with the given
 Hatari release is the etos1024k.img[1] from a preceding EmuTOS release:
-- Hatari v2.6.0:
+- Hatari v2.6.0, v2.6.1:
   https://sourceforge.net/projects/emutos/files/emutos/1.4/
 - Hatari v2.5.0:
   https://sourceforge.net/projects/emutos/files/emutos/1.3/
@@ -632,6 +632,7 @@ Free/shareware/PD games:
 - Alien Blockade* (quixx)
 - Atari Dash
 - Atax
+- Babaliba
 - Bellum*
 - Blaster
 - Blind labyrinth (line-A bitblits, mouse issues)
@@ -681,6 +682,7 @@ Free/shareware/PD games:
 - Haywire        (use joystick 0)
 - Hector*
 - Hero           (RPG)
+- Hero Fantasy: The King's Sword
 - Hexmines*
 - Iceblox Plus*  (works on all Atari machines)
 - In nihilum reverteris (interactive color novel)
@@ -1009,6 +1011,9 @@ Working debuggers (support also e.g. TT):
 - Peacebug v1.30
 - Templmon 2.01
 
+Working utilities:
+- Shifer Inside ST (expands GEM desktop to top & bottom borders)
+
 Working drawing / image viewing programs:
 - Degas Elite, see http://www.youtube.com/watch?v=G4st-x4-BJg (at 16:30)
 - Iffcnv, IFF converter/viewer
@@ -1211,6 +1216,7 @@ Color demos:
 - The Art of Profanity (by SMFX & DHS)
 - The Star Wars Demo (by The Arctic Land)
 - Tribute to Rainbow TOS (by 505 & Tobe)
+- Trumpton Riots (by M Lynn)
 - Tyranny (by DHS)
 - UFO (by Dune & Sector1)
 - Unbeatable (by Masters of Electric City)
@@ -1276,6 +1282,7 @@ Color games:
 - Pole Position (arcade conversion)
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
+- Puckman
 - R0x (line-A bitblit)
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
 - Randomazer 1.x & SV2020 editions
@@ -1339,6 +1346,9 @@ STE (enhanced) music applications:
 - Paula
 - Protracker 2 STE
 - Sirius Player
+
+STE (enhanced) utilities:
+- Shifer Inside STE (expands GEM desktop to top & bottom borders)
 
 
 Non-working STE programs
@@ -1419,11 +1429,17 @@ Working games:
 - GEM Manga Puzzle (needs 256 color mode)
 - GEM Milanopoly
 - GEM NetHack v3.4.3
+- GEM Panic 0.90
+  - Needs at least 460x400@256 mode for full glory (= VDI mode on TT)
 - GEM Santarun
 - GEM Shapes
   - Sounds do not work on ST + needs at least 480x400 mode
 - GEM Slashem v3.3.1
 - "Hacked" Heretic & Hexen (SDL ports by Miro)
+- Kniff (Omikron Basic v3.60)
+  - Needs 640x480@256 mode (VDI mode on TT, VGA monitor on Falcon)
+- Mau Mau de luxe (Omikron Basic v3.60)
+  - Needs 800x600@256 mode (8-bit VDI mode)
 - OpenDUNE
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
 - Oxyd (Falcon version)
@@ -1574,6 +1590,7 @@ Demos working under EmuTOS >= v1.1 (with DSP support):
 - Stercus Accidit (060, by Fit)
 - Stocasto (by NoCrew)
   - Works also with v1.0, but then DSP 3D objects are missing
+- Taedium Vitae (by Dune)
 - Tere Ra'I (by Cerebral Vortex / Dune / Sector One)
 - The mountains flight (by Cruor)
 - The Ultimate Seduction (Sommarhack 2020 invite)
@@ -1621,7 +1638,7 @@ Demos working under EmuTOS >= v1.4 (full TC support):
 
 Demos working partly under EmuTOS >= v1.4:
 - 124 beers later (by Trio)
-  - Works already with v1.0, but fighter screen DSP textures need v1.1
+  - Runs already with v1.0, but fighter screen DSP textures need v1.1
   - Ground texture missing in last screen
 
 Broken demos (with EmuTOS v1.4):
@@ -1663,8 +1680,6 @@ Games working under EmuTOS >= v1.0:
 - Jeu de Poker (VGA only)
   - Needs 640x480@256 mode
 - King Solitaire
-- Kniff (VGA only, Omikron Basic v3.60)
-  - needs 640x480@256 mode
 - Lamemine
 - L'Abbaye Des Morts
 - Let's play Shanghai
@@ -1739,6 +1754,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Racer 2* (by Thadoss/Dune)
 - Running* (shareware version)
 - Slippery Sam
+- SVO 30 v1.0 (Falcon "Minecraft" by d.m.l)
 - Static (Patience by Reservoir Gods)
   - For v1.0, disable DSP from Hatari
 - TsccTron
@@ -1816,8 +1832,8 @@ Broken games (with EmuTOS v1.4):
     when the actual game would start
   - "fast Falcon" (B) option gets infinite illegal DSP instruction
     errors after pressing joypad button 3 in main menu
-- Neurobot
-  - Both intro & game just exit immediately (TOS version?)
+- Neurobotix (v1.02/v1.08)
+  - Exits immediately at start (see EmuTOS incompatible.txt)
 - Reeking Rubber
   - Broken graphics & pterm0() on game start, uses VDI draw calls
 - SBM v0.8 & v1.03* (Bomberman clone)

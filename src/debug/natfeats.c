@@ -1,7 +1,7 @@
 /*
  * Hatari - natfeats.c
  * 
- * Copyright (C) 2012-2016, 2019-2022 by Eero Tamminen
+ * Copyright (C) 2012-2016, 2019-2022, 2025 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -124,6 +124,18 @@ static bool nf_version(uint32_t stack, uint32_t subid, uint32_t *retval)
 {
 	LOG_TRACE(TRACE_NATFEATS, "NF_VERSION() -> 0x00010000\n");
 	*retval = 0x00010000;
+	return true;
+}
+
+/**
+ * NF_CYCLES - Hatari cycles counter
+ * returns lower 32-bits (unsigned)
+ */
+static bool nf_cycles(uint32_t stack, uint32_t subid, uint32_t *retval)
+{
+	const uint32_t value = CyclesGlobalClockCounter & 0xffffffff;
+	LOG_TRACE(TRACE_NATFEATS, "NF_CYCLES() -> 0x%x\n", value);
+	*retval = value;
 	return true;
 }
 
@@ -286,6 +298,7 @@ static const struct {
 #endif
 	{ "NF_NAME",     false, nf_name },
 	{ "NF_VERSION",  false, nf_version },
+	{ "NF_CYCLES",   false, nf_cycles },
 	{ "NF_STDERR",   false, nf_stderr },
 	{ "NF_SHUTDOWN", true,  nf_shutdown },
 	{ "NF_EXIT",     false, nf_exit },

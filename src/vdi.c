@@ -15,12 +15,12 @@ const char VDI_fileid[] = "Hatari vdi.c";
 
 #include "main.h"
 #include "configuration.h"
+#include "conv_st.h"
 #include "file.h"
 #include "gemdos.h"
 #include "inffile.h"
 #include "m68000.h"
 #include "options.h"
-#include "screen.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "vars.h"
@@ -85,13 +85,18 @@ void VDI_Reset(void)
 bool VDI_ByteLimit(int *width, int *height, int planes)
 {
 	double ratio;
-	int size;
+	int max, size;
+
+	if (planes >= 8)
+		max = MAX_VDI8_BYTES;
+	else
+		max = MAX_VDI_BYTES;
 
 	size = (*width)*(*height)*planes/8;
-	if (size <= MAX_VDI_BYTES)
+	if (size <= max)
 		return false;
 
-	ratio = sqrt(MAX_VDI_BYTES) / sqrt(size);
+	ratio = sqrt(max) / sqrt(size);
 	*width = (*width) * ratio;
 	*height = (*height) * ratio;
 	if (*width < MIN_VDI_WIDTH || *height < MIN_VDI_HEIGHT)
@@ -101,7 +106,7 @@ bool VDI_ByteLimit(int *width, int *height, int planes)
 		Log_Printf(LOG_WARN, "Bad VDI screen ratio / too small size -> use smallest valid size.\n");
 	}
 	else
-		Log_Printf(LOG_WARN, "VDI screen size limited to <= %dKB\n", MAX_VDI_BYTES/1024);
+		Log_Printf(LOG_WARN, "VDI screen size limited to <= %dKB\n", max/1024);
 	return true;
 }
 
@@ -130,8 +135,12 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 		VDIRes = ST_LOW_RES;
 		VDIPlanes = 4;
 		break;
+	 case GEMCOLOR_256:
+		VDIRes = TT_LOW_RES;
+		VDIPlanes = 8;
+		break;
 	default:
-		Main_ErrorExit("Invalid VDI planes mode request (not 2/4/16)", NULL, 1);
+		Main_ErrorExit("Invalid VDI planes mode request (not 1/2/4/8)", NULL, 1);
 	}
 #if DEBUG
 	printf("%s v0x%04x, RAM=%dkB\n", bIsEmuTOS ? "EmuTOS" : "TOS", TosVersion,  ConfigureParams.Memory.STRamSize_KB);

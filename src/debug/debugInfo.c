@@ -210,6 +210,14 @@ uint32_t DebugInfo_GetBSS(void)
 	return GetBasepageValue(0x18);
 }
 /**
+ * DebugInfo_GetBSSEnd: return BSS section end for current program
+ * or zero if basepage missing/invalid.  For max valid symbol address.
+ */
+uint32_t DebugInfo_GetBSSEnd(void)
+{
+	return GetBasepageValue(0x18) + GetBasepageValue(0x1C);
+}
+/**
  * DebugInfo_GetBASEPAGE: return current basepage address.
  */
 uint32_t DebugInfo_GetBASEPAGE(void)
@@ -299,7 +307,7 @@ static void DebugInfo_PrintOSHeader(FILE *fp, uint32_t sysbase)
 {
 	uint32_t gemblock, basepage;
 	uint16_t osversion, datespec, osconf, langbits;
-	const char *lang;
+	const char *lang, *palmode;
 
 	/* first more technical info */
 
@@ -347,9 +355,16 @@ static void DebugInfo_PrintOSHeader(FILE *fp, uint32_t sysbase)
 
 	osconf = STMemory_ReadWord(sysbase+0x1C);
 	langbits = osconf >> 1;
-	lang = TOS_LanguageName(langbits);
+	if (osconf != 0xff) {
+		lang = TOS_LanguageName(langbits);
+		palmode = osconf&1 ? "PAL":"NTSC";
+	} else {
+		/* (Emu)TOS build defaults */
+		lang = "DEFAULT";
+		palmode = "DEFAULT";
+	}
 	fprintf(fp, "OS config    : %s (0x%x), %s (%d)\n",
-		osconf&1 ? "PAL":"NTSC", osconf, lang, langbits);
+		palmode, osconf, lang, langbits);
 	fprintf(fp, "Phystop      : %d KB\n", (STMemory_ReadLong(OS_PHYSTOP) + 511) / 1024);
 }
 
@@ -406,7 +421,7 @@ static void DebugInfo_Cookiejar(FILE *fp, uint32_t dummy)
  */
 
 /**
- * Helper to call debugcpu.c and debugdsp.c debugger commands
+ * Helper: call debugcpu.c and debugdsp.c debugger commands
  */
 static void DebugInfo_CallCommand(int (*func)(int, char* []), const char *command, uint32_t arg)
 {

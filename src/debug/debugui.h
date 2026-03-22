@@ -30,6 +30,9 @@ typedef enum {
 	REASON_USER        // e.g. keyboard shortcut
 } debug_reason_t;
 
+/* max size for debugger command line input buffers */
+#define MAX_DEBUG_CMD_LEN 4096
+
 extern void DebugUI_Init(void);
 extern void DebugUI(debug_reason_t reason);
 extern void DebugUI_Exceptions(int nr, long pc);

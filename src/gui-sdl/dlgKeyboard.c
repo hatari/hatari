@@ -146,9 +146,13 @@ static void DlgKbd_DefineShortcutKey(int sc, bool withMod)
 		switch (sdlEvent.type)
 		{
 		 case SDL_KEYDOWN:
+#if ENABLE_SDL3
+			pscs[sc] = sdlEvent.key.key;
+#else
 			pscs[sc] = sdlEvent.key.keysym.sym;
+#endif
 			snprintf(sScKeyName, sizeof(sScKeyName), "(now: '%s')",
-			         Keymap_GetKeyName(sdlEvent.key.keysym.sym));
+			         Keymap_GetKeyName(pscs[sc]));
 			SDLGui_DrawDialog(sckeysdlg);
 			break;
 		 case SDL_MOUSEBUTTONDOWN:

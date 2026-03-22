@@ -28,7 +28,7 @@ const char File_fileid[] = "Hatari file.c";
 #include "dialog.h"
 #include "file.h"
 #include "str.h"
-#include "zip.h"
+#include "file_archive.h"
 
 #ifdef HAVE_FLOCK
 # include <sys/file.h>
@@ -119,7 +119,7 @@ bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_ol
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if filename is from root
+ * Check if host filename is from root
  *
  * Return TRUE if filename is '/', else give FALSE
  */
@@ -293,11 +293,13 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 	{
 		pFile = File_ZlibRead(filepath, &FileSize);
 	}
-	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
+#if HAVE_LIBARCHIVE
+	else if (Archive_FileNameIsSupported(filepath))
 	{
-		/* It is a .ZIP file! -> Try to load the first file in the archive */
-		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
+		/* It's a supported archive (zip,rar,7z,...) : try to load the first file in the archive */
+		pFile = Archive_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
+#endif
 	else
 #endif  /* HAVE_LIBZ */
 	{
@@ -519,7 +521,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return basename of given path (remove directory names)
+ * Return basename of given path (pointer to file name part of same string)
  */
 const char *File_Basename(const char *path)
 {

@@ -10,7 +10,7 @@
 
 extern bool Spec512_IsImage(void);
 extern void Spec512_StartVBL(void);
-extern void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr);
+extern void Spec512_StoreCyclePalette(uint16_t col, uint32_t addr);
 extern void Spec512_StartFrame(void);
 extern void Spec512_ScanWholeLine(void);
 extern void Spec512_StartScanLine(void);

@@ -134,12 +134,18 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 	caller_t *info;
 	uint64_t total;
 	uint32_t addr, typeaddr;
+	bool next;
 
 	/* legend */
 	fputs("# <callee>: <caller1> = <calls> <types>[ <inclusive/totals>[ <exclusive/totals>]], <caller2> ..., <callee name>", fp);
 	fputs("\n# types: ", fp);
+	next = false;
 	for (i = 0; i < ARRAY_SIZE(flaginfo); i++) {
-		fprintf(fp, "%c = %s, ", flaginfo[i].chr, flaginfo[i].info);
+		if (next) {
+			fputs(", ", fp);
+		}
+		fprintf(fp, "%c = %s", flaginfo[i].chr, flaginfo[i].info);
+		next = true;
 	}
 	fputs("\n# totals: calls/instructions/cycles/i-misses/d-hits\n", fp);
 
@@ -654,10 +660,10 @@ const char Profile_Description[] =
 	"\t- loops <file> [CPU limit] [DSP limit]\n"
 	"\n"
 	"\t'on' & 'off' enable and disable profiling.  Data is collected\n"
-	"\tuntil debugger is entered again at which point you get profiling\n"
-	"\tstatistics ('stats') summary.\n"
+	"\tuntil debugger is entered again, at which point profiling\n"
+	"\tstatistics ('stats') summary is shown.\n"
 	"\n"
-	"\tThen you can ask for list of the PC addresses, sorted either by\n"
+	"\tMost active PC addresses can be queried, sorted either by\n"
 	"\texecution 'counts', used 'cycles', i-cache misses or d-cache hits.\n"
 	"\tFirst can be limited just to named addresses with 'symbols'.\n"
 	"\tOptional count will limit how many items will be shown.\n"
@@ -666,15 +672,15 @@ const char Profile_Description[] =
 	"\n"
 	"\t'addresses' lists the profiled addresses in order, with the\n"
 	"\tinstructions (currently) residing at them.  By default this\n"
-	"\tstarts from the first executed instruction, or you can\n"
-	"\tspecify the starting address.\n"
+	"\tstarts from the first executed instruction, or from the\n"
+	"\tspecified start address.\n"
 	"\n"
 	"\t'callers' shows (raw) caller information for addresses which\n"
 	"\thad symbol(s) associated with them.  'stack' shows the current\n"
 	"\tprofile stack (this is useful only with :noinit breakpoints).\n"
 	"\n"
 	"\tProfile address and callers information can be saved with\n"
-	"\t'save' command.\n"
+	"\tthe 'save' command.\n"
 	"\n"
 	"\tDetailed (spin) looping information can be collected by\n"
 	"\tspecifying to which file it should be saved, with optional\n"

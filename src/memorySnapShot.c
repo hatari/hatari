@@ -23,6 +23,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "main.h"
 #include "blitter.h"
 #include "configuration.h"
+#include "conv_gen.h"
 #include "debugui.h"
 #include "dmaSnd.h"
 #include "fdc.h"
@@ -51,7 +52,6 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "scu_vme.h"
 #include "tos.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "video.h"
 #include "falcon/dsp.h"
 #include "falcon/crossbar.h"
@@ -60,7 +60,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "hatari-glue.h"
 
 
-#define VERSION_STRING      "2.6.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define SNAPSHOT_MAGIC      0xDeadBeef
 
 #if HAVE_LIBZ
@@ -366,7 +366,7 @@ void MemorySnapShot_Capture_Do(void)
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(Temp_FileName, true);
 		IoMem_MemorySnapShot_Capture(true);
-		ScreenConv_MemorySnapShot_Capture(true);
+		ConvGen_MemorySnapShot_Capture(true);
 		SCC_MemorySnapShot_Capture(true);
 		SCU_MemorySnapShot_Capture(true);
 
@@ -461,7 +461,7 @@ void MemorySnapShot_Restore_Do(void)
 		DSP_MemorySnapShot_Capture(false);
 		DebugUI_MemorySnapShot_Capture(Temp_FileName, false);
 		IoMem_MemorySnapShot_Capture(false);
-		ScreenConv_MemorySnapShot_Capture(false);
+		ConvGen_MemorySnapShot_Capture(false);
 		SCC_MemorySnapShot_Capture(false);
 		SCU_MemorySnapShot_Capture(false);
 

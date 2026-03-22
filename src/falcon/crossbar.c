@@ -1850,11 +1850,11 @@ void Crossbar_DmaRecordInHandShakeMode_Frame(uint32_t frame)
 
 /**
  * Get data recorded by the microphone and convert them into falcon internal frequency
- *    - micro_bufferL : left track recorded by the microphone
- *    - micro_bufferR : right track recorded by the microphone
+ *    - micro_buffer : track recorded by the microphone
+ *                     (interleaved left and right samples)
  *    - microBuffer_size : buffers size
  */
-void Crossbar_GetMicrophoneDatas(int16_t *micro_bufferL, int16_t *micro_bufferR, uint32_t microBuffer_size)
+void Crossbar_EnqueueMicrophoneData(int16_t *micro_buffer, uint32_t microBuffer_size)
 {
 	uint32_t i, size, bufferIndex;
 	int64_t idxPos;
@@ -1866,8 +1866,8 @@ void Crossbar_GetMicrophoneDatas(int16_t *micro_bufferL, int16_t *micro_bufferR,
 	for (i = 0; i < size; i++) {
 		adc.writePosition = (adc.writePosition + 1) % DACBUFFER_SIZE;
 
-		adc.buffer_left[adc.writePosition] = micro_bufferL[bufferIndex];
-		adc.buffer_right[adc.writePosition] = micro_bufferR[bufferIndex];
+		adc.buffer_left[adc.writePosition] = micro_buffer[bufferIndex * 2];
+		adc.buffer_right[adc.writePosition] = micro_buffer[bufferIndex * 2 + 1];
 
 		idxPos += crossbar.frequence_ratio2;
 		bufferIndex += idxPos>>32;

@@ -11,8 +11,10 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c";
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
+#include "gui_event.h"
 #include "sdlgui.h"
 #include "screen.h"
+#include "screen_sdl.h"
 
 
 #define MAINDLG_SYSTEM   2
@@ -23,24 +25,25 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c";
 #define MAINDLG_HARDDISK 7
 #define MAINDLG_MONITOR  8
 #define MAINDLG_WINDOW   9
-#define MAINDLG_JOY      10
-#define MAINDLG_KEYBD    11
-#define MAINDLG_DEVICES  12
-#define MAINDLG_SOUND    13
-#define MAINDLG_ABOUT    14
-#define MAINDLG_LOADCFG  15
-#define MAINDLG_SAVECFG  16
-#define MAINDLG_NORESET  17
-#define MAINDLG_RESET    18
-#define MAINDLG_OK       19
-#define MAINDLG_QUIT     20
-#define MAINDLG_CANCEL   21
+#define MAINDLG_RECORD   10
+#define MAINDLG_JOY      11
+#define MAINDLG_KEYBD    12
+#define MAINDLG_DEVICES  13
+#define MAINDLG_SOUND    14
+#define MAINDLG_ABOUT    15
+#define MAINDLG_LOADCFG  16
+#define MAINDLG_SAVECFG  17
+#define MAINDLG_NORESET  18
+#define MAINDLG_RESET    19
+#define MAINDLG_OK       20
+#define MAINDLG_QUIT     21
+#define MAINDLG_CANCEL   22
 
 
 /* The main dialog: */
 static SGOBJ maindlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 50,19, NULL },
+	{ SGBOX, 0, 0, 0,0, 50,21, NULL },
 	{ SGTEXT, 0, 0, 17,1, 16,1, "Hatari main menu" },
 	{ SGBUTTON, 0, 0,  2, 4, 13,1, "S_ystem" },
 	{ SGBUTTON, 0, 0,  2, 6, 13,1, "CP_U" },
@@ -50,18 +53,19 @@ static SGOBJ maindlg[] =
 	{ SGBUTTON, 0, 0, 17, 6, 16,1, "Hard _disks" },
 	{ SGBUTTON, 0, 0, 17, 8, 16,1, "_Atari screen" },
 	{ SGBUTTON, 0, 0, 17,10, 16,1, "_Hatari screen" },
+	{ SGBUTTON, 0, 0, 17,12, 16,1, "Recordin_g" },
 	{ SGBUTTON, 0, 0, 35, 4, 13,1, "_Joysticks" },
 	{ SGBUTTON, 0, 0, 35, 6, 13,1, "_Keyboard" },
 	{ SGBUTTON, 0, 0, 35, 8, 13,1, "D_evices" },
 	{ SGBUTTON, 0, 0, 35,10, 13,1, "S_ound" },
-	{ SGBUTTON, 0, 0,  2,13, 13,1, "A_bout" },
-	{ SGBUTTON, 0, 0, 17,13, 16,1, "_Load config" },
-	{ SGBUTTON, 0, 0, 35,13, 13,1, "_Save config" },
-	{ SGRADIOBUT, 0, 0, 3,15, 10,1, "_No Reset" },
-	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset ma_chine" },
-	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
-	{ SGBUTTON, 0, 0, 36,15, 10,1, "_Quit" },
-	{ SGBUTTON, SG_CANCEL, 0, 36,17, 10,1, "Cancel" },
+	{ SGBUTTON, 0, 0,  2,15, 13,1, "A_bout" },
+	{ SGBUTTON, 0, 0, 17,15, 16,1, "_Load config" },
+	{ SGBUTTON, 0, 0, 35,15, 13,1, "_Save config" },
+	{ SGRADIOBUT, 0, 0, 3,17, 10,1, "_No Reset" },
+	{ SGRADIOBUT, 0, 0, 3,19, 15,1, "Reset ma_chine" },
+	{ SGBUTTON, SG_DEFAULT, 0, 21,17, 8,3, "OK" },
+	{ SGBUTTON, 0, 0, 36,17, 10,1, "_Quit" },
+	{ SGBUTTON, SG_CANCEL, 0, 36,19, 10,1, "Cancel" },
 	{ SGSTOP, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -82,8 +86,8 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 	if (SDLGui_SetScreen(sdlscrn))
 		return false;
 
-	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
-	bOldMouseVisibility = Main_ShowCursor(true);
+	Screen_GetMouseState(&nOldMouseX, &nOldMouseY);
+	bOldMouseVisibility = Screen_ShowCursor(true);
 
 	SDLGui_CenterDlg(maindlg);
 
@@ -124,8 +128,8 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			{
 				/* Memory snapshot has been loaded - leave GUI immediately */
 				*bLoadedSnapshot = true;
-				Main_ShowCursor(bOldMouseVisibility);
-				Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+				Screen_ShowCursor(bOldMouseVisibility);
+				GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 				return true;
 			}
 			break;
@@ -140,6 +144,9 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			break;
 		 case MAINDLG_SOUND:
 			Dialog_SoundDlg();
+			break;
+		 case MAINDLG_RECORD:
+			Dialog_RecordingDlg();
 			break;
 		 case MAINDLG_LOADCFG:
 			psNewCfg = SDLGui_FileSelect("Load configuration:", sConfigFileName, NULL, false);
@@ -171,8 +178,8 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 	if (maindlg[MAINDLG_RESET].state & SG_SELECTED)
 		*bReset = true;
 
-	Main_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+	Screen_ShowCursor(bOldMouseVisibility);
+	GuiEvent_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	return (retbut == MAINDLG_OK);
 }

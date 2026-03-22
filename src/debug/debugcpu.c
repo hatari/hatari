@@ -40,7 +40,6 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
-#define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 
 static uint32_t disasm_addr;     /* disasm address */
 static uint32_t memdump_addr;    /* memdump address */
@@ -449,7 +448,7 @@ static int DebugCpu_Profile(int nArgc, char *psArgs[])
 }
 
 /**
- * helper: return type width (b/c=1, w=2, l=4)
+ * Helper: return type width (b/c=1, w=2, l=4)
  */
 static unsigned get_type_width(char mode)
 {
@@ -469,8 +468,7 @@ static unsigned get_type_width(char mode)
 
 
 /**
- * This is a helper function that prints `count` `size` sized memory items
- * from `addr` in `base`.
+ * Helper: print `count` `size` sized memory items from `addr` in `base`.
  * @param addr    the start address
  * @param count   the amount of items that should be printed
  * @param size    the size of one item
@@ -518,24 +516,16 @@ static void print_mem_values(uint32_t addr, int count, int size, int base)
 }
 
 /**
- * This is a helper function that prints `count` bytes from Atari `addr`
- * as host encoded chars.
+ * Helper: print `count` bytes from Atari `addr` using
+ * user-configured conversion for host character conversion.
  * @param addr   The ST RAM start address
  * @param count  the amount of bytes that should get printed
  */
 static void print_mem_chars(uint32_t addr, uint8_t count)
 {
-	char host[4], st[2];
-	st[1] = '\0';
-
 	for (int i = 0; i < count; i++)
 	{
-		st[0] = STMemory_ReadByte(addr + i);
-		if ((unsigned)st[0] >= 32 && st[0] != 127 &&
-		    Str_AtariToHost(st, host, sizeof(host), NON_PRINT_CHAR))
-			fprintf(debugOutput,"%s", host);
-		else
-			fputc(NON_PRINT_CHAR, debugOutput);
+		Str_PrintMemChar(debugOutput, STMemory_ReadByte(addr + i));
 	}
 }
 
@@ -633,7 +623,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 
 /**
- * helper: return type base (b=1, o=8, d=10, h=16)
+ * Helper: return type base (b=1, o=8, d=10, h=16)
  */
 static unsigned get_type_base(char mode)
 {
@@ -828,7 +818,8 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 }
 
 
-/* helper to convert argument from host to Atari encoding.
+/**
+ * Helper: convert argument from host to Atari encoding.
  * returns false if argument could not be mapped completely,
  * or it maps to more than one Atari character.
  *
@@ -1320,7 +1311,9 @@ static int DebugCpu_Next(int nArgc, char *psArgv[])
 	return DEBUGGER_CMDDONE;
 }
 
-/* helper to get instruction type */
+/**
+ * Helper: get instruction type
+ */
 uint32_t DebugCpu_OpcodeType(void)
 {
 	/* cannot use OpcodeFamily like profiler does,

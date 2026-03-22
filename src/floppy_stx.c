@@ -12,7 +12,7 @@
    - Markus Fritze (Sarnau)
    - P. Putnik
    - Jean Louis Guerin (Dr CoolZic)
-   - Nicolas Pomarede
+   - Nicolas Pomarède
 */
 const char floppy_stx_fileid[] = "Hatari floppy_stx.c";
 
@@ -27,6 +27,7 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c";
 #include "cycles.h"
 #include "str.h"
 #include "utils.h"
+#include "file_archive.h"
 
 
 #define	STX_DEBUG_FLAG_STRUCTURE	1
@@ -1793,11 +1794,11 @@ uint8_t	FDC_WriteSector_STX ( uint8_t Drive , uint8_t Track , uint8_t Sector , u
 //fprintf ( stderr , "write drive=%d track=%d side=%d sector=%d size=%d index=%d\n", Drive, Track, Side, Sector, SectorSize , pStxSector->SaveSectorIndex );
 //Str_Dump_Hex_Ascii ( (char *) pSector_WriteData, SectorSize, 16, "" , stderr );
 
-	/* Warn that 'write sector' data will be lost or saved (if zipped or not) */
+	/* Warn that 'write sector' data will be lost or saved (if disk image is inside an archive or not) */
 	if ( STX_State.ImageBuffer[ Drive ]->WarnedWriteSector == false )
 	{
-		if ( File_DoesFileExtensionMatch ( EmulationDrives[ Drive ].sFileName , ".zip" ) )
-			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write sector' to an STX disk inside a zip file" );
+		if ( Archive_FileNameIsSupported ( EmulationDrives[ Drive ].sFileName ) )
+			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write sector' to an STX disk inside an archive file" );
 		else
 			Log_AlertDlg ( LOG_INFO , "Changes made with 'write sector' to an STX disk will be saved into an additional .wd1772 file" );
 		STX_State.ImageBuffer[ Drive ]->WarnedWriteSector = true;
@@ -2116,11 +2117,11 @@ uint8_t	FDC_WriteTrack_STX ( uint8_t Drive , uint8_t Track , uint8_t Side , int 
 	}
 
 
-	/* Warn that 'write track' data will be lost or saved (if zipped or not) */
+	/* Warn that 'write track' data will be lost or saved (if disk image is inside an archive or not) */
 	if ( STX_State.ImageBuffer[ Drive ]->WarnedWriteTrack == false )
 	{
-		if ( File_DoesFileExtensionMatch ( EmulationDrives[ Drive ].sFileName , ".zip" ) )
-			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write track' to an STX disk inside a zip file" );
+		if ( Archive_FileNameIsSupported ( EmulationDrives[ Drive ].sFileName ) )
+			Log_AlertDlg ( LOG_INFO , "WARNING : can't save changes made with 'write track' to an STX disk inside an archive file" );
 		else
 			Log_AlertDlg ( LOG_INFO , "Changes made with 'write track' to an STX disk will be saved into an additional .wd1772 file" );
 		STX_State.ImageBuffer[ Drive ]->WarnedWriteTrack = true;

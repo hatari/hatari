@@ -237,8 +237,63 @@ void Str_UnEscape(char *s1)
 			*s2++ = '\\';
 		}
 	}
-	assert(s2 < s1);
+	assert(s2 <= s1);
 	*s2 = '\0';
+}
+
+/**
+ * Return true if character at given offset in a given name is invalid
+ * for a GEMDOS file name, false otherwise.
+ *
+ * GEMDOS HD needs to identify characters in host files that could
+ * have been set as INVALID_CHAR after Str_Filename_Host2Atari()
+ * conversion, to avoid matching host file names with valid chars at
+ * those positions (as INVALID_CHAR replacement is itself a valid
+ * char).
+ *
+ * All >127 codepoints are assume to be valid. I.e. this does not
+ * take into account potential invalid host name corner-case
+ * (INVALID_CHAR replacements due to host file name UTF-8 / UCS-2
+ * conversion encountering invalid character sequences).
+ *
+ * Invalid char info is based on based on info in Compedium +
+ * Profibuch. While some of these chars could appear in Unix file
+ * names, Windows file names have similar restrictions to GEMDOS:
+ * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+ */
+bool Str_Filename_Invalid_Char(const char *name, int offset)
+{
+	const char *dot;
+
+	char c = name[offset];
+	if (c < 32 || c == 127)
+		return true;
+
+	switch (c)
+	{
+		/* used in patterns */
+	case '*':
+		/* used in drives & special device names */
+	case ':':
+		/* used in patterns */
+	case '?':
+		/* used in paths */
+	case '\\':
+		/* otherwise not valid for file names */
+	case '/':
+		/* invalid GEMDOS file name char */
+		return true;
+	case '.':
+		/* last dot */
+		dot = strrchr(name, '.');
+		/* extra dots are invalid chars, except for ".." */
+		if (dot != name + offset && strlen(name) > 2)
+			return true;
+		/* fall through */
+	default:
+		/* assumed to be valid GEMDOS file name char */
+		return false;
+	}
 }
 
 /**
@@ -272,9 +327,12 @@ void Str_Filename_Host2Atari(const char *source, char *dst)
 			dot[4] = '\0';
 
 		/* if there are extra dots, convert them */
-		for (tmp = src; tmp < dot; tmp++)
-			if (*tmp == '.')
-				*tmp = INVALID_CHAR;
+		if (len != 2 || strcmp(src, "..") != 0)
+		{
+			for (tmp = src; tmp < dot; tmp++)
+				if (*tmp == '.')
+					*tmp = INVALID_CHAR;
+		}
 
 		/* limit part before extension to 8 chars */
 		if (dot - src > 8)
@@ -297,12 +355,10 @@ void Str_Filename_Host2Atari(const char *source, char *dst)
 			switch (*tmp)
 			{
 				case '*':
-				case '/':
 				case ':':
 				case '?':
 				case '\\':
-				case '{':
-				case '}':
+				case '/':
 					*tmp = INVALID_CHAR;
 					break;
 				default:
@@ -540,9 +596,19 @@ static bool Str_LocalToAtari(const char *source, char *dest, char replacementCha
 }
 #endif
 
+static bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
+{
+#if defined(WIN32) || defined(USE_LOCALE_CHARSET)
+	return Str_AtariToLocal(source, dest, destLen, replacementChar);
+#else
+	return Str_AtariToUtf8(source, dest, destLen);
+#endif
+}
+
 /**
- * Convert given host 'source' file name to 'destLen' sized 'dest',
- * in Atari encoding, if GEMDOS HD filename conversion is enabled.
+ * Convert given Atari encoding 'source' file name to 'destLen'
+ * sized 'dest' in host encoding, if GEMDOS HD file name conversion
+ * is enabled, otherwise just copy it.
  */
 void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char replacementChar)
 {
@@ -554,15 +620,7 @@ void Str_Filename_Atari2Host(const char *source, char *dest, int destLen, char r
 	Str_AtariToHost(source, dest, destLen, replacementChar);
 }
 
-bool Str_AtariToHost(const char *source, char *dest, int destLen, char replacementChar)
-{
-#if defined(WIN32) || defined(USE_LOCALE_CHARSET)
-	return Str_AtariToLocal(source, dest, destLen, replacementChar);
-#else
-	return Str_AtariToUtf8(source, dest, destLen);
-#endif
-}
-
+/* 'dest' buffer should be same size as 'source' one */
 bool Str_HostToAtari(const char *source, char *dest, char replacementChar)
 {
 #if defined(WIN32) || defined(USE_LOCALE_CHARSET)
@@ -642,6 +700,10 @@ static int mapDecomposedPrecomposed[] =
  * and a combining character) in an UTF-8 encoded string into
  * the precomposed UTF-8 encoded form. Only characters which
  * exist in the AtariST character set are converted.
+ *
+ * Source and destination can point to same string.
+ * Converted string does not expand.
+ *
  * This is needed for OSX which returns filesystem paths in the
  * decomposed form (NFD).
  */
@@ -674,7 +736,29 @@ void Str_DecomposedToPrecomposedUtf8(const char *source, char *dest)
 
 /* ---------------------------------------------------------------------- */
 
+/**
+ * Convert given Atari char with the configured conversion,
+ * and print it to given FILE*.
+ */
+void Str_PrintMemChar(FILE *fp, uint8_t c)
+{
+	/* 8-bit Atari char + locale conversion? */
+	if (c > 0x7F && ConfigureParams.Debugger.bMemConvLocale)
+	{
+		/* multi-byte conversion */
+		char host[5], st[2] = { c, 0 };
+		Str_AtariToHost(st, host, sizeof(host), '.');
+		fprintf(fp,"%s", host);
+		return;
+	}
 
+	/* non-ASCII conversion? */
+	if (c < 0x20 || c >= 0x7f)
+		c = '.';
+	fputc(c, fp);
+}
+
+/* ---------------------------------------------------------------------- */
 
 /**
  * Print an Hex/Ascii dump of Len bytes located at *p

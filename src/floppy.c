@@ -42,7 +42,7 @@ const char Floppy_fileid[] = "Hatari floppy.c";
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
 #include "floppy_scp.h"
-#include "zip.h"
+#include "file_archive.h"
 #include "str.h"
 #include "video.h"
 #include "fdc.h"
@@ -554,10 +554,10 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = STX_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (SCP_FileNameIsSCP(filename, true))
 		EmulationDrives[Drive].pBuffer = SCP_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
-	else if (ZIP_FileNameIsZIP(filename))
+	else if (Archive_FileNameIsSupported(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(Drive, filename, zippath, &nImageBytes, &ImageType);
+		EmulationDrives[Drive].pBuffer = Archive_ReadDisk(Drive, filename, zippath, &nImageBytes, &ImageType);
 	}
 
 	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
@@ -667,8 +667,8 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 					bSaved = STX_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (SCP_FileNameIsSCP(psFileName, true))
 					bSaved = SCP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (ZIP_FileNameIsZIP(psFileName))
-					bSaved = ZIP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (Archive_FileNameIsSupported(psFileName))
+					bSaved = Archive_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
 					Log_Printf(LOG_INFO, "Updated the contents of floppy image '%s'.", psFileName);
 				else

@@ -20,6 +20,107 @@ Following features are deprecated and will be removed in a future release:
  Development version
  -------------------
 
+API changes:
+- "--avirecord" option requires now bool argument to enable AVI
+  recording. This is to support skipping recording of the TOS boot
+  (using option "event" prefix to enable it later)
+- Configuration file "Debugger" section "bSymbolsAutoLoad" (boolean)
+  option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
+  the same (program symbols loaded on debugger invocation)
+- Debugger accepts only single quotes ('') as expression (e.g. symbol
+  or register name) markers, due to double quotes ("") being used
+  now as string argument markers
+
+
+Emulation improvements:
+
+Emulator improvements:
+- CLI options:
+  - Fix: delayed --log-level / --trace options effect on Hatari init
+  - Both "" and "none" can be used to disable devices that are enabled
+    by providing a <file> or <dir name> (revert v2.6.1 API change)
+  - "event" prefixes support for a subset of options (listed in manual).
+    They delay applying specified option until given emulation event.
+    E.g. to fast-forward until program starts (from GEMDOS HD),
+    use: "--fast-forward boot:on --fast-forward prg:off"
+  - New "--symload" option for specifying when program symbols are loaded
+  - New "--vsync" option to enable screen update vsyncing
+  - Hatari exits with return value 1 on option errors
+  - Stricter validation of integer option values
+- Experimental support for compiling Hatari as core for libretro
+- Added support for compiling with SDL3
+- SDL GUI:
+  - Fix: allow exit from text edit mode when using just joystick
+  - Fix: do not show recording in progress, if starting it failed
+  - Audio + video recording functionality moved to its own dialog
+  - Number field values can now also be typed in
+- GEMDOS HD:
+  - Fix: "Show parent" items missing from TeraDesk folder windows
+  - Fix: Curly braces are valid GEMDOS file name characters
+  - Fix: Incorrect file match when (valid) file name contains '+'
+  - When Atari file name matches multiple host files, prefer
+    (potentially) truncated file name matches over ones where
+    invalid chars have (potentially) been replaced with '+'
+  - Increase max DTA cache size + warn on larger increases
+- Recording:
+  - Also sound recording shows recording time in Hatari titlebar
+- VDI mode:
+  - Support 8-bit VDI mode (up to 800x600@256) on TT & Falcon
+- Virtual INF file (used with autostart/TOS-resolution options):
+  - Fix: resolution setting for EmuTOS with saved Falcon EMUDESK.INF
+  - Fix: Boot drive window specified in the virtual INF file when
+    GEMDOS HD has no existing INF file, works now also with EmuTOS
+  - Support (--tos-res) resolution setting also for Falcon machines,
+    and new tclow/tcmed/tchigh values for Falcon TC modes
+- NatFeats:
+  - New NF_CYCLES call to retrieve (unsigned) 32-bit cycle counter
+- Tracing:
+  - "event" option for tracing option changes on events
+- Debugger:
+  - Fix: dysfunctional WinUAE CPU core disasm wrapper
+  - Fix: separate arguments output by "echo" command with a space
+  - Fix: breakpoint options missing from Hatari debugger state save
+  - String arguments (e.g. to echo/struct commands) can be quoted
+    with double quotes ("")
+  - Add ':print' option for annotating conditional breakpoints
+  - Debugger input file commands can be split to multiple lines
+    by adding '\' to end of line to continue it
+  - Increase max lenght of accepted debugger file commands to 4k
+  - Always ignore unnamed symbols (= note instead of warnings)
+  - Add "--memconv" option to enable locale conversion for non-ASCII
+    Atari chars in memory output from the debugger commands, and
+    for "--conout" output
+  - Symbol autoloading loads all symbol types, not just TEXT symbols
+  - Symbol offsets for "symbols prg" are taken from program basepage
+    (user given values are ignored)
+  - *.sym files supported also with "symbols prg" command
+  - Profiler skips "profile stats" output when entering debugger,
+    if it showed (there was data for) a backtrace
+- Mac:
+  - AVI recordings & screenshots default to same dir like on other OSes
+- Windows:
+  - Open Windows console automatically for debugger
+
+Testing additions:
+- Test for verifying parsing of all Hatari options
+- Test for verifying profiling & breakpoint chaining functionality,
+  and output from the "uae" + "ext" disassembly engines
+
+Tools:
+- Profile post-processor accepts "fnmatch" patterns for all
+  options that take symbol names
+
+Documentation:
+- (Very) obsolete French manual page removed
+
+
+ Version 2.6.1 (2025-08-15)
+ --------------------------
+
+Unintended API change:
+- GEMDOS HD emulation is disabled from CLI by providing "none" as
+  <dir> instead of an empty string, same as with device <file> options
+
 Emulation improvements:
 - MegaSTE:
   - When using cache, only compare 24 lowest bits of address
@@ -38,7 +139,7 @@ Emulator improvements:
 - Windows:
   - Fix: late locale init messes debugger readline history handling
 - GEMDOS HD:
-  - Fix: caches were no always flushed on writing to emulated memory
+  - Fix: caches were not always flushed on writing to emulated memory
 - Debugger:
   - Fix: show DEL character as non-printable in memdumps
 - CPU/FPU settings:
@@ -46,6 +147,8 @@ Emulator improvements:
 - Config / SDL GUI:
   - Default screenshot save directory override option
   - SDL GUI asks for file name when starting AVI recording
+  - Fit Hatari screen dialog to smallest required size and
+    log errors on invalid dialog sizes
 - CLI options:
   - GEMDOS HD & screenshot dir options accept only existing directories
 

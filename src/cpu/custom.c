@@ -57,6 +57,11 @@ static void sync_cycles(void)
 	if (extra) {
 		extra = CYCLE_UNIT - extra;
 		do_cycles(extra);
+		// 68000/010 CE requires CYCLE_UNIT aligned cycle counter
+		// (it might be unaligned if on the fly switching CPU modes)
+		if (currprefs.cpu_model <= 68010) {
+			set_cycles(c + extra);
+		}
 	}
 }
 #endif

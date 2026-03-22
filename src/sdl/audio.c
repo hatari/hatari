@@ -8,27 +8,37 @@
 */
 const char Audio_fileid[] = "Hatari audio.c";
 
-#include <SDL.h>
-
 #include "main.h"
+
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
+#include <SDL.h>
+#endif
+
 #include "audio.h"
 #include "configuration.h"
 #include "log.h"
 #include "sound.h"
 #include "dmaSnd.h"
-#include "falcon/crossbar.h"
+#include "crossbar.h"
 #include "video.h"
 
 
-int nAudioFrequency = 44100;			/* Sound playback frequency */
+#define DEFAULT_BUFFER_SAMPLES 1024
+
 bool bSoundWorking = false;			/* Is sound OK */
 static volatile bool bPlayingBuffer = false;	/* Is playing buffer? */
-int SoundBufferSize = 1024 / 4;			/* Size of sound buffer (in samples) */
+int SoundBufferSize = DEFAULT_BUFFER_SAMPLES;	/* Size of sound buffer (in samples) */
 int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
 						/*  window comparator and pulse swallowing counter */
 
-/*-----------------------------------------------------------------------*/
+#if ENABLE_SDL3
+static SDL_AudioStream *audio_stream;
+#endif
+
+
 /**
  * SDL audio callback function - copy emulation sound to audio system.
  */
@@ -106,14 +116,64 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 }
 
 
-/*-----------------------------------------------------------------------*/
+#if ENABLE_SDL3
+static void SDLCALL Audio_SDL3Callback(void *userdata, SDL_AudioStream *stream,
+                                       int additional_amount, int total_amount)
+{
+	if (additional_amount > 0)
+	{
+		Uint8 *data = SDL_stack_alloc(Uint8, additional_amount);
+		if (data)
+		{
+			Audio_CallBack(userdata, data, additional_amount);
+			SDL_PutAudioStreamData(stream, data, additional_amount);
+			SDL_stack_free(data);
+		}
+	}
+}
+#endif
+
+
+static int Audio_GetBufferSize(int freq)
+{
+	int buf_size;
+
+	/* In most case, setting samples to 1024 will give an equivalent */
+	/* sdl sound buffer of ~20-30 ms (depending on freq). */
+	/* But setting samples to 1024 for all the freq can cause some faulty */
+	/* OS sound drivers to add an important delay when playing sound at lower freq. */
+	/* In that case we use SdlAudioBufferSize (in ms) to compute a value */
+	/* of samples that matches the corresponding freq and buffer size. */
+	if (SdlAudioBufferSize == 0)			/* don't compute "samples", use default value */
+	{
+		buf_size = DEFAULT_BUFFER_SAMPLES;	/* buffer size in samples */
+	}
+	else
+	{
+		int samples = (freq / 1000) * SdlAudioBufferSize;
+		int power2 = 1;
+		while ( power2 < samples )		/* compute the power of 2 just above samples */
+			power2 *= 2;
+
+		buf_size = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
+	}
+
+	return buf_size;
+}
+
+
 /**
  * Initialize the audio subsystem. Return true if all OK.
  * We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
  */
 void Audio_Init(void)
 {
-	SDL_AudioSpec desiredAudioSpec;    /* We fill in the desired SDL audio options here */
+	SDL_AudioSpec desiredAudioSpec =
+	{
+		.format = AUDIO_S16SYS,
+		.channels = 2,
+		.freq = nAudioFrequency
+	};
 
 	/* Is enabled? */
 	if (!ConfigureParams.Sound.bEnableSound)
@@ -123,6 +183,41 @@ void Audio_Init(void)
 		bSoundWorking = false;
 		return;
 	}
+
+#if ENABLE_SDL3
+
+	/* Init the SDL's audio subsystem: */
+	if (SDL_WasInit(SDL_INIT_AUDIO) == 0)
+	{
+		if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
+		{
+			Log_Printf(LOG_WARN, "Could not init audio: %s\n", SDL_GetError() );
+			bSoundWorking = false;
+			return;
+		}
+	}
+
+	char samples_str[11];
+	SoundBufferSize = Audio_GetBufferSize(nAudioFrequency);
+	snprintf(samples_str, sizeof(samples_str), "%u", SoundBufferSize);
+	SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, samples_str);
+
+	audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+						 &desiredAudioSpec,
+						 Audio_SDL3Callback,
+						 NULL);
+	if (!audio_stream)	/* Open audio device */
+	{
+		Log_Printf(LOG_WARN, "Can't use audio: %s\n", SDL_GetError());
+		bSoundWorking = false;
+		ConfigureParams.Sound.bEnableSound = false;
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+		return;
+	}
+
+	SoundBufferSize =  AUDIOMIXBUFFER_SIZE / 2;
+
+#else
 
 	/* Init the SDL's audio subsystem: */
 	if (SDL_WasInit(SDL_INIT_AUDIO) == 0)
@@ -136,30 +231,9 @@ void Audio_Init(void)
 	}
 
 	/* Set up SDL audio: */
-	desiredAudioSpec.freq = nAudioFrequency;
-	desiredAudioSpec.format = AUDIO_S16SYS;		/* 16-Bit signed */
-	desiredAudioSpec.channels = 2;			/* stereo */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
-
-	/* In most case, setting samples to 1024 will give an equivalent */
-	/* sdl sound buffer of ~20-30 ms (depending on freq). */
-	/* But setting samples to 1024 for all the freq can cause some faulty */
-	/* OS sound drivers to add an important delay when playing sound at lower freq. */
-	/* In that case we use SdlAudioBufferSize (in ms) to compute a value */
-	/* of samples that matches the corresponding freq and buffer size. */
-	if ( SdlAudioBufferSize == 0 )			/* don't compute "samples", use default value */
-		desiredAudioSpec.samples = 1024;	/* buffer size in samples */
-	else
-	{
-		int samples = (desiredAudioSpec.freq / 1000) * SdlAudioBufferSize;
-		int power2 = 1;
-		while ( power2 < samples )		/* compute the power of 2 just above samples */
-			power2 *= 2;
-
-		desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
-	}
-
+	desiredAudioSpec.samples = Audio_GetBufferSize(desiredAudioSpec.freq);
 
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
@@ -177,6 +251,8 @@ void Audio_Init(void)
 			   SoundBufferSize, AUDIOMIXBUFFER_SIZE/2);
 	}
 
+#endif
+
 	/* All OK */
 	bSoundWorking = true;
 	/* And begin */
@@ -184,7 +260,6 @@ void Audio_Init(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Free audio subsystem
  */
@@ -194,9 +269,12 @@ void Audio_UnInit(void)
 	{
 		/* Stop */
 		Audio_EnableAudio(false);
-
+#if ENABLE_SDL3
+		SDL_DestroyAudioStream(audio_stream);
+		audio_stream = NULL;
+#else
 		SDL_CloseAudio();
-
+#endif
 		bSoundWorking = false;
 	}
 }
@@ -208,7 +286,11 @@ void Audio_UnInit(void)
  */
 void Audio_Lock(void)
 {
+#if ENABLE_SDL3
+	SDL_LockAudioStream(audio_stream);
+#else
 	SDL_LockAudio();
+#endif
 }
 
 
@@ -218,53 +300,14 @@ void Audio_Lock(void)
  */
 void Audio_Unlock(void)
 {
+#if ENABLE_SDL3
+	SDL_UnlockAudioStream(audio_stream);
+#else
 	SDL_UnlockAudio();
+#endif
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Set audio playback frequency variable, pass as PLAYBACK_xxxx
- */
-void Audio_SetOutputAudioFreq(int nNewFrequency)
-{
-	/* Do not reset sound system if nothing has changed! */
-	if (nNewFrequency != nAudioFrequency)
-	{
-		/* Set new frequency */
-		nAudioFrequency = nNewFrequency;
-
-		if (Config_IsMachineFalcon())
-		{
-			/* Compute Ratio between host computer sound frequency and Hatari's sound frequency. */
-			Crossbar_Compute_Ratio();
-		}
-		else if (!Config_IsMachineST())
-		{
-			/* Adapt LMC filters to this new frequency */
-			DmaSnd_Init_Bass_and_Treble_Tables();
-		}
-
-		/* Re-open SDL audio interface if necessary: */
-		if (bSoundWorking)
-		{
-			Audio_UnInit();
-			Audio_Init();
-		}
-	}
-
-	/* Apply YM2149 C10 low pass filter ? (except if forced to NONE) */
-	if ( YM2149_LPF_Filter != YM2149_LPF_FILTER_NONE )
-	{
-		if ( Config_IsMachineST() && nAudioFrequency >= 40000 )
-			YM2149_LPF_Filter = YM2149_LPF_FILTER_LPF_STF;
-		else
-			YM2149_LPF_Filter = YM2149_LPF_FILTER_PWM;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Start/Stop sound buffer
  */
@@ -273,13 +316,21 @@ void Audio_EnableAudio(bool bEnable)
 	if (bEnable && !bPlayingBuffer)
 	{
 		/* Start playing */
+#if ENABLE_SDL3
+		SDL_ResumeAudioStreamDevice(audio_stream);
+#else
 		SDL_PauseAudio(false);
+#endif
 		bPlayingBuffer = true;
 	}
 	else if (!bEnable && bPlayingBuffer)
 	{
 		/* Stop from playing */
+#if ENABLE_SDL3
+		SDL_PauseAudioStreamDevice(audio_stream);
+#else
 		SDL_PauseAudio(true);
+#endif
 		bPlayingBuffer = false;
 	}
 }

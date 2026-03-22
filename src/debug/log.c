@@ -27,7 +27,6 @@ const char Log_fileid[] = "Hatari log.c";
 #include "console.h"
 #include "dialog.h"
 #include "log.h"
-#include "screen.h"
 #include "file.h"
 #include "vdi.h"
 #include "options.h"
@@ -97,6 +96,8 @@ static flagname_t TraceFlags[] = {
 	{ TRACE_DSP_INTERRUPT	 , "dsp_interrupt" },
 	{ TRACE_DSP_STATE	 , "dsp_state" },
 	{ TRACE_DSP_SYMBOLS	 , "dsp_symbols" },
+
+	{ TRACE_EVENT_ACTION	 , "event" },
 
 	{ TRACE_FDC		 , "fdc" },
 
@@ -450,7 +451,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	}
 
 	/* Show alert dialog box: */
-	if (sdlscrn && nType <= AlertDlgLogLevel)
+	if (nType <= AlertDlgLogLevel)
 	{
 		char buf[MAX_MSG_LEN];
 		va_start(argptr, psFormat);
@@ -593,6 +594,16 @@ Log_ParseOptionFlags (const char *FlagsStr, flagname_t *Flags, int MaxFlags, uin
 }
 
 /**
+ * Parse/check specified exception flags.
+ * Return error string or NULL for success.
+ */
+const char* Log_CheckExceptionDebugMask (const char *FlagsStr)
+{
+	uint64_t mask = ConfigureParams.Debugger.nExceptionDebugMask;
+	return Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
+}
+
+/**
  * Parse exception flags and store results in ExceptionDebugMask.
  * Return error string or NULL for success.
  * 
@@ -608,8 +619,17 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 	return errstr;
 }
 
-
 #if ENABLE_TRACING
+
+/**
+ * Parse/check specified trace flags.
+ * Return error string or NULL for success.
+ */
+const char* Log_CheckTraceOptions (const char *FlagsStr)
+{
+	uint64_t flags = LogTraceFlags;
+	return Log_ParseOptionFlags(FlagsStr, TraceFlags, ARRAY_SIZE(TraceFlags), &flags);
+}
 
 /**
  * Parse trace flags and store results in LogTraceFlags.
@@ -687,9 +707,15 @@ void Log_Trace(const char *format, ...)
 #else	/* !ENABLE_TRACING */
 
 /** dummy */
-const char* Log_SetTraceOptions (const char *FlagsStr)
+const char* Log_CheckTraceOptions (const char *FlagsStr)
 {
 	return "Hatari has been compiled without ENABLE_TRACING!";
+}
+
+/** dummy */
+const char* Log_SetTraceOptions (const char *FlagsStr)
+{
+	return Log_CheckTraceOptions(FlagsStr);
 }
 
 /** dummy */

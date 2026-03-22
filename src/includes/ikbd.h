@@ -82,6 +82,14 @@ typedef struct {
 #define ACIA_STATUS_REGISTER__OVERRUN_ERROR    0x20
 #define ACIA_STATUS_REGISTER__INTERRUPT_REQUEST  0x80
 
+/* Some ST keyboard scancodes */
+#define ST_ESC		0x01
+#define ST_CONTROL	0x1d
+#define ST_LSHIFT	0x2a
+#define ST_RSHIFT	0x36
+#define ST_ALTERNATE	0x38
+#define ST_CAPSLOCK	0x3a
+
 extern KEYBOARD_PROCESSOR KeyboardProcessor;
 extern KEYBOARD Keyboard;
 
@@ -95,6 +103,7 @@ extern void IKBD_InterruptHandler_AutoSend(void);
 extern void IKBD_UpdateClockOnVBL ( void );
 
 extern void IKBD_PressSTKey(uint8_t ScanCode, bool bPress);
+extern void IKBD_DebounceAllKeys(void);
 
 extern void IKBD_Info(FILE *fp, uint32_t dummy);
 

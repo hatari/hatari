@@ -36,7 +36,7 @@ bool GuiOsx_Pause(bool);
 void GuiOsx_Resume(void);
 
 
-// Add method for general Usage  
+// Add method for general Usage
 //
 @interface NSApplication (service)
 

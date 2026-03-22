@@ -20,8 +20,8 @@
  * uses the macOS default of ~/Desktop/. Caller is responsible for freeing
  * the returned pointer.
  */
-char *Paths_GetMacScreenShotDir(void) {
-
+char *Paths_GetMacScreenShotDir(void)
+{
 	/* Allocate memory for storing the path string */
 	char *psPath = malloc(FILENAME_MAX);
 	if (!psPath)
@@ -32,13 +32,17 @@ char *Paths_GetMacScreenShotDir(void) {
 
 	NSString *keyValue = nil;
 	NSUserDefaults *defaults = [[[NSUserDefaults alloc] init] autorelease];
-	if(defaults != nil) {
+	if(defaults != nil)
+	{
 		[defaults addSuiteNamed:@"com.apple.screencapture.plist"];
 		keyValue = [defaults stringForKey:@"location"];
 	}
-	if (keyValue!=nil) {
+	if (keyValue!=nil)
+	{
 		Str_Copy(psPath, [keyValue UTF8String], FILENAME_MAX);
-	} else {
+	}
+	else
+	{
 		snprintf(psPath, FILENAME_MAX, "%s%c%s",
 			 Paths_GetUserHome(), PATHSEP, "Desktop");
 	}

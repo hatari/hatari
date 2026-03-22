@@ -42,6 +42,7 @@
 #define DEFAULT_EXCEPTIONS (EXCEPT_BUS|EXCEPT_ADDRESS|EXCEPT_DSP)
 
 extern int ExceptionDebugMask;
+extern const char* Log_CheckExceptionDebugMask(const char *FlagsStr);
 extern const char* Log_SetExceptionDebugMask(const char *OptionsStr);
 
 
@@ -81,6 +82,7 @@ extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
+extern const char* Log_CheckTraceOptions(const char *FlagsStr);
 extern const char* Log_SetTraceOptions(const char *OptionsStr);
 extern char *Log_MatchTrace(const char *text, int state);
 extern void Log_ToggleMsgRepeat(void);
@@ -190,7 +192,9 @@ enum {
 	TRACE_BIT_VIDEO_RES,
 	TRACE_BIT_VIDEO_STE,
 	TRACE_BIT_VIDEO_SYNC,
-	TRACE_BIT_VIDEO_VBL
+	TRACE_BIT_VIDEO_VBL,
+
+	TRACE_BIT_EVENT_ACTION
 };
 
 #define TRACE_ACIA               (1ll<<TRACE_BIT_ACIA)
@@ -276,6 +280,8 @@ enum {
 #define TRACE_VIDEO_STE          (1ll<<TRACE_BIT_VIDEO_STE)
 #define TRACE_VIDEO_SYNC         (1ll<<TRACE_BIT_VIDEO_SYNC)
 #define TRACE_VIDEO_VBL          (1ll<<TRACE_BIT_VIDEO_VBL)
+
+#define TRACE_EVENT_ACTION       (1ll<<TRACE_BIT_EVENT_ACTION)
 
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0ll)

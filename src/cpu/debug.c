@@ -21,14 +21,12 @@
 #include "memory.h"
 #include "custom.h"
 #include "newcpu.h"
-#include "cpu_prefetch.h"
 #include "debug.h"
 #include "disasm.h"
 #include "debugmem.h"
 //#include "cia.h"
 //#include "xwin.h"
 //#include "identify.h"
-//#include "audio.h"
 //#include "sounddep/sound.h"
 //#include "disk.h"
 #include "savestate.h"
@@ -52,7 +50,6 @@
 //#include "blitter.h"
 //#include "ini.h"
 #include "readcpu.h"
-#include "cputbl.h"
 //#include "keybuf.h"
 
 static int trace_mode;
@@ -223,6 +220,9 @@ static const TCHAR help[] = {
 	_T("  ob <addr>             Copper breakpoint.\n")
 	_T("  H[H] <cnt>            Show PC history (HH=full CPU info) <cnt> instructions.\n")
 	_T("  C <value>             Search for values like energy or lifes in games.\n")
+	_T("  mmu <fc>              Set current MMU translation function code for all debugging instructions.\n")
+	_T("  mmud                  Dump MMU tables.\n")
+	_T("  U <address>           Translate logical address to physical using current MMU tables.\n")
 	_T("  Cl                    List currently found trainer addresses.\n")
 	_T("  D[idxzs <[max diff]>] Deep trainer. i=new value must be larger, d=smaller,\n")
 	_T("                        x = must be same, z = must be different, s = restart.\n")
@@ -1090,7 +1090,7 @@ static size_t next_string (TCHAR **c, TCHAR *out, int max, int forceupper)
 			ignore_ws (c);
 			break;
 		}
-		*p = next_char (c);
+		*p = next_char2(c);
 		if (forceupper)
 			*p = _totupper(*p);
 		*++p = 0;
@@ -5064,7 +5064,7 @@ static void writeintomem (TCHAR **c)
 	}
 end:
 	if (eaddr != 0xffffffff)
-		console_out_f(_T("Wrote data to %08x - %08x\n"), addrc, addr);
+		console_out_f(_T("Wrote data to %08x - %08x\n"), addrc, addr - 1);
 }
 
 static uae_u8 *dump_xlate (uae_u32 addr)
@@ -6009,20 +6009,12 @@ static void saveloadmem (TCHAR **cc, bool save)
 	uae_u8 b;
 	uae_u32 src, src2;
 	int len, len2;
-	TCHAR *name;
+	TCHAR name[MAX_PATH];
 	FILE *fp;
 
 	if (!more_params (cc))
 		goto S_argh;
-
-	name = *cc;
-	while (**cc != '\0' && !isspace (**cc))
-		(*cc)++;
-	if (!isspace (**cc))
-		goto S_argh;
-
-	**cc = '\0';
-	(*cc)++;
+	next_string(cc, name, sizeof(name) / sizeof(TCHAR), 0);
 	if (!more_params (cc))
 		goto S_argh;
 	src2 = src = readhex(cc, NULL);
@@ -6554,6 +6546,133 @@ static void find_ea (TCHAR **inptr)
 				console_out_f (_T("Aborted at %08X\n"), addr);
 				break;
 			}
+		}
+	}
+}
+
+static void debug_do_mmu_translate(uaecptr addrl)
+{
+	struct mmu_debug_data *mdd, *mdd2;
+	uaecptr addrp;
+
+	console_out_f(_T("%08x translates to:\n"), addrl);
+	for (int fc = 0; fc < 7; fc++) {
+		bool super = (fc & 4) != 0;
+		bool data = (fc & 1) != 0;
+		bool ins = (fc & 2) != 0;
+		if (currprefs.mmu_model >= 68040 && fc != 5 && fc != 6 && fc != 1 && fc != 2) {
+			continue;
+		}
+		console_out_f(_T("FC%d %s: "), fc, fc == 6 ? _T("SC") : (fc == 5 ? _T("SD") : (fc == 2 ? _T("UC") : (fc == 1 ? _T("UD") : _T("--")))));
+		TRY(prb) {
+			if (currprefs.mmu_model >= 68040) {
+				addrp = debug_mmu_translate(addrl, 0, super, data, false, sz_long, &mdd);
+			} else {
+				addrp = debug_mmu030_translate(addrl, fc, false, &mdd);
+			}
+			console_out_f(_T("PHYS: %08x"), addrp);
+			TRY(prb2) {
+				if (currprefs.mmu_model >= 68040) {
+					addrp = debug_mmu_translate(addrl, 0, super, data, true, sz_long, &mdd2);
+				} else {
+					addrp = debug_mmu030_translate(addrl, fc, true, &mdd2);
+				}
+				console_out_f(_T(" RW"));
+			} CATCH(prb2) {
+				console_out_f(_T(" RO"));
+			} ENDTRY;
+		} CATCH(prb) {
+			console_out_f(_T("PHYS: ********"));
+		} ENDTRY;
+		if (mdd->tt) {
+			console_out_f(_T(" TT%d: %08x"), mdd->tt - 1, mdd->ttdata);
+		} else if (mdd->descriptor[0] != 0xffffffff) {
+			console_out_f(_T("\n"));
+			if (currprefs.mmu_model < 68040) {
+				uaecptr desc = mdd->descriptor[0];
+				int type = mdd->descriptor_type[0];
+				for (int i = 0; i < MAX_MMU_DEBUG_DESCRIPTOR_LEVEL; i++) {
+					uaecptr desc = mdd->descriptor[i];
+					int type = mdd->descriptor_type[i];
+					if (desc == 0xffffffff) {
+						break;
+					}
+					uae_u32 descdata = get_long_debug(desc);
+					if (type == DESCR_TYPE_PAGE) {
+						console_out_f(_T(" - PAGE  %08x (%08x = %08x,CI=%d,M=%d,U=%d,WP=%d,DT=%d)\n"),
+							desc, descdata, descdata >> 8,
+							(descdata >> 6) & 1,
+							(descdata >> 4) & 1,
+							(descdata >> 3) & 1,
+							(descdata >> 2) & 1,
+							(descdata >> 0) & 3);
+					} else if (type == DESCR_TYPE_VALID4) {
+						console_out_f(_T(" - TABLE %08x (%08x = %08x,U=%d,WP=%d,DT=%d)\n"),
+							desc, descdata, descdata >> 4,
+							(descdata >> 3) & 1,
+							(descdata >> 2) & 1,
+							(descdata >> 0) & 3);
+					} else if (type == DESCR_TYPE_INVALID) {
+						console_out_f(_T(" - INV   %08x (%08x = %08x,DT=%d)\n"),
+							desc, descdata, descdata >> 2,
+							(descdata >> 0) & 3);
+					}
+				}
+			} else {
+				uaecptr desc = mdd->descriptor[0];
+				uae_u32 descdata = get_long_debug(desc);
+				console_out_f(_T(" - ROOT %08x (%08x = %08x,U=%d,W=%d,UDT=%d)\n"),
+					desc, descdata, descdata & 0xfffffe00,
+					(descdata >> 3) & 1,
+					(descdata >> 2) & 1,
+					(descdata >> 0) & 3);
+				desc = mdd->descriptor[1];
+				if (desc != 0xffffffff) {
+					descdata = get_long_debug(desc);
+					console_out_f(_T(" - PTR  %08x (%08x = %08x,U=%d,W=%d,UDT=%d)\n"),
+						desc, descdata, descdata >> (regs.mmu_page_size == 4096 ? 8 : 7),
+						(descdata >> 3) & 1,
+						(descdata >> 2) & 1,
+						(descdata >> 0) & 3);
+					int pageidx = 2;
+					desc = mdd->descriptor[pageidx];
+					if (desc != 0xffffffff) {
+						descdata = get_long_debug(desc);
+						if ((descdata & 3) ==  2) {
+							console_out_f(_T(" - IND  %08x (%08x = %08x,PDT=%d)\n"),
+								desc, descdata & ~3, descdata & 3);
+							pageidx++;
+						}
+						desc = mdd->descriptor[pageidx];
+						descdata = get_long_debug(desc);
+						if (desc != 0xffffffff) {
+							console_out_f(_T(" - PAGE %08x (%08x = %08x,UR=%d,G=%d,U1=%d,U0=%d,S=%d,CM=%d,M=%d,U=%d,W=%d,PDT=%d)\n"),
+								desc, descdata, descdata >> (regs.mmu_page_size == 4096 ? 12 : 13),
+								(descdata >> 12) & (regs.mmu_page_size == 4096 ? 1 : 3),
+								(descdata >> 10) & 1,
+								(descdata >> 9) & 1,
+								(descdata >> 8) & 1,
+								(descdata >> 7) & 1,
+								(descdata >> 5) & 3,
+								(descdata >> 4) & 1,
+								(descdata >> 3) & 1,
+								(descdata >> 2) & 1,
+								(descdata >> 0) & 3);
+						}
+					}
+				}
+				if (mdd->desc_fault) {
+					console_out_f(_T(" - DESCRIPTOR FAULT\n"));
+				}
+			}
+		} else {
+			console_out_f(_T(" DESCR: ********"));
+			console_out_f(_T("\n"));
+		}
+		if (currprefs.mmu_model >= 68040) {
+			debug_mmu_translate_end();
+		} else {
+			debug_mmu030_translate_end();
 		}
 	}
 }
@@ -7136,8 +7255,18 @@ static bool debug_line (TCHAR *input)
 				if (*inptr == 'm' && inptr[1] == 'u') {
 					inptr += 2;
 					if (inptr[0] == 'd') {
-						if (currprefs.mmu_model >= 68040)
+						if (currprefs.mmu_model >= 68040) {
 							mmu_dump_tables();
+						} else {
+							int fc = debug_mmu_mode;
+							if (more_params(&inptr)) {
+								fc = readint(&inptr, NULL);
+							}
+							if (fc <= 0 || fc > 7) {
+								fc = 2;
+							}
+							mmu030_dump_tables(fc);
+						}
 					} else {
 						if (currprefs.mmu_model) {
 							if (more_params (&inptr))
@@ -7313,35 +7442,8 @@ static bool debug_line (TCHAR *input)
 			break;
 		case 'U':
 			if (currprefs.mmu_model && more_params (&inptr)) {
-				int i;
 				uaecptr addrl = readhex(&inptr, NULL);
-				uaecptr addrp;
-				console_out_f (_T("%08X translates to:\n"), addrl);
-				for (i = 0; i < 4; i++) {
-					bool super = (i & 2) != 0;
-					bool data = (i & 1) != 0;
-					console_out_f (_T("S%dD%d="), super, data);
-					TRY(prb) {
-						if (currprefs.mmu_model >= 68040)
-							addrp = mmu_translate (addrl, 0, super, data, false, sz_long);
-						else
-							addrp = mmu030_translate (addrl, super, data, false);
-						console_out_f (_T("%08X"), addrp);
-						TRY(prb2) {
-							if (currprefs.mmu_model >= 68040)
-								addrp = mmu_translate (addrl, 0, super, data, true, sz_long);
-							else
-								addrp = mmu030_translate (addrl, super, data, true);
-							console_out_f (_T(" RW"));
-						} CATCH(prb2) {
-							console_out_f (_T(" RO"));
-						} ENDTRY
-					} CATCH(prb) {
-						console_out_f (_T("***********"));
-					} ENDTRY
-					console_out_f (_T(" "));
-				}
-				console_out_f (_T("\n"));
+				debug_do_mmu_translate(addrl);
 			}
 			break;
 		case 'h':

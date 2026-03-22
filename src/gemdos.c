@@ -35,6 +35,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c";
 #elif HAVE_SYS_UTIME_H
 #include <sys/utime.h>
 #endif
+#include <stddef.h>
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -44,6 +45,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c";
 #include "main.h"
 #include "cart.h"
 #include "configuration.h"
+#include "event.h"
 #include "file.h"
 #include "floppy.h"
 #include "ide.h"
@@ -109,8 +111,11 @@ typedef enum {
 } dta_ret_t;
 
 #define DTA_MAGIC_NUMBER  0x12983476
-#define DTA_CACHE_INC     256      /* DTA cache initial and increment size (grows on demand) */
-#define DTA_CACHE_MAX     4096     /* max DTA cache size (multiple of DTA_CACHE_INC) */
+
+/* these are intended to be multiplies of each other */
+#define DTA_CACHE_MIN_INC  256     /* DTA cache initial size */
+#define DTA_CACHE_MAX_INC  4096    /* DTA cache size doubles until this size, after which increases are warned */
+#define DTA_CACHE_MAX_SIZE 16*1024 /* max DTA cache size */
 
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
 #define  MAX_FILE_HANDLES    64    /* We can allow 64 files open at once */
@@ -387,7 +392,7 @@ static void GemDOS_ClearAllInternalDTAs(void)
 	int i;
 	if (!InternalDTAs)
 	{
-		DTACount = DTA_CACHE_INC;
+		DTACount = DTA_CACHE_MIN_INC;
 		InternalDTAs = calloc(DTACount, sizeof(*InternalDTAs));
 		assert(InternalDTAs);
 	}
@@ -420,13 +425,24 @@ static void GemDOS_FreeAllInternalDTAs(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Match a TOS file name to a dir mask.
+ *
+ * Set 'subdir' when file is not at drive root, and 'only_invalid'
+ * when '?' in (host file) name pattern should match only
+ * characters that are invalid for Atari GEMDOS file names.
  */
-static bool fsfirst_match(const char *pat, const char *name)
+static bool fsfirst_match(const char *pat, const char *name, bool subdir, bool only_invalid)
 {
 	const char *dot, *p=pat, *n=name;
 
 	if (name[0] == '.')
-		return false;           /* skip .* files */
+	{
+		if (!subdir)
+			/* skip all ".*" entries for drive root */
+			return false;
+		if (strcmp(name, ".") && strcmp(name, ".."))
+			/* skip other than "." and ".." entries for subdirs */
+			return false;
+	}
 
 	dot = strrchr(name, '.');	/* '*' matches everything except last dot in name */
 	if (dot && p[0] == '*' && p[1] == 0)
@@ -440,7 +456,8 @@ static bool fsfirst_match(const char *pat, const char *name)
 				n++;
 			p++;
 		}
-		else if (*p=='?' && *n)
+		else if (*p=='?' && *n &&
+			 (!only_invalid || Str_Filename_Invalid_Char(name, n-name)))
 		{
 			n++;
 			p++;
@@ -469,12 +486,13 @@ static bool fsfirst_match(const char *pat, const char *name)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse directory from sfirst mask
+ * Parse directory from sfirst mask 'string' to 'newstr'
  * - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
+ * Return true if it matches drive 'rootdir'
  */
-static void fsfirst_dirname(const char *string, char *newstr)
+static bool fsfirst_dirname(const char *rootdir, const char *string, char *newstr)
 {
-	int i=0;
+	int i = 0, rootlen = strlen(rootdir);
 
 	strcpy(newstr, string);
 
@@ -485,10 +503,24 @@ static void fsfirst_dirname(const char *string, char *newstr)
 			newstr[i] = PATHSEP;
 		i++;
 	}
+	if (i <= rootlen)
+	{
+		assert(strcmp(rootdir, newstr) == 0);
+		return true;
+	}
+
 	/* find last slash and terminate string */
 	while (i && newstr[i] != PATHSEP)
 		i--;
 	newstr[i] = '\0';
+
+	if (i <= rootlen)
+	{
+		assert(strcmp(rootdir, newstr) == 0);
+		return true;
+	}
+
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1134,10 +1166,13 @@ static int GemDOS_FileName2HardDriveID(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check whether a file in given path matches given case-insensitive pattern.
- * Return first matched name which caller needs to free, or NULL for no match.
+ * Does host file in given path match given Atari name (case-insensitively)?
+ * If 'pattern' is set, do pattern match, otherwise exact match.
+ * is 'only_invalid' is set, '?' in pattern should match only invalid chars.
+ * Return first matched name (which caller needs to free), or NULL for no match.
  */
-static char* match_host_dir_entry(const char *path, const char *name, bool pattern)
+static char* match_host_dir_entry(const char *path, const char *name,
+				  bool pattern, bool only_invalid)
 {
 #define MAX_UTF8_NAME_LEN (3*(8+1+3)+1) /* UTF-8 can have up to 3 bytes per character */
 	struct dirent *entry;
@@ -1157,11 +1192,14 @@ static char* match_host_dir_entry(const char *path, const char *name, bool patte
 #endif
 	if (pattern)
 	{
+		/* TOS handles "." / ".." */
+		const bool subdir = false;
+
 		while ((entry = readdir(dir)))
 		{
 			char *d_name = entry->d_name;
 			Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-			if (fsfirst_match(name, d_name))
+			if (fsfirst_match(name, d_name, subdir, only_invalid))
 			{
 				match = strdup(d_name);
 				break;
@@ -1243,7 +1281,11 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	char *tmp, *match;
 	int dot, namelen, pathlen;
 	int (*chr_conv)(int);
-	bool modified;
+	/* start with exact matches */
+	bool use_pattern = false;
+	/* whether '?' should match only invalid chars */
+	bool only_invalid = false;
+
 	char *name = alloca(strlen(origname) + 3);
 
 	/* append separator */
@@ -1258,7 +1300,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	namelen = clip_to_83(name);
 
 	/* first try exact (case insensitive) match */
-	match = match_host_dir_entry(path, name, false);
+	match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 	if (match)
 	{
 		/* use strncat so that string is always nul terminated */
@@ -1274,7 +1316,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	if (is_dir && namelen == 9 && name[8] == '.')
 	{
 		name[8] = '\0';
-		match = match_host_dir_entry(path, name, false);
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -1283,22 +1325,11 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		}
 	}
 
-	/* Assume there were invalid characters or that the host file
-	 * was too long to fit into GEMDOS 8+3 filename limits.
-	 * If that's the case, modify the name to a pattern that
-	 * will match such host files and try again.
+	/* Next check whether Atari file name could have been
+	 * truncated, or invalid chars in it replaced. If that's
+	 * the case, modify the name to a pattern that will match
+	 * such host files and try again...
 	 */
-	modified = false;
-
-	/* catch potentially invalid characters */
-	for (tmp = name; *tmp; tmp++)
-	{
-		if (*tmp == INVALID_CHAR)
-		{
-			*tmp = '?';
-			modified = true;
-		}
-	}
 
 	/* catch potentially too long extension */
 	for (dot = 0; name[dot] && name[dot] != '.'; dot++);
@@ -1308,7 +1339,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		/* "emulated.too" -> "emulated.too*" */
 		name[namelen++] = '*';
 		name[namelen] = '\0';
-		modified = true;
+		use_pattern = true;
 	}
 	/* catch potentially too long part before extension */
 	if (namelen > 8 && name[8] == '.')
@@ -1318,7 +1349,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		memmove(name+9, name+8, namelen-7);
 		namelen++;
 		name[8] = '*';
-		modified = true;
+		use_pattern = true;
 	}
 	/* catch potentially too long part without extension */
 	else if (namelen == 8 && !name[dot])
@@ -1327,12 +1358,36 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		name[8] = '*';
 		name[9] = '\0';
 		namelen++;
-		modified = true;
+		use_pattern = true;
 	}
 
-	if (modified)
+	if (use_pattern)
 	{
-		match = match_host_dir_entry(path, name, true);
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
+		if (match)
+		{
+			strncat(path+pathlen, match, maxlen-pathlen);
+			free(match);
+			return true;
+		}
+	}
+
+	use_pattern = false;
+	/* need pattern to catch (potentially) invalid characters? */
+	for (tmp = name; *tmp; tmp++)
+	{
+		if (*tmp == INVALID_CHAR)
+		{
+			*tmp = '?';
+			use_pattern = true;
+		}
+	}
+
+	if (use_pattern)
+	{
+		/* '?' should match only invalid chars */
+		only_invalid = true;
+		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
 			strncat(path+pathlen, match, maxlen-pathlen);
@@ -3015,6 +3070,7 @@ static bool GemDOS_SFirst(uint32_t Params)
 	uint32_t DTA_Gemdos;
 	uint16_t useidx;
 	uint16_t attrib;
+	bool isRoot;
 
 	attrib = STMemory_ReadWord(Params+SIZE_LONG);
 	pszFileName = STMemory_GetStringPointer(STMemory_ReadLong(Params));
@@ -3097,7 +3153,8 @@ static bool GemDOS_SFirst(uint32_t Params)
 	/* open directory
 	 * TODO: host path may not fit into InternalDTA
 	 */
-	fsfirst_dirname(szActualFileName, InternalDTAs[useidx].path);
+	const char *rootdir = emudrives[Drive-2]->hd_emulation_dir;
+	isRoot = fsfirst_dirname(rootdir, szActualFileName, InternalDTAs[useidx].path);
 	fsdir = opendir(InternalDTAs[useidx].path);
 
 	if (fsdir == NULL)
@@ -3124,9 +3181,13 @@ static bool GemDOS_SFirst(uint32_t Params)
 	j = 0;
 	for (i=0; i < count; i++)
 	{
+		/* root dir does not include "." & ".." entries, others do */
+		const bool subdir = !isRoot;
+		const bool only_invalid = false;
 		char *d_name = files[i]->d_name;
+
 		Str_DecomposedToPrecomposedUtf8(d_name, d_name);   /* for OSX */
-		if (fsfirst_match(dirmask, d_name))
+		if (fsfirst_match(dirmask, d_name, subdir, only_invalid))
 		{
 			InternalDTAs[useidx].found[j] = files[i];
 			j++;
@@ -3157,20 +3218,27 @@ static bool GemDOS_SFirst(uint32_t Params)
 
 	if (++DTAIndex >= DTACount)
 	{
-		if (DTACount < DTA_CACHE_MAX)
+		if (DTACount < DTA_CACHE_MAX_SIZE)
 		{
 			INTERNAL_DTA *pNewIntDTAs;
+			/* double size until max increcement */
+			int DTAInc = DTACount > DTA_CACHE_MAX_INC ? DTA_CACHE_MAX_INC : DTACount;
 			/* increase DTA cache size */
-			pNewIntDTAs = realloc(InternalDTAs, (DTACount + DTA_CACHE_INC) * sizeof(*InternalDTAs));
+			pNewIntDTAs = realloc(InternalDTAs, (DTACount + DTAInc) * sizeof(*InternalDTAs));
 			if (pNewIntDTAs)
 			{
 				InternalDTAs = pNewIntDTAs;
-				memset(InternalDTAs + DTACount, 0, DTA_CACHE_INC * sizeof(*InternalDTAs));
-				DTACount += DTA_CACHE_INC;
+				memset(InternalDTAs + DTACount, 0, DTAInc * sizeof(*InternalDTAs));
+				DTACount += DTAInc;
+				if (DTACount > DTA_CACHE_MAX_INC)
+				{
+					/* show warnings before max size is reached */
+					Log_Printf(LOG_WARN, "Increased GEMDOS HD DTA cache to %d/%d entries\n", DTACount, DTA_CACHE_MAX_SIZE);
+				}
 			}
 			else
 			{
-				Log_Printf(LOG_WARN, "Failed to alloc GEMDOS HD DTA entries, wrapping DTA index\n");
+				Log_Printf(LOG_WARN, "Failed to alloc %d GEMDOS HD DTA entries, wrapping DTA index\n", DTACount + DTAInc);
 				DTAIndex = 0;
 			}
 		}
@@ -3342,6 +3410,10 @@ static void GemDOS_TerminateClose(void)
 			unforced++;
 		}
 	}
+
+	/* user-configured program termination "event" actions */
+	Event_DoPrgTermActions();
+
 	if (!(closed || unforced))
 		return;
 	Log_Printf(LOG_WARN, "Closing %d & unforcing %d file handle(s) remaining at program 0x%x exit.\n",
@@ -3356,6 +3428,7 @@ static bool GemDOS_Pterm0(uint32_t Params)
 {
 	LOG_TRACE(TRACE_OS_GEMDOS|TRACE_OS_BASE, "GEMDOS 0x00 Pterm0() at PC 0x%X\n",
 		  CallingPC);
+
 	GemDOS_TerminateClose();
 	Symbols_RemoveCurrentProgram();
 
@@ -3463,7 +3536,7 @@ static bool GemDOS_Super(uint32_t Params)
  * Map GEMDOS call opcodes to their names
  * 
  * Mapping is based on TOSHYP information:
- *	http://toshyp.atari.org/en/005013.html
+ *	https://freemint.github.io/tos.hyp/en/gemdos_functions.html
  */
 static const char* GemDOS_Opcode2Name(uint16_t opcode)
 {
@@ -4190,7 +4263,7 @@ int GemDOS_Trap(void)
 		break;
 	case 0x4A:	/* Mshrink */
 		/* Mshrink's two pointers are prefixed by reserved zero word:
-		 * http://toshyp.atari.org/en/00500c.html#Bindings_20for_20Mshrink
+		 * https://freemint.github.io/tos.hyp/en/gemdos_memory.html#Mshrink
 		 */
 		LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x4A Mshrink(0x%X, 0x%X) at PC 0x%X\n",
 			  STMemory_ReadLong(Params+SIZE_WORD),
@@ -4305,7 +4378,9 @@ void GemDOS_Boot(void)
 /**
  * Load and relocate a PRG file into the memory of the emulated machine.
  */
-int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSetup)
+int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr,
+			uint32_t *offsets, uint32_t *bssEnd,
+			bool bFullBpSetup)
 {
 	long nFileSize, nRelTabIdx;
 	uint8_t *prg;
@@ -4337,7 +4412,9 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		memtop = STMemory_ReadLong(0x436);
 	else
 		memtop = STMemory_ReadLong(0x5a4);
-	if (baseaddr + 0x100 + nTextLen + nDataLen + nBssLen > memtop)
+
+	const uint32_t nTextAddr = baseaddr + 0x100;
+	if (nTextAddr + nTextLen + nDataLen + nBssLen > memtop)
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Program too large: '%s'.\n", psPrgName);
@@ -4347,26 +4424,32 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	/* relocation info is also written to this area */
 	M68000_Flush_All_Caches(baseaddr, 0x100 + nTextLen + nDataLen + nBssLen);
 
-	if (!STMemory_SafeCopy(baseaddr + 0x100, prg + 28, nTextLen + nDataLen, psPrgName))
+	if (!STMemory_SafeCopy(nTextAddr, prg + 28, nTextLen + nDataLen, psPrgName))
 	{
 		free(prg);
 		return GEMDOS_EIMBA;
 	}
 
 	/* Clear BSS */
-	if (!STMemory_SafeClear(baseaddr + 0x100 + nTextLen + nDataLen, nBssLen))
+	if (!STMemory_SafeClear(nTextAddr + nTextLen + nDataLen, nBssLen))
 	{
 		free(prg);
 		Log_Printf(LOG_ERROR, "Failed to clear BSS for '%s'.\n", psPrgName);
 		return GEMDOS_EIMBA;
 	}
 
+	/* TEXT/DATA/BSS offsets */
+	offsets[0] = nTextAddr;
+	offsets[1] = offsets[0] + nTextLen;
+	offsets[2] = offsets[1] + nDataLen;
+	*bssEnd = offsets[2] + nBssLen;
+
 	/* Set up basepage */
-	STMemory_WriteLong(baseaddr + 8, baseaddr + 0x100);                        /* p_tbase */
-	STMemory_WriteLong(baseaddr + 12, nTextLen);                               /* p_tlen */
-	STMemory_WriteLong(baseaddr + 16, baseaddr + 0x100 + nTextLen);            /* p_dbase */
-	STMemory_WriteLong(baseaddr + 20, nDataLen);                               /* p_dlen */
-	STMemory_WriteLong(baseaddr + 24, baseaddr + 0x100 + nTextLen + nDataLen); /* p_bbase */
+	STMemory_WriteLong(baseaddr + 8, offsets[0]);   /* p_tbase */
+	STMemory_WriteLong(baseaddr + 12, nTextLen);    /* p_tlen */
+	STMemory_WriteLong(baseaddr + 16, offsets[1]);  /* p_dbase */
+	STMemory_WriteLong(baseaddr + 20, nDataLen);    /* p_dlen */
+	STMemory_WriteLong(baseaddr + 24, offsets[2]);  /* p_bbase */
 	STMemory_WriteLong(baseaddr + 28, nBssLen);                                /* p_blen */
 	/* In case we run without TOS, set some of the other values as good as possible, too */
 	if (bFullBpSetup)
@@ -4384,7 +4467,7 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 	if (!(prg[25] & 1))
 	{
 		uint32_t nAddrLen;
-		nCurrAddr = baseaddr + 0x100 + nTextLen + nDataLen + nBssLen;
+		nCurrAddr = nTextAddr + nTextLen + nDataLen + nBssLen;
 		nAddrLen = STMemory_ReadLong(baseaddr + 4) - nCurrAddr;
 
 		M68000_Flush_All_Caches(baseaddr, nAddrLen);
@@ -4431,8 +4514,8 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 		return 0;
 	}
 
-	nCurrAddr = baseaddr + 0x100 + nRelOff;
-	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+	nCurrAddr = nTextAddr + nRelOff;
+	STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + nTextAddr);
 	nRelTabIdx += 4;
 
 	while (nRelTabIdx < nFileSize && prg[nRelTabIdx])
@@ -4444,8 +4527,8 @@ int GemDOS_LoadAndReloc(const char *psPrgName, uint32_t baseaddr, bool bFullBpSe
 			continue;
 		}
 		nRelOff += prg[nRelTabIdx];
-		nCurrAddr = baseaddr + 0x100 + nRelOff;
-		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + baseaddr + 0x100);
+		nCurrAddr = nTextAddr + nRelOff;
+		STMemory_WriteLong(nCurrAddr, STMemory_ReadLong(nCurrAddr) + nTextAddr);
 		nRelTabIdx += 1;
 	}
 	free(prg);
@@ -4468,6 +4551,8 @@ void GemDOS_PexecBpCreated(void)
 	char sFileName[FILENAME_MAX];
 	char *sStFileName;
 	uint32_t errcode;
+	uint32_t offsets[3];
+	uint32_t bssEnd;
 	uint16_t sr = M68000_GetSR();
 	uint16_t mode;
 	uint32_t prgname;
@@ -4487,7 +4572,8 @@ void GemDOS_PexecBpCreated(void)
 	{
 		GemDOS_CreateHardDriveFileName(drive, sStFileName, sFileName,
 		                               sizeof(sFileName));
-		errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0], false);
+		errcode = GemDOS_LoadAndReloc(sFileName, Regs[REG_D0],
+					      offsets, &bssEnd, false);
 	}
 	else
 	{
@@ -4507,6 +4593,15 @@ void GemDOS_PexecBpCreated(void)
 		STMemory_WriteWord(nSavedPexecParams, TosVersion >= 0x104 ? 6 : 4);
 		STMemory_WriteLong(nSavedPexecParams + 6, Regs[REG_D0]);
 		sr |= SR_OVERFLOW;
+
+		/* whether to immediately load symbols for the executed program */
+		if (ConfigureParams.Debugger.nSymbolsAutoLoad == SYM_AUTOLOAD_EXEC)
+		{
+			Symbols_AutoLoadCurrentProgram(offsets, bssEnd);
+		}
+
+		/* do user-configured program exec "event" actions */
+		Event_DoPrgExecActions();
 	}
 	else
 	{

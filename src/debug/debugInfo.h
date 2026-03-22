@@ -15,6 +15,7 @@ extern uint32_t DebugInfo_GetTEXT(void);
 extern uint32_t DebugInfo_GetTEXTEnd(void);
 extern uint32_t DebugInfo_GetDATA(void);
 extern uint32_t DebugInfo_GetBSS(void);
+extern uint32_t DebugInfo_GetBSSEnd(void);
 extern uint32_t DebugInfo_GetBASEPAGE(void);
 
 /* for debugui.c */

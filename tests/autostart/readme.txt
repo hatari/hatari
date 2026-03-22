@@ -13,8 +13,10 @@ Normally TOS v1.x seems to start that counter ~5s after boot (in
 *emulated* time), and the boot itself will always take some of that,
 so waiting quite that long isn't necessary.
 
-Try first with 4_SECS.PRG (4s wait), and if it fixes the issue, you
-could also try whether 2_SECS.PRG (2s wait) is enough for that.
+Provided AUTO-folder program searches for "\AUTO\??_SLEEP.PRG", and
+sleeps number of seconds specified (as "??") in the program name. Try
+first with "4s_sleep.prg", and if it fixes the issue, you could also
+try whether renaming it "2s_sleep.prg" is enough.
 
 Note: you can use "--fast-forward on" option on boot, as it doesn't
 impact emulated Atari time.

@@ -8,7 +8,7 @@ build-minimal:
  - CFLAGS="-D_FORTIFY_SOURCE=3"
    ./configure --disable-dsp --enable-debug --disable-tracing --enable-werror
  - make -j$(nproc)
- - ctest -j$(nproc)
+ - ctest -j$(nproc) || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 build-32bit:
  script:
@@ -18,11 +18,12 @@ build-32bit:
                       libgcc1:i386 libportmidi-dev:i386 libpng-dev:i386
                       libglib2.0-dev:i386 zlib1g-dev:i386
                       libsdl2-dev:i386 libudev-dev:i386 libreadline-dev:i386
+                      libarchive-dev:i386 retroarch-dev
  - CC="clang" CFLAGS="-m32 -O3 -Werror -D_FORTIFY_SOURCE=3"
    ./configure --enable-debug
  - make -j$(nproc)
  - file src/hatari | grep 32.bit
- - ctest -j$(nproc)
+ - ctest -j$(nproc) || { cat Testing/Temporary/LastTest.log; exit 1; }
 
 build-mingw:
   image: fedora:41
@@ -35,6 +36,7 @@ build-mingw:
     - dnf update -y
     - dnf install -y autoconf cmake git make gawk gcc mingw64-gcc mingw64-gcc-c++
                      mingw64-libstdc++ mingw64-SDL2 mingw64-zlib mingw64-libpng
+                     mingw64-libarchive
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
     - cd libs
@@ -63,7 +65,7 @@ build-mingw:
     - cd ../build
     - VERSION=$(git describe)
     - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_64.cmake
-            -DENABLE_WERROR:BOOL=1 ..
+            -DENABLE_WERROR:BOOL=1 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo ..
     - make -j$(nproc)
     - cd ..
     # And finally create the package
@@ -86,14 +88,14 @@ build-mingw:
       - ./*.zip
 
 build-fedora:
-  image: fedora:latest
+  image: fedora:41
   variables:
     GIT_DEPTH: 1000
   before_script:
     - dnf update -y
     - dnf install -y cmake make gcc diffutils python-unversioned-command
-          capstone-devel GraphicsMagick SDL2-devel libpng-devel zlib-devel tidy
-          python3-gobject gtk3 readline-devel man git rpmdevtools
+          capstone-devel GraphicsMagick SDL3-devel libpng-devel zlib-devel tidy
+          python3-gobject gtk3 readline-devel man git rpmdevtools libarchive-devel
   script:
     - rpmdev-setuptree
     - VERSION=$(git describe | sed -e s,-,^, -e s,-,.,)

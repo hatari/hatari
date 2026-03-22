@@ -1,5 +1,5 @@
 
-include_directories(${CMAKE_SOURCE_DIR}/src/cpu)
+include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/cpu)
 
 add_executable(gst2ascii gst2ascii.c)
 

@@ -4,18 +4,18 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  Joystick routines.
+  Handling of the ST joysticks and STE/Falcon enhanced joypads.
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
 const char Joy_fileid[] = "Hatari joy.c";
 
-#include <SDL.h>
-
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "joy.h"
+#include "joy_ui.h"
+#include "keymap.h"
 #include "log.h"
 #include "m68000.h"
 #include "video.h"
@@ -28,214 +28,15 @@ const char Joy_fileid[] = "Hatari joy.c";
 #define Dprintf(a)
 #endif
 
-#define JOYREADING_BUTTON1  1		/* bit 0, regular fire button */
-#define JOYREADING_BUTTON2  2		/* bit 1, space / jump button */
-#define JOYREADING_BUTTON3  4		/* bit 2, autofire button */
 #define STE_JOY_ANALOG_MIN_VALUE 0x04	/* minimum value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MID_VALUE 0x24	/* neutral mid value for STE analog joystick/paddle axis */
 #define STE_JOY_ANALOG_MAX_VALUE 0x43	/* maximum value for STE analog joystick/paddle axis */
-
-typedef struct
-{
-	int XPos,YPos;                /* the actually read axis values in range of -32768...0...32767 */
-	int XAxisID,YAxisID;          /* the IDs of the physical PC joystick's axis to be used to gain ST joystick axis input */
-	int Buttons;                  /* JOYREADING_BUTTON1 */
-} JOYREADING;
-
-typedef struct
-{
-    const char *SDLJoystickName;
-    int XAxisID,YAxisID;           /* the IDs associated with a certain SDL joystick */
-} JOYAXISMAPPING;
-
-static SDL_Joystick *sdlJoystick[ JOYSTICK_COUNT ] =		/* SDL's joystick structures */
-{
-	NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-/* Further explanation see JoyInit() */
-static JOYAXISMAPPING const *sdlJoystickMapping[ JOYSTICK_COUNT ] =	/* references which axis are actually in use by the selected SDL joystick */
-{
-	NULL, NULL, NULL, NULL, NULL, NULL
-};
-
-static bool bJoystickWorking[ JOYSTICK_COUNT ] =		/* Is joystick plugged in and working? */
-{
-	false, false, false, false, false, false
-};
 
 int JoystickSpaceBar = JOYSTICK_SPACE_NULL;   /* State of space-bar on joystick button 2 */
 static uint32_t nJoyKeyEmu[JOYSTICK_COUNT];
 static uint16_t nSteJoySelect;
 
 
-/**
- * Get joystick name
- */
-const char *Joy_GetName(int id)
-{
-	return SDL_JoystickName(sdlJoystick[id]);
-}
-
-/**
- * Return maximum available real joystick ID, or
- * zero on error or no joystick (to avoid invalid array accesses)
- */
-int Joy_GetMaxId(void)
-{
-	int count = SDL_NumJoysticks();
-	if (count > JOYSTICK_COUNT)
-		count = JOYSTICK_COUNT;
-	if (count > 0)
-		return count - 1;
-	return 0;
-}
-
-/**
- * Make sure real Joystick ID is valid, and if not, disable it & return false
- */
-bool Joy_ValidateJoyId(int i)
-{
-	int joyid = ConfigureParams.Joysticks.Joy[i].nJoyId;
-
-	/* Unavailable joystick ID -> disable it if necessary */
-	if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK &&
-	    !bJoystickWorking[joyid])
-	{
-		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", joyid, i);
-		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
-		ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
-		return false;
-	}
-	return true;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * This function initialises the (real) joysticks.
- */
-void Joy_Init(void)
-{
-	/* Joystick axis mapping table				*/
-	/* Matthias Arndt <marndt@asmsoftware.de>		*/
-	/* Somehow, not all SDL joysticks are created equal.	*/
-	/* Not all pads or sticks use axis 0 for x and axis 1	*/
-	/* for y information.					*/
-	/* This table allows to remap the axis to used.		*/
-	/* A joystick is identified by its SDL name and 	*/
-	/* followed by the X axis to use and the Y axis.	*/
-	/* Find out the axis number with the tool jstest.	*/
-
-	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
-	static const JOYAXISMAPPING AxisMappingTable [] =
-	{
-		/* Example entry for mapping joystick axis for a certain device: */
-		/* USB game pad with ID ID 0079:0011, sold by Speedlink with axis 3 and 4 used */
-		/*{"USB Gamepad" , 3, 4}, */
-		/* Default entry used if no other SDL joystick name does match (should be last of this list) */
-		{"*DEFAULT*" , 0, 1},
-	};
-
-	int i, j, nPadsConnected;
-
-	/* Initialise SDL's joystick subsystem: */
-	if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
-	{
-		Log_Printf(LOG_ERROR, "Could not init joysticks: %s\n", SDL_GetError());
-		return;
-	}
-
-	/* Scan joystick connection array for working joysticks */
-	nPadsConnected = SDL_NumJoysticks();
-	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
-	{
-		/* Open the joystick for use */
-		sdlJoystick[i] = SDL_JoystickOpen(i);
-		/* Is joystick ok? */
-		if (sdlJoystick[i] != NULL)
-		{
-			/* Set as working */
-			bJoystickWorking[i] = true;
-			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
-			/* determine joystick axis mapping for given SDL joystick name, last is default: */
-			for (j = 0; j < ARRAY_SIZE(AxisMappingTable)-1; j++) {
-				/* check if ID string matches the one reported by SDL: */
-				if(strncmp(AxisMappingTable[j].SDLJoystickName, Joy_GetName(i), strlen(AxisMappingTable[j].SDLJoystickName)) == 0)
-					break;
-			}
-
-			sdlJoystickMapping[i] = &(AxisMappingTable[j]);
-			Log_Printf(LOG_DEBUG, "Joystick %i maps axis %d and %d (%s)\n", i, sdlJoystickMapping[i]->XAxisID, sdlJoystickMapping[i]->YAxisID,
-					sdlJoystickMapping[i]->SDLJoystickName );
-		}
-	}
-
-	for (i = 0; i < JOYSTICK_COUNT ; i++)
-		Joy_ValidateJoyId(i);
-
-	JoystickSpaceBar = JOYSTICK_SPACE_NULL;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Close the (real) joysticks.
- */
-void Joy_UnInit(void)
-{
-	int i, nPadsConnected;
-
-	nPadsConnected = SDL_NumJoysticks();
-
-	for (i = 0; i < nPadsConnected && i < JOYSTICK_COUNT ; i++)
-	{
-		if (bJoystickWorking[i] == true)
-		{
-			bJoystickWorking[i] = false;
-			SDL_JoystickClose(sdlJoystick[i]);
-		}
-		sdlJoystick[i] = NULL;
-		sdlJoystickMapping[i] = NULL;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read details from joystick using SDL calls
- * NOTE ID is that of SDL
- */
-static bool Joy_ReadJoystick(int nStJoyId, JOYREADING *pJoyReading)
-{
-	int nSdlJoyID = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	unsigned hat = SDL_JoystickGetHat(sdlJoystick[nSdlJoyID], 0);
-
-	/* Joystick is OK, read position from the configured joystick axis */
-	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->XAxisID);
-	pJoyReading->YPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], pJoyReading->YAxisID);
-	/* Similarly to other emulators that support hats, override axis readings with hats */
-	if (hat & SDL_HAT_LEFT)
-		pJoyReading->XPos = -32768;
-	if (hat & SDL_HAT_RIGHT)
-		pJoyReading->XPos = 32767;
-	if (hat & SDL_HAT_UP)
-		pJoyReading->YPos = -32768;
-	if (hat & SDL_HAT_DOWN)
-		pJoyReading->YPos = 32767;
-
-	pJoyReading->Buttons = 0;
-	/* Sets bits based on pressed buttons */
-	for (int i = 0; i < JOYSTICK_BUTTONS; i++)
-	{
-		int button = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyButMap[i];
-		if (button >= 0 && SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], button))
-			pJoyReading->Buttons |= 1 << i;
-	}
-	return true;
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Enable PC Joystick button press to mimic space bar
  * (For XenonII, Flying Shark etc...) or joystick up (jump)
@@ -273,38 +74,7 @@ static uint8_t Joy_ButtonSpaceJump(int press, bool jump)
 	return 0;
 }
 
-/*-----------------------------------------------------------------------*/
-/**
- * Read details from joystick using SDL calls.  Returns the SDL joystick ID or -1 if not found.
- */
-static int Joy_ReadAxisConfig(int nStJoyId, JOYREADING *pJoyReading)
-{
-	int nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
-	if (nSdlJoyId < 0 || !bJoystickWorking[nSdlJoyId])
-		return -1;
 
-	/* How many axes are there on the corresponding SDL joystick? */
-	int nAxes = SDL_JoystickNumAxes(sdlJoystick[nSdlJoyId]);
-
-	/* get joystick axis from configuration settings and make them plausible */
-	pJoyReading->XAxisID = sdlJoystickMapping[nSdlJoyId]->XAxisID;
-	pJoyReading->YAxisID = sdlJoystickMapping[nSdlJoyId]->YAxisID;
-
-	/* make selected axis IDs plausible */
-	if(  (pJoyReading->XAxisID == pJoyReading->YAxisID) /* same joystick axis for two directions? */
-		||(pJoyReading->XAxisID > nAxes)                /* ID for x axis beyond nr of existing axes? */
-		||(pJoyReading->YAxisID > nAxes)                /* ID for y axis beyond nr of existing axes? */
-		)
-	{
-		/* define sane SDL joystick axis defaults and prepare them for saving back to the config file: */
-		pJoyReading->XAxisID = 0;
-		pJoyReading->YAxisID = 1;
-	}
-
-	return nSdlJoyId;
-}
-
-/*-----------------------------------------------------------------------*/
 /**
  * Read PC joystick and return ST format byte, i.e. lower 4 bits direction
  * and top bit fire.
@@ -320,25 +90,17 @@ uint8_t Joy_GetStickData(int nStJoyId)
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		/* If holding 'SHIFT' we actually want cursor key movement, so ignore any of this */
-		if ( !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+		if (!Keymap_IsShiftPressed())
 		{
 			nData = nJoyKeyEmu[nStJoyId] & 0xff;
 		}
 	}
 	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		/* map to SDL stick and Axes */
-		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
-		if (nSdlJoyId < 0)
-		{
-			return 0;
-		}
-
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
+		if (!JoyUI_ReadJoystick(nStJoyId, &JoyReading))
 		{
-			/* Something is wrong, we cannot read the joystick from SDL */
-			bJoystickWorking[nSdlJoyId] = false;
+			/* Something is wrong, we cannot read the real joystick data */
 			return 0;
 		}
 
@@ -381,7 +143,6 @@ uint8_t Joy_GetStickData(int nStJoyId)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Get the fire button states.
  * Note: More than one fire buttons are only supported for real joystick,
@@ -390,30 +151,15 @@ uint8_t Joy_GetStickData(int nStJoyId)
 static int Joy_GetFireButtons(int nStJoyId)
 {
 	int nButtons = 0;
-	int nSdlJoyId;
-	int i, nMaxButtons;
-
-	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
 
 	/* Are we emulating the joystick via the keyboard? */
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		nButtons |= nJoyKeyEmu[nStJoyId] >> 7;
 	}
-	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK
-	         && bJoystickWorking[nSdlJoyId])
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK)
 	{
-		nMaxButtons = SDL_JoystickNumButtons(sdlJoystick[nSdlJoyId]);
-		if (nMaxButtons > 17)
-			nMaxButtons = 17;
-		/* Now read all fire buttons and set a bit for each pressed button: */
-		for (i = 0; i < nMaxButtons; i++)
-		{
-			if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyId], i))
-			{
-				nButtons |= (1 << i);
-			}
-		}
+		nButtons = JoyUI_GetRealFireButtons(nStJoyId);
 	}
 
 	return nButtons;
@@ -425,13 +171,11 @@ static int Joy_GetFireButtons(int nStJoyId)
  * Set joystick cursor emulation for given port.  This assumes that
  * if the same keys have been defined for "cursor key emulation" in
  * other ports, the emulation for them has been switched off. Returns
- * 1 if the port number was OK, zero for error.
+ * true if the port number was OK, asserts otherwise.
  */
 bool Joy_SetCursorEmulation(int port)
 {
-	if (port < 0 || port >= JOYSTICK_COUNT) {
-		return false;
-	}
+	assert(port >= 0 && port < JOYSTICK_COUNT);
 	ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
 	return true;
 }
@@ -558,12 +302,9 @@ static uint32_t Joy_KeyToButton(int joyid, int symkey)
  * A key has been pressed down, check if we use it for joystick emulation
  * via keyboard.
  */
-bool Joy_KeyDown(int symkey, int modkey)
+bool Joy_KeyDown(int symkey)
 {
 	int i;
-
-	if (modkey & KMOD_SHIFT)
-		return false;
 
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
@@ -613,12 +354,9 @@ bool Joy_KeyDown(int symkey, int modkey)
  * A key has been released, check if we use it for joystick emulation
  * via keyboard.
  */
-bool Joy_KeyUp(int symkey, int modkey)
+bool Joy_KeyUp(int symkey)
 {
 	int i;
-
-	if (modkey & KMOD_SHIFT)
-		return false;
 
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
@@ -895,7 +633,7 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
 	{
 		/* If holding 'SHIFT' we actually want cursor key movement, so ignore any of this */
-		if ( !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+		if (!Keymap_IsShiftPressed())
 		{
 			uint8_t digiData = nJoyKeyEmu[nStJoyId];
 			uint8_t bitmaskMin = isXAxis ? ATARIJOY_BITMASK_LEFT : ATARIJOY_BITMASK_UP;
@@ -915,26 +653,14 @@ static uint8_t Joy_GetStickAnalogData(int nStJoyId, bool isXAxis)
 	{
 		JOYREADING JoyReading;
 
-		/* map to SDL stick and Axes */
-		int nSdlJoyId = Joy_ReadAxisConfig(nStJoyId, &JoyReading);
-		if (nSdlJoyId < 0)
-		{
-			return nData;
-		}
-
 		/* Read real joystick and map to emulated ST joystick for emulation */
-		if (!Joy_ReadJoystick(nStJoyId, &JoyReading))
+		if (JoyUI_ReadJoystick(nStJoyId, &JoyReading))
 		{
-			/* Something is wrong, we cannot read the joystick from SDL */
-			bJoystickWorking[nSdlJoyId] = false;
-		}
-		else
-		{
-			int sdl_reading = isXAxis ? JoyReading.XPos : JoyReading.YPos;
-			if (sdl_reading < -32768)
-				sdl_reading = -32768;
-			unsigned int usdl_reading = 32768 + sdl_reading;
-			nData = STE_JOY_ANALOG_MIN_VALUE + ((usdl_reading & 0xff00) >> 8) / STE_JOY_ANALOG_MIN_VALUE;
+			int pos = isXAxis ? JoyReading.XPos : JoyReading.YPos;
+			if (pos < -32768)
+				pos = -32768;
+			unsigned int upos = 32768 + pos;
+			nData = STE_JOY_ANALOG_MIN_VALUE + ((upos & 0xff00) >> 8) / STE_JOY_ANALOG_MIN_VALUE;
 		}
 	}
 

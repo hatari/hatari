@@ -961,8 +961,9 @@ static void TOS_CheckSysConfig(void)
 	}
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "Please use 512k EmuTOS instead of TOS v4 "
-			     "for proper extended VDI resolutions support on Falcon.");
+		Log_AlertDlg(LOG_ERROR, "VDI mode does not work with TOS v4 => disabled.\n"
+			     "Use 512k/1024k EmuTOS for VDI mode on Falcon.");
+		bUseVDIRes = false;
 	}
 }
 
@@ -1050,7 +1051,7 @@ static uint8_t *TOS_LoadImage(void)
 	}
 
 	/* Assert that machine type matches the TOS version.
-	 * 512k EmuTOS declares itself as TOS 2.x, but it can handle
+	 * 512k/1024k EmuTOS declares itself as TOS 2.x, but it can handle
 	 * all machine types, so it can & needs to be skipped here
 	 */
 	if (!bIsEmuTOS || TosSize < 512 * 1024)
@@ -1197,6 +1198,14 @@ int TOS_InitImage(void)
 		}
 		else
 		{
+			/* use VDI type supported by current machine */
+			if (ConfigureParams.Screen.nVdiColors > GEMCOLOR_16 &&
+			    !(Config_IsMachineFalcon() || Config_IsMachineTT()))
+			{
+				Log_AlertDlg(LOG_ERROR, "Only Falcon + TT support better than 16-color modes."
+					     " Switching to 16-color VDI mode.");
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+			}
 			/* needs to be called after TosVersion is set, but
 			 * before STMemory_SetDefaultConfig() is called
 			 */
@@ -1257,9 +1266,10 @@ int TOS_InitImage(void)
 		/* Load test program (has to be done after memory has been cleared) */
 		if (psTestPrg)
 		{
+			uint32_t offsets[3], dummy;
 			Log_Printf(LOG_DEBUG, "Loading '%s' to 0x%x.\n",
 			           psTestPrg, TEST_PRG_START);
-			if (GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, true))
+			if (GemDOS_LoadAndReloc(psTestPrg, TEST_PRG_BASEPAGE, offsets, &dummy, true))
 			{
 				Main_ErrorExit("Failed to load:", psTestPrg, 1);
 			}

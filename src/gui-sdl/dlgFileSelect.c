@@ -8,7 +8,6 @@
 */
 const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 
-#include <SDL.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -18,12 +17,20 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #endif
 
 #include "main.h"
+
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
+#include <SDL.h>
+#endif
+
 #include "scandir.h"
+#include "screen.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "paths.h"
 #include "str.h"
-#include "zip.h"
+#include "file_archive.h"
 #include "log.h"
 
 
@@ -149,7 +156,7 @@ static void DlgFileSelect_Convert_ypos_to_scrollbar_Ypos(void);
  * Update the file name strings in the dialog.
  * Returns false if it failed, true on success.
  */
-static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool browsingzip)
+static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool browsing_archive)
 {
 	int i;
 	char *tempstr = malloc(FILENAME_MAX);
@@ -174,7 +181,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool 
 			strcpy(tempstr, path);
 			strcat(tempstr, files[i+ypos]->d_name);
 
-			if (browsingzip)
+			if (browsing_archive)
 			{
 				if (File_DoesFileNameEndWithSlash(tempstr))
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
@@ -183,7 +190,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool 
 			{
 				if( stat(tempstr, &filestat)==0 && S_ISDIR(filestat.st_mode) )
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
-				if (ZIP_FileNameIsZIP(tempstr) && browsingzip == false)
+				if (Archive_FileNameIsSupported(tempstr) && browsing_archive == false)
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark .ZIP archives as folders */
 			}
 
@@ -302,7 +309,7 @@ static void DlgFileSelect_ManageScrollbar(void)
 	int scrollY, scrollYmin, scrollYmax, scrollH_half;
 	float scrollMove;
 
-	SDL_GetMouseState(&x, &y);
+	Screen_GetMouseState(&x, &y);
 	SDLGui_ScaleMouseStateCoordinates(&x, &y);
 
 	/* If mouse is down on the scrollbar for the first time */
@@ -401,7 +408,11 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 			DlgFileSelect_ScrollDown();
 		break;
 	 case SDL_KEYDOWN:
+#if ENABLE_SDL3
+		switch (pEvent->key.key)
+#else
 		switch (pEvent->key.keysym.sym)
+#endif
 		{
 		 case SDLK_UP:
 			DlgFileSelect_ScrollUp();
@@ -538,11 +549,11 @@ static int filesort(const struct dirent **d1, const struct dirent **d2)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create and return suitable path into zip file
+ * Create and return suitable path into archive file
  */
-static char* zip_get_path(const char *zipdir, const char *zipfilename, int browsingzip)
+static char* zip_get_path(const char *zipdir, const char *zipfilename, int browsing_archive)
 {
-	if (browsingzip)
+	if (browsing_archive)
 	{
 		char *zippath;
 		zippath = Str_Alloc(strlen(zipdir) + strlen(zipfilename));
@@ -663,8 +674,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	int selection;                      /* The selection index */
 	char *zipfilename;                  /* Filename in zip file */
 	char *zipdir;
-	bool browsingzip = false;           /* Are we browsing an archive? */
-	zip_dir *zipfiles = NULL;
+	bool browsing_archive = false;      /* Are we browsing an archive? */
+	archive_dir *archive_files = NULL;
 	SDL_Event sdlEvent;
 	int yScrollbar_size;                /* Size of the vertical scrollbar */
 	union {
@@ -704,7 +715,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	fsdlg[SGFSDLG_TITLE].w = len;
 
 	/* Save mouse state and enable cursor */
-	bOldMouseVisibility = Main_ShowCursor(true);
+	bOldMouseVisibility = Screen_ShowCursor(true);
 
 	SDLGui_CenterDlg(fsdlg);
 	if (bAllowNew)
@@ -750,12 +761,12 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		{
 			files = files_free(files);
 
-			if (browsingzip)
+			if (browsing_archive)
 			{
-				files = ZIP_GetFilesDir(zipfiles, zipdir, &entries);
+				files = Archive_GetFilesDir(archive_files, zipdir, &entries);
 				if(!files)
 				{
-					Log_Printf(LOG_WARN, "SDLGui_FileSelect: ZIP_GetFilesDir() error!\n");
+					Log_Printf(LOG_WARN, "SDLGui_FileSelect: Archive_GetFilesDir() error!\n");
 					goto clean_exit;
 				}
 			}
@@ -812,7 +823,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
 		{
-			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip))
+			if (!DlgFileSelect_RefreshEntries(files, path, browsing_archive))
 			{
 				goto clean_exit;
 			}
@@ -834,7 +845,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				goto clean_exit;
 			}
 
-			if (browsingzip == true)
+			if (browsing_archive == true)
 			{
 				if (!strcat_maxlen(tempstr, FILENAME_MAX,
 						   zipdir, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
@@ -853,11 +864,11 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 						if (strcmp(tempstr, "../") == 0)
 						{
 							/* free zip file entries */
-							ZIP_FreeZipDir(zipfiles);
-							zipfiles = NULL;
+							Archive_FreeArcDir(archive_files);
+							archive_files = NULL;
 							/* Copy the path name to the dialog */
 							File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
-							browsingzip = false;
+							browsing_archive = false;
 						}
 						else
 						{
@@ -889,7 +900,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				}
 
 			}
-			else /* not browsingzip */
+			else	/* not browsing_archive */
 			{
 				if (!strcat_maxlen(tempstr, FILENAME_MAX,
 						   path, files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name))
@@ -910,16 +921,16 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					ypos = 0;
 					scrollbar_Ypos = 0.0;
 				}
-				else if (ZIP_FileNameIsZIP(tempstr) && zip_path != NULL)
+				else if (Archive_FileNameIsSupported(tempstr) && zip_path != NULL)
 				{
 					/* open a zip file */
-					zipfiles = ZIP_GetFiles(tempstr);
-					if (zipfiles != NULL && browsingzip == false)
+					archive_files = Archive_GetFiles(tempstr);
+					if (archive_files != NULL && browsing_archive == false)
 					{
 						selection = retbut-SGFSDLG_ENTRYFIRST+ypos;
 						strcpy(fname, files[selection]->d_name);
 						File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
-						browsingzip = true;
+						browsing_archive = true;
 						zipdir[0] = '\0'; /* zip root */
 						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
 						reloaddir = true;
@@ -936,7 +947,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
 				}
 
-			} /* not browsingzip */
+			}	/* not browsing_archive */
 
 			free(tempstr);
 		}
@@ -945,15 +956,15 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 			switch(retbut)
 			{
 			case SGFSDLG_UPDIR:                 /* Change path to parent directory */
-				if (browsingzip)
+				if (browsing_archive)
 				{
 					/* close the zip file? */
 					if (!zipdir[0])
 					{
 						/* free zip file entries */
-						ZIP_FreeZipDir(zipfiles);
-						browsingzip = false;
-						zipfiles = NULL;
+						Archive_FreeArcDir(archive_files);
+						browsing_archive = false;
+						archive_files = NULL;
 						File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 					}
 					else
@@ -981,12 +992,12 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					home = Paths_GetUserHome();
 				if (home == NULL || !*home)
 					break;
-				if (browsingzip)
+				if (browsing_archive)
 				{
-					/* free zip file entries */
-					ZIP_FreeZipDir(zipfiles);
-					zipfiles = NULL;
-					browsingzip = false;
+					/* free archive file entries */
+					Archive_FreeArcDir(archive_files);
+					archive_files = NULL;
+					browsing_archive = false;
 				}
 				strcpy(path, home);
 				File_AddSlashToEndFileName(path);
@@ -998,12 +1009,12 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				break;
 
 			case SGFSDLG_ROOTDIR:               /* Change to root directory */
-				if (browsingzip)
+				if (browsing_archive)
 				{
 					/* free zip file entries */
-					ZIP_FreeZipDir(zipfiles);
-					zipfiles = NULL;
-					browsingzip = false;
+					Archive_FreeArcDir(archive_files);
+					archive_files = NULL;
+					browsing_archive = false;
 				}
 #if WIN32
 				path[0] = sCurrDrive[0]; path[1] = ':'; path[2] = PATHSEP; path[3] = '\0';
@@ -1072,20 +1083,20 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	if (retbut == SGFSDLG_OKAY)
 	{
 		if (zip_path)
-			*zip_path = zip_get_path(zipdir, zipfilename, browsingzip);
+			*zip_path = zip_get_path(zipdir, zipfilename, browsing_archive);
 		retpath = File_MakePath(path, fname, NULL);
 	}
 	else
 		retpath = NULL;
 
 clean_exit:
-	Main_ShowCursor(bOldMouseVisibility);
+	Screen_ShowCursor(bOldMouseVisibility);
 
-	if (browsingzip && zipfiles != NULL)
+	if (browsing_archive && archive_files != NULL)
 	{
-		/* free zip file entries */
-		ZIP_FreeZipDir(zipfiles);
-		zipfiles = NULL;
+		/* free archive file entries */
+		Archive_FreeArcDir(archive_files);
+		archive_files = NULL;
 	}
 	files_free(files);
 	free(pStringMem);

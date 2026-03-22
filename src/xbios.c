@@ -4,7 +4,7 @@
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
 
-  XBios Handler (Trap #14) -  http://toshyp.atari.org/en/004014.html
+  XBios Handler (Trap #14) -  https://freemint.github.io/tos.hyp/en/xbios_functions.html
 
   Intercept and direct XBios calls to allow saving screenshots in host format
   and to help with tracing/debugging.
@@ -42,7 +42,7 @@ void XBios_EnableCommands(bool enable)
  *
  * Atari debugger API:
  * http://dev-docs.atariforge.org/files/Atari_Debugger_1-24-1990.pdf
- * http://toshyp.atari.org/en/004012.html#Dbmsg
+ * https://freemint.github.io/tos.hyp/en/xbios_special.html#Dbmsg
  */
 static bool XBios_Dbmsg(uint32_t Params)
 {
@@ -230,7 +230,7 @@ static bool XBios_Devconnect(uint32_t Params)
  * Map XBIOS call opcode to XBIOS function name
  *
  * Mapping is based on TOSHYP information:
- * 	http://toshyp.atari.org/en/004014.html
+ * 	https://freemint.github.io/tos.hyp/en/xbios_functions.html
  */
 static const char* XBios_Call2Name(uint16_t opcode)
 {

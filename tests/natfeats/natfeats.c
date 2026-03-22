@@ -24,7 +24,7 @@
 static int nf_ok;
 
 /* handles for NF features that may be used more frequently */
-static long nfid_print, nfid_debugger, nfid_fastforward;
+static long nfid_print, nfid_cycles, nfid_debugger, nfid_fastforward;
 
 
 /* API documentation is in natfeats.h header */
@@ -38,6 +38,7 @@ int nf_init(void)
 	if (nf_ok) {
 		/* initialize commonly used handles */
 		nfid_print = nf_id("NF_STDERR");
+		nfid_cycles = nf_id("NF_CYCLES");
 		nfid_debugger = nf_id("NF_DEBUGGER");
 		nfid_fastforward = nf_id("NF_FASTFORWARD");
 	} else {
@@ -83,6 +84,16 @@ long nf_print(const char *text)
 		return nf_call(nfid_print, text);
 	} else {
 		(void)Cconws("NF_STDERR unavailable!\r\n");
+		return 0;
+	}
+}
+
+unsigned long nf_cycles(void)
+{
+	if (nfid_cycles) {
+		return nf_call(nfid_cycles);
+	} else {
+		(void)Cconws("NF_CYCLES unavailable!\r\n");
 		return 0;
 	}
 }
@@ -152,7 +163,7 @@ void nf_exit(long exitval)
 #ifdef TEST
 
 /* show emulator name */
-static void nf_showname(void)
+static void nf_show_name(void)
 {
 	long chars;
 	char buffer[64];
@@ -163,8 +174,10 @@ static void nf_showname(void)
 }
 
 #if 1
-# define nf_showversion(void)
+# define nf_show_version(void)
+# define nf_show_cycles(void)
 #else
+
 /* printf requires adding ahcstart.o & ahccstdi.lib to nf_ahcc.prj,
  * but those need features not supported by Hatari's dummy TOS
  * (used in automated tests).
@@ -173,10 +186,16 @@ static void nf_showname(void)
  * emulated display doesn't have time to refresh before exit.
  */
 #include <stdio.h>
-static void nf_showversion(void)
+static void nf_show_version(void)
 {
 	long version = nf_version();
 	printf("NF API version: 0x%x\n", version);
+}
+
+static void nf_show_cycles(void)
+{
+	unsigned long cycles = nf_call(nfid_cycles);
+	printf("Cycles: 0x%x\n", cycles);
 }
 #endif
 
@@ -199,12 +218,14 @@ int main()
 	}
 	old_ff = nf_fastforward(1);
 	nf_print("Emulator name:\n");
-	nf_showname();
+	nf_show_name();
+	nf_show_cycles();
 	nf_print(""); /* check regression b2a81850 + its fix */
 	nf_print("Invoking debugger...\n");
 	nf_debugger();
 	nf_print("Restoring fastforward & shutting down...\n");
 	nf_fastforward(old_ff);
+	nf_show_cycles();
 	nf_exit(0);
 	wait_key();
 	return 0;

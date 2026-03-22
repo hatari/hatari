@@ -29,7 +29,7 @@
 <h1 class="pageheader">Hatari Atari Software Compatibility List</h1>
 
 <p class="pageheader">
-Version 2.6.0, June 2025
+Version 2.6.1, August 2025
 </p>
 <p class="pageheader">
 This list has been written by: <strong>Thomas Huth</strong>, <strong>Eero Tamminen</strong>
@@ -1595,6 +1595,11 @@ are just STE enhanced.  These are marked with '*' (for more info, see
 	  DMA sound and update the content of this sample with an MFP timer</td>
     </tr>
     <tr>
+      <td><a href="https://frgailll.itch.io/puckman">Puckman</a></td>
+      <td>2.4</td>
+      <td>(the original Japanese name for Pac-Man)</td>
+    </tr>
+    <tr>
       <td><a href="http://www.atari-forum.com/viewtopic.php?f=28&amp;t=29047">R-Type Deluxe</a>
           (arcade conversion)</td>
       <td>1.8</td>
@@ -2289,6 +2294,12 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
       <td>Opens bottom border, 50kHz DMA replay</td>
     </tr>
     <tr>
+      <td>Shifter Inside STE</td>
+      <td>2.4</td>
+      <td>Extends GEM desktop to top + bottom borders in color modes.
+          Disable TOS blitter option to avoid flickering</td>
+    </tr>
+    <tr>
       <td>Stretch</td>
       <td>before 1.0</td>
       <td>Screen extender (like the famous Bigscreen). One of the few programs
@@ -2302,7 +2313,8 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
 
 <p>Most programs that work on TT work also in the Falcon emulation.
 As all 1-8 bit GEM programs work without problems under TT emulation
-this section lists only programs that have TT-specific features.</p>
+this section lists only programs that have TT-specific features or
+e.g. require specific resolution.</p>
 
 <h3>TT applications and games</h3>
 
@@ -2321,6 +2333,13 @@ this section lists only programs that have TT-specific features.</p>
       <td>2.3</td>
       <td>Requires TT-RAM and 256-color VGA mode. Really slow. Sound
           works on Falcon as-is, on TT it requires XBIOS sound emulator</td>
+    </tr>
+    <tr>
+      <td>Blackhole</td>
+      <td>2.7-dev</td>
+      <td>Dice game, requires 640x480@256-color resolution,
+          i.e. either 8-bit VDI mode on TT, or VGA on Falcon.
+	  Sound with EmuTOS</td>
     </tr>
     <tr>
       <td><a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
@@ -2349,11 +2368,24 @@ this section lists only programs that have TT-specific features.</p>
       <td>"Hacked" (fixed) SDL versions of original open source versions</td>
     </tr>
     <tr>
+      <td>Kniff</td>
+      <td>2.7-dev</td>
+      <td>Dice game, requires 640x480@256-color resolution,
+          i.e. either 8-bit VDI mode on TT, or VGA on Falcon.
+	  Sound with EmuTOS</td>
+    </tr>
+    <tr>
       <td><a href="https://gtello.pagesperso-orange.fr/mplayere.htm">M_PLAYER</a></td>
       <td>2.3</td>
       <td>Movie player and creator. v4.02 added TT microwire support
           for audio. Whether M_PLAYER actually uses sound, depends on
 	  there being enough RAM for it to cache video audio</td>
+    </tr>
+    <tr>
+      <td>Mau Mau de luxe</td>
+      <td>2.7-dev</td>
+      <td>Card game, requires 800x600@256-color resolution, i.e. either
+          8-bit VDI mode on TT, or e.g. Videl Inside on Falcon</td>
     </tr>
     <tr>
       <td>Milanopoly</td>
@@ -2611,13 +2643,6 @@ VGA one are indicated separately.</p>
       <td>Music with DSP. Supports joypad. Due to game bug
           (data file corruption), it can freeze if user doesn't start
 	  game before it shows hall-of-fame screen</td>
-    </tr>
-    <tr>
-      <td>Blackhole</td>
-      <td>1.0</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>640x400@256 mode only</td>
     </tr>
     <tr>
       <td>Block Blizzard (preview)</td>
@@ -3044,11 +3069,11 @@ VGA one are indicated separately.</p>
       <td>v1.50 and v1.00 (preview) versions of the game work</td>
     </tr>
     <tr>
-      <td>Neurobot.108</td>
+      <td>Neurobotix</td>
       <td>2.3.1</td>
       <td>yes</td>
       <td>-</td>
-      <td>Game versions from 1.06 onwards suppport also Joypad</td>
+      <td>Game versions from 1.06 onwards suppport also Joypad. TOS v4 only</td>
     </tr>
     <tr>
       <td>Nibe2</td>
@@ -3309,6 +3334,13 @@ VGA one are indicated separately.</p>
       <td>?</td>
       <td>?</td>
       <td>TODO. One of the Falcon launch games. Requires joypad</td>
+    </tr>
+    <tr>
+      <td>SVO 30</td>
+      <td>2.4</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Sparse Voxel Octree demo (Falcon "Minecraft" by d.m.l)</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Sweety Thingies</a></td>
@@ -3915,6 +3947,14 @@ FPU.</p>
       <td>yes</td>
       <td>emu</td>
       <td>Requires very powerful machine to run at full speed</td>
+    </tr>
+    <tr>
+      <td>Dune:
+      <a href="http://www.pouet.net/prod.php?which=105304">Taedium Vitae</a></td>
+      <td>2.6</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Requires 14MB RAM + FPU, all screens use DSP</td>
     </tr>
     <tr>
       <td>Dune / Sector One:

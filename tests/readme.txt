@@ -70,7 +70,7 @@ cycles/
 
 debugger/
 - "make test" test code & data for Hatari debugger.
-  test-scripting.sh is script for manual testing of debugger scripting
+- "test-scripting.sh" is a script for manual testing of debugger scripting
 
 gemdos/
 - "make test" test code for GEMDOS APIs used by GEMDOS HD emulation
@@ -79,12 +79,21 @@ keymap/
 - test programs for finding out Atari and SDL keycodes needed in
   Hatari keymap files
 
+mem_end/
+- "make test" tests handling of screen at end of RAM
+
 natfeats/
 - "make test" test for Native Features emulator interface, and
    example code for different compilers / assemblers on how to use it
 
-mem_end/
-- "make test" tests handling of screen at end of RAM
+options/
+- "make test" verifies that Hatari options parsing succeeds when
+  expected, for all options ("run_test.sh" can be called directly
+  to check also that option parsing fails when expected)
+
+profile/
+- "make test" test for debugger profile features and related
+  breakpoint chaining + disassembling functionality
 
 screen/
 - "make test" tests for a fullscreen demo

@@ -1060,12 +1060,7 @@ void Ncr5380_UnInit(void)
 
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
-		if (!ScsiBus.devs[i].enabled)
-			continue;
-		File_UnLock(ScsiBus.devs[i].image_file);
-		fclose(ScsiBus.devs[i].image_file);
-		ScsiBus.devs[i].image_file = NULL;
-		ScsiBus.devs[i].enabled = false;
+		HDC_UnInitDevice(&ScsiBus.devs[i]);
 	}
 	free(ScsiBus.buffer);
 	ScsiBus.buffer = NULL;

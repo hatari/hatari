@@ -251,6 +251,21 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
 	STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
 
+	if (!ConfigureParams.Rom.bPatchTos)
+	{
+		/* If the user wants a rather unmodified TOS environment,
+		 * we skip the patching of the system variables here.
+		 * But just in case, warn for invalid configs! */
+		if (bUseVDIRes)
+			Log_Printf(LOG_WARN,
+			           "Extended VDI resolution needs TOS patching!");
+		if (!bIsEmuTOS && TosVersion < 0x300 &&
+		    ConfigureParams.Memory.STRamSize_KB > 4*1024)
+			Log_Printf(LOG_WARN,
+			           "Need TOS patching for memory sizes > 4 MiB on ST/STE");
+		return;
+	}
+
 	/* Fill in magic numbers to bypass TOS' memory tests for faster boot or
 	 * if VDI resolution is enabled or if more than 4 MB of ram are used
 	 * or if TT RAM added in Falcon mode.
@@ -259,7 +274,7 @@ void STMemory_SetDefaultConfig(void)
 	 *  the RAM content after those tests) */
 	if ( ConfigureParams.System.bFastBoot
 	  || bUseVDIRes
-	  || ( ConfigureParams.Memory.STRamSize_KB > (4*1024) && !bIsEmuTOS )
+	  || ( ConfigureParams.Memory.STRamSize_KB > 4*1024 && !bIsEmuTOS && TosVersion < 0x300)
 	  || ( Config_IsMachineTT() && ConfigureParams.System.bAddressSpace24 && !bIsEmuTOS )
 	  || ( Config_IsMachineFalcon() && TTmemory && !bIsEmuTOS) )
 	{
@@ -356,9 +371,9 @@ void STMemory_SetDefaultConfig(void)
 	/* If possible we don't override memory detection, TOS will do it
 	 * (in that case MMU/MCU can be correctly emulated, and we do nothing
 	 * and let TOS do its own memory tests using $FF8001) */
-	if (!(Config_IsMachineST() || Config_IsMachineSTE())
-	    || ConfigureParams.System.bFastBoot || bUseVDIRes
-	    || ConfigureParams.Memory.STRamSize_KB > 4*1024)
+	if ((Config_IsMachineST() || Config_IsMachineSTE())
+	    && (ConfigureParams.System.bFastBoot || bUseVDIRes
+	        || ConfigureParams.Memory.STRamSize_KB > 4*1024))
 	{
 		/* Set memory controller byte according to different memory sizes */
 		/* Setting per bank : %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */

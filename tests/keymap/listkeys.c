@@ -1,7 +1,7 @@
 /* Print out all the keysyms we have, just to verify them */
 
 #include <stdio.h>
-#include "SDL.h"
+#include <SDL.h>
 
 int main(int argc, char *argv[])
 {

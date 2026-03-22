@@ -56,6 +56,17 @@ set(ENABLE_DSP_EMU 1
 set(ENABLE_TRACING 1
     CACHE BOOL "Enable tracing messages for debugging")
 
+find_path(LIBRETRO_INCLUDE_DIR libretro.h
+          PATH_SUFFIXES libretro libretro-common)
+
+if (LIBRETRO_INCLUDE_DIR)
+	set(ENABLE_LIBRETRO 1
+	    CACHE BOOL "Build a core for libretro (experimental)")
+else()
+	set(ENABLE_LIBRETRO 0
+	    CACHE BOOL "Build a core for libretro (experimental)")
+endif(LIBRETRO_INCLUDE_DIR)
+
 # Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
 # - stack protection
 # - checking of pointer accesses
@@ -110,10 +121,22 @@ endif(ENABLE_OSX_BUNDLE)
 # Check for libraries:
 # ####################
 
-find_package(SDL2)
-if(NOT SDL2_FOUND)
-	message(FATAL_ERROR "SDL2 library not found!")
-endif(NOT SDL2_FOUND)
+if(NOT DEFINED ENABLE_SDL3 OR ENABLE_SDL3)
+	find_package(SDL3 QUIET)
+endif()
+if(SDL3_FOUND)
+	# Yes, we're cheating by re-using the SDL2_* variables:
+	set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIRS})
+	set(SDL2_LIBRARIES ${SDL3_LIBRARIES})
+	set(SDL2_LIBDIR $<TARGET_FILE_DIR:SDL3::SDL3-shared>)
+	set(ENABLE_SDL3 1 CACHE BOOL "Use SDL3 instead of SDL2")
+else()
+	find_package(SDL2)
+	if(NOT SDL2_FOUND)
+		message(FATAL_ERROR "SDL library not found!")
+	endif(NOT SDL2_FOUND)
+	set(ENABLE_SDL3 0 CACHE BOOL "Use SDL3 instead of SDL2")
+endif()
 
 find_package(Math)
 
@@ -127,6 +150,11 @@ if(ZLIB_FOUND)
 	set(HAVE_LIBZ 1)
 	set(HAVE_ZLIB_H 1)
 endif(ZLIB_FOUND)
+
+find_package(LibArchive)
+if(LibArchive_FOUND)
+	set(HAVE_LIBARCHIVE 1)
+endif(LibArchive_FOUND)
 
 find_package(PNG)
 if(PNG_FOUND)
@@ -174,6 +202,10 @@ check_large_file()
 # CPP Definitions:
 # ################
 
+# We still want to have assert() in RelWithDebInfo builds:
+string(REPLACE " -DNDEBUG" ""
+       CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+
 # Test for large file support:
 execute_process(COMMAND getconf LFS_CFLAGS
                 OUTPUT_VARIABLE DETECTED_LFS_CFLAGS
@@ -184,11 +216,13 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-if(PKG_CONFIG_FOUND)
+if(NOT SDL3_FOUND)
+    if(PKG_CONFIG_FOUND)
 	execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --cflags-only-other sdl2
 			OUTPUT_VARIABLE SDL2_OTHER_CFLAGS
 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif(PKG_CONFIG_FOUND)
+    endif(PKG_CONFIG_FOUND)
+endif()
 
 if(ENABLE_OSX_BUNDLE)
 	# Use OSX native alert windows
@@ -206,6 +240,7 @@ endif(MSVC)
 # ###########################
 
 check_include_files(byteswap.h HAVE_BYTESWAP_H)
+check_include_files(dlfcn.h HAVE_DLFCN_H)
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_files(strings.h HAVE_STRINGS_H)
@@ -417,7 +452,11 @@ Libraries summary :
 -------------------
 ")
 
-message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
+if(SDL3_FOUND)
+	message("  - sdl :\tusing SDL3 ${SDL3_VERSION}")
+else()
+	message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
+endif()
 
 if(Readline_FOUND)
   message( "  - readline :\tfound, enables history/completion in the debugger" )
@@ -430,6 +469,12 @@ if(ZLIB_FOUND)
 else()
   message( "  - zlib :\tnot found, install it to use zip/gz files" )
 endif(ZLIB_FOUND)
+
+if(LibArchive_FOUND)
+  message( "  - libarchive:\tfound, allows to use zip/7z/rar/lha/lzh/bz2... files directly" )
+else()
+  message( "  - libarchive:\tnot found, install it to use zip/7z/rar/lha/lzh/bz2... files" )
+endif(LibArchive_FOUND)
 
 if(PNG_FOUND)
   message( "  - png :\tfound, allows to compress screenshot/avi files using png" )
@@ -478,6 +523,14 @@ else()
 	message("  - LFS :\tLarge File Support is NOT available (size of off_t = ${SIZEOF_OFF_T}),")
 	message("         \tAVI recording and HD image files will be limited to 2 GB")
 endif()
+
+if(ENABLE_LIBRETRO)
+  message("  - libretro :\tenabled (include dir = '${LIBRETRO_INCLUDE_DIR}'),")
+  message("              \tretroarch core will be built")
+else()
+  message("  - libretro :\tnot enabled (libretro.h header has not been found),")
+  message("              \tretroarch core won't be built")
+endif(ENABLE_LIBRETRO)
 
 if(NOT HAVE_SYS_TIMES_H)
   message("\n  Note: times() function is missing (sys/times.h is not available)")

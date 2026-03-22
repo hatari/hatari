@@ -10,7 +10,7 @@ URL:          https://www.hatari-emu.org/
 License:      GPLv2+
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      2.6.0
+Version:      2.6.1
 Release:      1
 Summary:      An Atari ST/STE/TT/Falcon emulator
 Source:       %{name}-%{version}.tar.bz2
@@ -19,7 +19,8 @@ Prefix:       /usr
 
 BuildRequires: binutils cmake coreutils cpio cpp diffutils file filesystem
 BuildRequires: findutils gcc grep gzip libgcc make man patch sed util-linux
-BuildRequires: glibc-devel zlib-devel SDL2-devel libpng-devel readline-devel
+BuildRequires: glibc-devel zlib-devel SDL3-devel libpng-devel readline-devel
+BuildRequires: libarchive-devel
 
 # Required by zip2st and atari-hd-image
 Requires: unzip
@@ -47,7 +48,7 @@ emulators.
 make %{?_smp_mflags}
 
 %check
-make test
+ctest -j$(nproc) --output-on-failure
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -69,6 +70,9 @@ rm -rf $RPM_BUILD_ROOT
 %license gpl.txt
 
 %changelog -n hatari
+
+* Fri Aug 15 2025 - Nicolas Pomarede
+- Hatari version 2.6.1
 
 * Sun Jun 22 2025 - Nicolas Pomarede
 - Hatari version 2.6.0

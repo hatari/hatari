@@ -24,7 +24,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 2.6.0, June 2025
+Version 2.6.1, August 2025
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -607,7 +607,10 @@ languages), country code selects also TOS language.
 </p><p class="paramdesc">
 Alternatively, one can use "tos-lang-change" tool from EmuTOS project
 to modify country code in the ROM image file itself. That works
-also for TOS v4</p>
+also for TOS v4.
+</p><p class="paramdesc">
+Note: NVRAM settings take precedence, so for machines with NVRAM, you
+should use --layout and --language instead</p>
 <p class="parameter">--layout &lt;x&gt;</p>
 <p class="paramdesc">Set NVRAM keyboard layout value.
 Set NVRAM keyboard layout value. While both TT and Falcon machines
@@ -647,8 +650,13 @@ color</p>
 <p class="paramdesc">Select monitor type (x =
 mono/rgb/vga/tv)</p>
 <p class="parameter">--tos-res &lt;x&gt;</p>
-<p class="paramdesc">Select TOS resolution for color monitors
-(x = low/med/high/ttlow/ttmed)</p>
+<p class="paramdesc">
+Select TOS resolution for color monitors, x = "low" / "med" / "high" /
+"ttlow" / "ttmed" / "tclow" / "tcmed" / "tchigh". Which correspond to
+standard 320x200@16 + 640x200@4 + 640x400@2 ST resolutions, 320x480@256
++ 640x480@16 TT resolutions, Falcon specific 320x240@TC + 320x480@TC
+resolutions on VGA monitors, and 320x200@TC + 320x400@TC + 640x400@TC
+resolutions on RGB monitors</p>
 <p class="parameter">-f,
 --fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen
@@ -664,12 +672,12 @@ mode</p>
 <p class="paramdesc">Show ST/STE/Falcon screen borders
 (for low/med resolution overscan demos)</p>
 <p class="parameter">--frameskips
-&lt;x&gt;</p>
-<p class="paramdesc">Skip &lt;x&gt; frames after each
+&lt;int&gt;</p>
+<p class="paramdesc">Skip &lt;int&gt; frames after each
 displayed frame to accelerate emulation (0=disabled, &gt;4 uses
 automatic frameskip with given value as maximum)</p>
-<p class="parameter">--slowdown &lt;x&gt;</p>
-<p class="paramdesc">Slow down emulation by factor of x
+<p class="parameter">--slowdown &lt;int&gt;</p>
+<p class="paramdesc">Slow down emulation by given factor
 (used as multiplier for VBL wait time)</p>
 <p class="parameter">--statusbar
 &lt;bool&gt;</p>
@@ -679,9 +687,9 @@ etc)</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
-<p class="parameter">--max-width &lt;x&gt;</p>
+<p class="parameter">--max-width &lt;int&gt;</p>
 <p class="paramdesc">Preferred / maximum Hatari screen width</p>
-<p class="parameter">--max-height &lt;x&gt;</p>
+<p class="parameter">--max-height &lt;int&gt;</p>
 <p class="paramdesc">Preferred / maximum Hatari screen height.
 </p><p class="paramdesc">
 Maximum width and height options are part of Hatari's Atari monitor
@@ -722,17 +730,18 @@ Disabling low resolution doubling like this is not recommended for
 Falcon emulation because TOS v4 bootup and some demos switch
 resolutions frequently.
 </p>
+<p class="parameter">--vsync &lt;bool&gt;</p>
+<p class="paramdesc">Limit screen updates to host monitor refresh rate</p>
 <p class="parameter">--disable-video
 &lt;bool&gt;</p>
 <p class="paramdesc">Run emulation without displaying video (audio only)</p>
 
 <h3>ST/STE specific display options</h3>
 <p class="parameter">--spec512
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
 when to render a screen with the slower but more accurate
-Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
-0=disable)</p>
+Spectrum512 screen conversion functions (0-512, 0=disable)</p>
 <p class="parameter">--video-timing
 &lt;x&gt;</p>
 <p class="paramdesc">Wakeup State for MMU/GLUE (x=ws1/ws2/ws3/ws4/random,
@@ -775,17 +784,17 @@ size in 2-plane (4 color) VDI mode when screen height &gt;= 400 pixels.
 Because of these issues, using EmuTOS is recommended for VDI mode
 </p>
 <p class="parameter">--vdi-planes
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with bit
-depth &lt;x&gt; (x = 1, 2 or 4)</p>
+depth &lt;int&gt; (1/2/4/8)</p>
 <p class="parameter">--vdi-width
-&lt;w&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with width
-&lt;w&gt; (320 &lt; w &lt;= 2048)</p>
+&lt;int&gt; (320-2048)</p>
 <p class="parameter">--vdi-height
-&lt;h&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
-&lt;h&gt; (160 &lt; h &lt;= 1280)</p>
+&lt;int&gt; (160-1280)</p>
 <p>
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
@@ -818,14 +827,14 @@ automatically stop when emulation resolution changes.</p>
 <p class="paramdesc">Select AVI video codec (x = bmp/png).
 PNG compression can be <em>much</em> slower than using the uncompressed BMP
 format, but uncompressed video content takes huge amount of space.</p>
-<p class="parameter">--png-level &lt;x&gt;</p>
-<p class="paramdesc">Select PNG compression level for AVI video (x = 0-9).
+<p class="parameter">--png-level &lt;int&gt;</p>
+<p class="paramdesc">Select PNG compression level (0-9) for AVI video.
 Both compression efficiency and speed depend on the compressed
 screen content. Highest compression level (9) can be <em>really</em>
 slow with some content. Levels 3-6 should compress nearly as well
 with clearly smaller CPU overhead.</p>
-<p class="parameter">--avi-fps &lt;x&gt;</p>
-<p class="paramdesc">Force AVI frame rate (x = 50/60/71/...)</p>
+<p class="parameter">--avi-fps &lt;int&gt;</p>
+<p class="paramdesc">Force AVI frame rate (1-100, 50/60/71/...)</p>
 <p class="parameter">--avi-file &lt;file&gt;</p>
 <p class="paramdesc">Use &lt;file&gt; to record AVI</p>
 <p class="parameter">--screenshot-dir &lt;dir&gt;</p>
@@ -891,10 +900,10 @@ to &lt;file&gt;</p>
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable drive B (default is on)</p>
 <p class="parameter">--drive-a-heads
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set number of heads for drive A (1=single sided, 2=double sided)</p>
 <p class="parameter">--drive-b-heads
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set number of heads for drive B (1=single sided, 2=double sided)</p>
 <p class="parameter">--disk-a
 &lt;file&gt;</p>
@@ -921,8 +930,8 @@ with &lt;dir&gt; contents. If directory contains only single letter
 as a separate partition, otherwise the given directory itself will
 be assigned to drive "C:". In the multiple partition case, the
 letters used as the subdirectory names will determine to which
-drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
-an empty string, then harddrive's emulation is disabled</p>
+drives/partitions they are assigned to. If &lt;dir&gt; is an empty
+string (or "none"), then GEMDOS HD emulation is disabled</p>
 <p class="parameter">--protect-hd
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect hard drive &lt;dir&gt;
@@ -984,15 +993,15 @@ IDE 0</p>
 --memstate &lt;file&gt;</p>
 <p class="paramdesc">Load memory snap-shot &lt;file&gt;</p>
 <p class="parameter">-s, --memsize
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB. Other values are considered as a size in KiB.
 While Hatari allows 14 MiB for all machine types, on real HW, ST/STE can
 have up to 4 MiB, MegaSTE/TT up to 10MiB, and Falcon up to 14 MiB RAM.</p>
 <p class="parameter">--ttram
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set amount of emulated TT RAM (for Falcon and TT
-mode), x = 0 to 1024 MiB (in 4MiB steps)</p>
+mode), 0-1024 MiB (in 4MiB steps)</p>
 
 <h3>ROM options</h3>
 <p class="parameter">-t,
@@ -1015,7 +1024,7 @@ disabled)</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
 1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
 <p class="parameter">--cpuclock
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">Set the CPU clock (8, 16 or 32 MHz)</p>
 <p class="parameter">--compatible
 &lt;bool&gt;</p>
@@ -1042,11 +1051,11 @@ megaste, tt or falcon)</p>
 <p class="parameter">--blitter
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable blitter emulation (ST only)</p>
-<p class="parameter">--rtc-year &lt;x&gt;</p>
+<p class="parameter">--rtc-year &lt;int&gt;</p>
 <p class="paramdesc">With the default value 0, RTC date and time are
 taken from the host. If application does not handle current dates,
-this can be used to change RTC year to a more compatible one.  See
-also "--gemdos-time" option.
+this can be used to change RTC year to a more compatible one (1980-2079).
+See also "--gemdos-time" option.
 </p>
 <p class="parameter">--dsp &lt;x&gt;</p>
 <p class="paramdesc">Falcon DSP emulation (x = none, dummy
@@ -1077,7 +1086,7 @@ matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
 250033, 50066 Hz) or your sound card frequencies (11025, 22050,
 44100 or 6000...48000 Hz). Check what your sound card supports.</p>
 <p class="parameter">--sound-buffer-size
-&lt;x&gt;</p>
+&lt;int&gt;</p>
 <p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
 or 0 to use default buffer size. By default Hatari uses an SDL
 buffer size of 1024 samples, which gives approximately 20-30 ms
@@ -1117,6 +1126,12 @@ the debugger</p>
 <p class="paramdesc">Specify which exceptions invoke debugger, see
 "--debug-except help" for available (comma separated) exception
 flags.</p>
+<p class="parameter">--symload &lt;mode&gt;</p>
+<p class="paramdesc">Set the GEMDOS HD program symbols autoloading
+mode. "exec" loads symbols when program is executed, "debugger" when
+debugger is first invoked after program startup (default), and "off"
+disables autoloading (may be needed to debug memory-resident programs
+/ TOS).</p>
 <p class="parameter">--bios-intercept &lt;bool&gt;</p>
 <p class="paramdesc">
 Enable/disable XBios command parsing. Allows Atari programs to use all Hatari
@@ -1129,6 +1144,11 @@ screenshots. XBios(11) Dbmsg call can be used to invoke the debugger.
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
 the (CON:) VT52 console, which vector function catches also EmuTOS panic
 messages and MiNT console output, not just normal BIOS console output.</p>
+<p class="parameter">--memconv &lt;bool&gt;</p>
+<p class="paramdesc">Instead of showing non-ASCII (8-bit) Atari
+characters as dots in the memory output from the debugger commands
+(and for "--conout" option), enable their "locale" conversion to host
+characters.</p>
 <p class="parameter">--disasm &lt;x&gt;</p>
 <p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
 the disassembly engine to use, bitmask sets disassembly output options
@@ -1183,8 +1203,9 @@ socket. Hatari outputs help for unrecognized commands and subcommands
 <p class="paramdesc">Show dialog for log messages above
 given level</p>
 <p class="parameter">--run-vbls
-&lt;x&gt;</p>
-<p class="paramdesc">Exit after X VBLs. Used with --benchmark mode</p>
+&lt;int&gt;</p>
+<p class="paramdesc">Exit after given number of (1-) VBLs.
+Used with --benchmark mode</p>
 <p class="parameter">--benchmark</p>
 <p class="paramdesc">Start in benchmark mode (use with --run-vbls).
 Same as --fast-forward mode, except it cannot be disabled at run-time,
@@ -1215,7 +1236,7 @@ The GUI is rather self explanatory.</p>
 <h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
-  <img src="images/main.png" width="500" height="304"
+  <img src="images/main.png" width="500" height="338"
        alt="Hatari's GUI - the main menu" />
 </div>
 
@@ -1820,7 +1841,7 @@ VDI mode is most useful with ST / STE emulation.
 <h4 class="gui">The Hatari Screen Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/screen.png" width="520" height="400"
+  <img src="images/screen.png" width="519" height="288"
        alt="Hatari's GUI - the Hatari screen dialog" />
 </div>
 
@@ -1895,12 +1916,31 @@ should scale the resulting Hatari window framebuffer, when presenting
 it on screen.  Non-integer scaling values will cause "fuzzy" output.
 </p>
 
+<p>"SDL2" options impact following:</p>
+<ul>
+<li>GPU scaling: Hatari window scaling is HW accelerated</li>
+<li>Resizable: User can resize Hatari window</li>
+<li>Vsync: Hatari window updates are limited to host monitor refresh
+rate. This avoids tearing, but will impact emulation speed, if host
+monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
+</ul>
+
+
+<h4 class="gui">The Recording Dialog</h4>
+
+<div class="floatimage">
+  <img src="images/recording.png" width="517" height="333"
+       alt="Hatari's GUI - the recording dialog" />
+</div>
+
 <p>Click the <span class="button">Screenshot</span> button to create
-a screenshot in the selected format to the current working directory.
-PNG and BMP formats will match the visual output of Hatari.
-NEO and XIMG formats will produce Atari ST native images, but will not include
-borders, or raster palette effects. NEO is limited to the 3 standard ST
-resolutions.
+a screenshot in the selected format. PNG and BMP formats will match
+the visual output of Hatari. NEO and XIMG formats will produce Atari
+ST native images, but will not include borders, or raster palette
+effects. NEO is limited to the 3 standard ST resolutions.
+</p>
+<p>Click the <span class="button">Directory:</span> button to change
+default screenshot saving directory.
 </p>
 <p>Click the <span class="button">Record&nbsp;AVI</span> button to
 record an AVI format video of Hatari screen (and audio) output.
@@ -1910,14 +1950,14 @@ Selecting "Crop statusbar" option will leave statusbar out from
 the screenshots and recorded videos.
 </p>
 
-<p>"SDL2 options" impact following:</p>
-<ul>
-<li>GPU scaling: Hatari window scaling is HW accelerated</li>
-<li>Resizable: User can resize Hatari window</li>
-<li>Vsync: Hatari window updates are limited to host monitor refresh
-rate. This avoids tearing, but will impact emulation speed, if host
-monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
-</ul>
+<p>
+To record a piece of sound, click <span class="button">File name:</span>
+button to choose a file. The file name extension that you use (.WAV or
+.YM) determines in which format the sound will be recorded in. The
+<span class="button">Record&nbsp;YM/WAV</span> button is a toggle so
+you will need to return to the GUI to switch sound recording off
+again (or to use the keyboard shortcut for that).
+</p>
 
 
 <h4 class="gui">The Keyboard Dialog</h4>
@@ -1970,7 +2010,7 @@ monitor refresh rate does not match Atari monitor refresh (VBL) rate!</li>
 <h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/sound.png" width="400" height="400"
+  <img src="images/sound.png" width="400" height="272"
        alt="Hatari's GUI - the sound dialog" />
 </div>
 
@@ -1995,12 +2035,7 @@ voltage values measured on STF, "Math model" uses a complex model to mix the
 for accurate sound's emulation.
 </p>
 <p>
- You can select to record a piece of sound here.
- Use the <span class="button">Browse</span> button to choose a file.
- The file name extension that you use (.WAV or .YM) determines in which format
- the sound is recorded in. The <span class="button">Record&nbsp;sound</span> button
- is a toggle so you will need to return to the GUI to switch sound recording off
- again (or to use the keyboard shortcut for that).
+Audio can be recorded with the "Recording" dialog.
 </p>
 
 
@@ -2657,7 +2692,7 @@ yet have the required write support.)
 
 <p>
 Hatari supports three ways of emulating Atari hard drives: The
-low-level ACSI and IDE hard drive emulation and a GEMDOS based HD
+low-level ACSI, SCSI and IDE hard drive emulation and a GEMDOS based HD
 emulation. In most cases the GEMDOS HD emulation is best as it allows
 exchanging files easily between the emulated and the host environment.
 </p>
@@ -2720,9 +2755,12 @@ host system and the emulated Atari, but there are also several
 order, for consistency.  E.g. moving files to a different directory and
 back (without changing their names) like AUTOSORT does, doesn't change
 that order. You need to rename the files.</li>
-<li>Names which aren't valid TOS directory or file names, are converted
-to a valid format.  If there are multiple files which converted
-names are identical in TOS-format, you see only one of those.</li>
+<li>Names which are not valid TOS directory or file names, are converted
+to a valid format; too long file names are truncated (like TOS does),
+and invalid GEMDOS characters replaced with valid ones. If there are
+multiple files which converted names are identical in TOS 8+3 format,
+they show as duplicates on the Atari side (and correct mapping cannot
+be guaranteed).</li>
 <li>Host file paths need to be shorter than 256 characters currently
 (like Atari side TOS file paths).</li>
 <li>It is not possible to use a cartridge image at the same time
@@ -2736,13 +2774,13 @@ files open on <i>non-GEMDOS HD drives</i>, i.e. their indexes increase
 over 64, accesses to those indexes could get routed (incorrectly) to
 GEMDOS HD drive instead</li>
 <li>GEMDOS HD supports up to 64 file handles (TOS supports slightly more).</li>
-<li>GEMDOS HD drive assignment can conflict with the ACSI and IDE hard
-drives. If you want to use GEMDOS HD directory and ACSI/IDE disk
-images together, either use the GEMDOS HD option for skipping ACSI
-&amp; IDE partitions, or use a multiple partition GEMDOS HD emulation
+<li>GEMDOS HD drive assignment can conflict with the ACSI / SCSI / IDE
+hard drives. If you want to use GEMDOS HD directory and disk images
+together, either use the GEMDOS HD option for skipping disk image
+partitions, or use a multiple partition GEMDOS HD emulation
 setup and select the partition subdirectory names (see above) so that
-they do not conflict with the drive letters for ACSI/IDE partitions.
-With HD Driver you have also another option,
+they do not conflict with the drive letters for the ACSI / SCSI / IDE
+partitions. With HD Driver you have also another option,
 see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
 with GEMDOS HD partitions</a>.</li>
 <li><em>The GEMDOS HD emulation does not work (very well) with TOS
@@ -2755,7 +2793,9 @@ handles used with GEMDOS <em>file</em> functions, such as Fwrite() to standard
 output that is redirected to a file.  File redirection is NOT supported
 e.g. for GEMDOS Ccon* console functions.</li>
 <li>Only FsFirst() / FsNext() calls support drive volume labels, other
-GEMDOS calls return errors when volume label attribute is specified
+GEMDOS calls return errors when volume label attribute is specified.
+<li>While programs can open dot-files (".*"), they are (intentionally)
+not returned by the FsFirst() / FsNext() pattern matches</li>
 <li>Host and emulation have their own clocks, which will drift apart
 after emulation is started, especially when emulation is
 fast-forwarded or paused.  Because of this, anything inside emulation

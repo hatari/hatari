@@ -430,11 +430,12 @@
 
 const char Video_fileid[] = "Hatari video.c";
 
-#include <SDL_endian.h>
-
 #include "main.h"
 #include "configuration.h"
+#include "conv_gen.h"
+#include "conv_st.h"
 #include "cycles.h"
+#include "endianswap.h"
 #include "fdc.h"
 #include "cycInt.h"
 #include "ioMem.h"
@@ -445,7 +446,6 @@ const char Video_fileid[] = "Hatari video.c";
 #include "mfp.h"
 #include "printer.h"
 #include "screen.h"
-#include "screenConvert.h"
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
@@ -461,6 +461,7 @@ const char Video_fileid[] = "Hatari video.c";
 #include "ikbd.h"
 #include "floppy_ipf.h"
 #include "statusbar.h"
+#include "timing.h"
 #include "clocks_timings.h"
 #include "utils.h"
 
@@ -528,7 +529,7 @@ static uint8_t *pVideoRasterDelayed = NULL;	/* Used in STE mode when changing vi
 static uint8_t *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
-static bool bTTColorsSync;			/* whether TT colors need conversion to SDL */
+static bool bTTColorsSync;			/* whether TT colors need conversion */
 static int VideoRasterDelayedInc;		/* Number of bytes to add at the end of the current video line */
 
 int TTSpecialVideoMode;				/* TT special video mode */
@@ -3680,7 +3681,7 @@ static void Video_StoreFirstLinePalette(void)
 	pp2 = (uint16_t *)&IoMem[0xff8240];
 	for (i = 0; i < 16; i++)
 	{
-		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
+		HBLPalettes[i] = be_swap16(*pp2++);
 		if (Config_IsMachineST())
 			HBLPalettes[i] &= 0x777;			/* Force unused "random" bits to 0 */
 	}
@@ -4685,7 +4686,7 @@ static void Video_SetTTPaletteColor(int idx, uint32_t addr)
 	}
 
 	//printf("%d (%x): (%d,%d,%d)\n", idx, addr, r,g,b);
-	Screen_SetPaletteColor(idx, r,g,b);
+	ConvGen_SetPaletteColor(idx, r,g,b);
 }
 
 /**
@@ -4697,15 +4698,15 @@ static int TTPaletteSTBank(void)
 }
 
 /**
- * Convert TT palette to SDL palette
+ * Convert TT palette to host palette
  */
 static void Video_UpdateTTPalette(int bpp)
 {
 	if (TTRes == TT_HIGH_RES || (bUseVDIRes && bpp == 1))
 	{
 		/* Monochrome mode... palette is hardwired (?) */
-		Screen_SetPaletteColor(0, 255, 255, 255);
-		Screen_SetPaletteColor(1, 0, 0, 0);
+		ConvGen_SetPaletteColor(0, 255, 255, 255);
+		ConvGen_SetPaletteColor(1, 0, 0, 0);
 	}
 	else if (bpp == 1)
 	{
@@ -4749,7 +4750,7 @@ bool Video_RenderTTScreen(void)
 	Video_GetTTRes(&width, &height, &bpp);
 	if (TTRes != nPrevTTRes)
 	{
-		Screen_SetGenConvSize(width, height, false);
+		ConvGen_SetSize(width, height, false);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = false;
@@ -4762,8 +4763,8 @@ bool Video_RenderTTScreen(void)
 		nPrevTTSpecialVideoMode = TTSpecialVideoMode;
 	}
 
-	return Screen_GenDraw(VideoBase, width, height, bpp, width * bpp / 16,
-	                      0, 0, 0, 0);
+	return ConvGen_Draw(VideoBase, width, height, bpp, width * bpp / 16,
+	                    0, 0, 0, 0);
 }
 
 
@@ -4778,7 +4779,6 @@ static void Video_DrawScreen(void)
 	if (nVBLs % (nFrameSkips+1))
 		return;
 
-	/* Now draw the screen! */
 	if (bUseVDIRes)
 	{
 		if (Config_IsMachineTT() && !bTTColorsSync)
@@ -4789,27 +4789,17 @@ static void Video_DrawScreen(void)
 		{
 			VIDEL_UpdateColors();
 		}
-		Screen_GenDraw(VideoBase, VDIWidth, VDIHeight, VDIPlanes,
-		               VDIWidth * VDIPlanes / 16, 0, 0, 0, 0);
 	}
-	else if (Config_IsMachineFalcon())
-	{
-		VIDEL_renderScreen();
-	}
-	else if (Config_IsMachineTT())
-	{
-		Video_RenderTTScreen();
-	}
-	else
+	else if (!Config_IsMachineTT() && !Config_IsMachineFalcon())
 	{
 		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
 		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
 		/* pSTScreen was set during Video_CopyScreenLineColor */
 		if (nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
-
-		Screen_Draw();
 	}
+
+	ConvST_Refresh(false);
 }
 
 
@@ -4966,7 +4956,7 @@ void Video_InterruptHandler_VBL ( void )
 	VBL_ClockCounter -= pVideoTiming->VblVideoCycleOffset << nCpuFreqShift;
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
-	Keymap_DebounceAllKeys();
+	IKBD_DebounceAllKeys();
 
 	Video_DrawScreen();
 
@@ -5050,7 +5040,7 @@ void Video_InterruptHandler_VBL ( void )
 	if ( quit_program == 0 )
 		M68000_Exception(EXCEPTION_NR_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4 */
 
-	Main_WaitOnVbl();
+	Timing_WaitOnVbl();
 }
 
 
@@ -5415,8 +5405,8 @@ static void Video_ColorReg_WriteWord(void)
 	{
 		if (idx == 0)
 		{
-			Screen_SetPaletteColor(col & 1, 0, 0, 0);
-			Screen_SetPaletteColor(!(col & 1), 255, 255, 255);
+			ConvGen_SetPaletteColor(col & 1, 0, 0, 0);
+			ConvGen_SetPaletteColor(!(col & 1), 255, 255, 255);
 		}
 	}
 	else if (bUseVDIRes)
@@ -5431,7 +5421,7 @@ static void Video_ColorReg_WriteWord(void)
 		b = col & 0x0f;
 		b = ((b & 7) << 1) | (b >> 3);
 		b |= b << 4;
-		Screen_SetPaletteColor(idx, r, g, b);
+		ConvGen_SetPaletteColor(idx, r, g, b);
 	}
 	else    /* Don't store if hi-res or VDI resolution */
 	{

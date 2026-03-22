@@ -1,6 +1,7 @@
 ; AHCC project file for CPU integer tester
 int_test.tos
 .C [-iinclude]
+.L [-g -n]
 =
 ../startup.s
 int_test.c

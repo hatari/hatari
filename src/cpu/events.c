@@ -12,7 +12,6 @@
 
 #include "options_cpu.h"
 #include "events.h"
-#include "newcpu.h"
 
 #ifndef WINUAE_FOR_HATARI
 void do_cycles_normal(int cycles_to_add)

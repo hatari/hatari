@@ -17,6 +17,7 @@ char *rl_filename_completion_function(const char *text, int state) { return NULL
 uint64_t LogTraceFlags = 0;
 FILE *TraceFile;
 void Log_Trace(const char *format, ...) { }
+void Log_Printf(LOGTYPE type, const char *format, ...) { }
 void Log_ResetMsgRepeat(void) {}
 
 /* fake Hatari configuration variables for number parsing */
@@ -129,6 +130,7 @@ uint32_t DebugInfo_GetTEXT(void)     { return 0x1234; }
 uint32_t DebugInfo_GetTEXTEnd(void)  { return 0x1234; }
 uint32_t DebugInfo_GetDATA(void)     { return 0x12f4; }
 uint32_t DebugInfo_GetBSS(void)      { return 0x1f34; }
+uint32_t DebugInfo_GetBSSEnd(void)   { return 0x1fff; }
 info_func_t DebugInfo_GetInfoFunc(const char *name) {
 	if (strcmp(name, "vdi") == 0) {
 		return VDI_Info;

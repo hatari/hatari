@@ -7,10 +7,10 @@
   Screen Conversion, Low Res to 640x32Bit
 */
 
-static void Line_ConvertLowRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
+static void Line_ConvertLowRes_640x32Bit(uint32_t *edi, uint32_t *ebp, uint32_t *esi, uint32_t eax)
 {
-	Uint32 edx;
-	Uint32 ebx, ecx;
+	uint32_t edx;
+	uint32_t ebx, ecx;
 	int x, update;
 
 	x = STScreenWidthBytes>>3;   /* Amount to draw across in 16-pixels (8 bytes) */
@@ -28,7 +28,7 @@ static void Line_ConvertLowRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, 
 
 			bScreenContentsChanged = true;
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 			/* Plot pixels in 'right-order' on big endian systems */
 			LOW_BUILD_PIXELS_0;             /* Generate 'ecx' as pixels [12,13,14,15] */
 			PLOT_LOW_640_32BIT(24);
@@ -60,10 +60,10 @@ static void Line_ConvertLowRes_640x32Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, 
 
 static void ConvertLowRes_640x32Bit(void)
 {
-	Uint32 *PCScreen = (Uint32 *)pPCScreenDest;
-	Uint32 *edi, *ebp;
-	Uint32 *esi;
-	Uint32 eax;
+	uint32_t *PCScreen = pPCScreenDest;
+	uint32_t *edi, *ebp;
+	uint32_t *esi;
+	uint32_t eax;
 	int y;
 
 	Convert_StartFrame();            /* Start frame, track palettes */
@@ -72,8 +72,8 @@ static void ConvertLowRes_640x32Bit(void)
 	{
 		/* Get screen addresses */
 		eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-		edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colors */
-		ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
+		edi = (uint32_t *)((uint8_t *)pSTScreen + eax);       /* ST format screen 4-plane 16 colors */
+		ebp = (uint32_t *)((uint8_t *)pSTScreenCopy + eax);   /* Previous ST format screen */
 		esi = PCScreen;                                    /* PC format screen */
 
 		if (AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */

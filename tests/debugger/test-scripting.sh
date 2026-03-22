@@ -1,6 +1,8 @@
 #!/bin/sh
 #
-# script to test Hatari debugger and console script features
+# Manually runnable test script for:
+# - Hatari debugger scripting
+# - (Python) HConsole features
 
 if [ $# -ne 1 ]; then
 	echo "usage: ${0##*/} <EmuTOS 512k binary>"

@@ -82,6 +82,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 #include "ikbd.h"
 #include "cycles.h"
 #include "cycInt.h"
+#include "gui_event.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"
@@ -1782,7 +1783,7 @@ static int IKBD_CheckPressedKey(void)
 void IKBD_InterruptHandler_AutoSend(void)
 {
 	/* Handle user events and other messages, (like quit message) */
-	Main_EventHandler();
+	GuiEvent_EventHandler();
 
 	/* Remove this interrupt from list and re-order.
 	 * (needs to be done after UI event handling so
@@ -2776,6 +2777,80 @@ static void IKBD_Cmd_ReportJoystickAvailability(void)
 /************************************************************************/
 
 
+/* List of ST scan codes to NOT de-bounce when running in maximum speed */
+static const uint8_t DebounceExtendedKeys[] =
+{
+	ST_CONTROL,
+	ST_LSHIFT,
+	ST_ESC,
+	ST_ALTERNATE,
+	ST_RSHIFT,
+	0  /* End of list */
+};
+
+/**
+ * Scan list of keys to NOT de-bounce when running in maximum speed, e.g.
+ * ALT,SHIFT,CTRL etc...
+ * @return true if key requires de-bouncing
+ */
+static bool IKBD_DebounceSTKey(uint8_t STScanCode)
+{
+	int i=0;
+
+	/* Are we in fast forward, and have disabled key repeat? */
+	if (ConfigureParams.System.bFastForward
+	    && !ConfigureParams.Keyboard.bFastForwardKeyRepeat)
+	{
+		/* We should de-bounce all non extended keys,
+		 * e.g. leave ALT, SHIFT, CTRL etc... held */
+		while (DebounceExtendedKeys[i])
+		{
+			if (STScanCode == DebounceExtendedKeys[i])
+				return false;
+			i++;
+		}
+
+		/* De-bounce key */
+		return true;
+	}
+
+	/* Do not de-bounce key */
+	return false;
+}
+
+
+/**
+ * Debounce any PC key held down if running with key repeat disabled.
+ * This is called each ST frame, so keys get held down for one VBL which
+ * is enough for 68000 code to scan.
+ */
+void IKBD_DebounceAllKeys(void)
+{
+	uint8_t nScanCode;
+
+	/* Return if we aren't in fast forward or have not disabled key repeat */
+	if (!ConfigureParams.System.bFastForward
+	    || ConfigureParams.Keyboard.bFastForwardKeyRepeat)
+	{
+		return;
+	}
+
+	/* Now run through each key looking for ones held down */
+	for (nScanCode = 1; nScanCode < ARRAY_SIZE(Keyboard.KeyStates); nScanCode++)
+	{
+		/* Is key held? */
+		if (Keyboard.KeyStates[nScanCode])
+		{
+			/* Does this require de-bouncing? */
+			if (IKBD_DebounceSTKey(nScanCode))
+			{
+				IKBD_PressSTKey(nScanCode, false);
+				Keyboard.KeyStates[nScanCode] = false;
+			}
+		}
+	}
+
+}
 
 
 /*************************************************************************/
