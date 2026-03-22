@@ -5785,7 +5785,7 @@ if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 2 : lat=%ld flux=%d c
  * The DPLL used in Hatari is a direct implementation of the patent US4808884,
  * including the window's length, phase and frequency correction, ...
  * This seems to give correct results, but the WD1772 might use some different
- * parameters or some variations compared to the orignal patent
+ * parameters or some variations compared to the original patent
  */
 
 
@@ -5854,7 +5854,7 @@ static void	FDC_DPLL_Reset ( void )
  *
  * - "window fast" doesn't have the "8" state at pos=0, so we need to update DPLL_Window_State_Pos
  *   to ensure for example that slow/nominal "0" at pos=8 state remains a "0" state at pos=7 when switching to "window fast"
- * - only "window slow" has a "X" state, we replace it by "7" state when switching to fast/nominal 
+ * - only "window slow" has a "X" state, we replace it by "7" state when switching to fast/nominal
  * - window's type will change in case of frequency change in FDC_DPLL_Do_Change_Freq. As such, type can
  *   change between fast/nominal and slow/nominal, but not directly between fast/slow.
  */
@@ -6898,7 +6898,7 @@ static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHead
 fprintf ( stderr , "A1 FE %x %x %x %x %x %x - %x %ld\n" , FDC.NextSector_ID_Field_TR , FDC.NextSector_ID_Field_SIDE ,
 	FDC.NextSector_ID_Field_SR , FDC.NextSector_ID_Field_LEN , FDC.NextSector_ID_Field_CRC1 , FDC.NextSector_ID_Field_CRC2  , FDC.CRC , CyclesGlobalClockCounter );
 
-	/* Total numer of FDC cycles */
+	/* Total number of FDC cycles */
 	*pFdcCycles = FDC_NsToFdcCycles ( Time_ns );
 	return FDCEMU_RETURN_OK;
 }
@@ -7008,7 +7008,7 @@ static uint8_t	FDC_ReadSector_MFM ( uint8_t Drive , uint8_t Track , uint8_t Sect
 		if ( Res != FDCEMU_RETURN_OK )
 			return FDC_STR_BIT_RNF;
 
-		/* Total numer of FDC cycles for this byte */
+		/* Total number of FDC cycles for this byte */
 		FdcCycles = FDC_NsToFdcCycles ( Time_ns );
 		Time_ns = 0;
 
@@ -7126,7 +7126,7 @@ static uint8_t	FDC_ReadTrack_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side 
 		else if ( Res != FDCEMU_RETURN_OK )
 			return FDC_STR_BIT_RNF;
 
-		/* Total numer of FDC cycles for this byte */
+		/* Total number of FDC cycles for this byte */
 		FdcCycles = FDC_NsToFdcCycles ( Time_ns );
 		Time_ns = 0;
 
