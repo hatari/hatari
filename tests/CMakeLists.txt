@@ -2,6 +2,10 @@
 add_subdirectory(debugger)
 add_subdirectory(unit)
 
+if(ENABLE_LIBRETRO AND HAVE_DLFCN_H)
+	add_subdirectory(retro)
+endif()
+
 if(UNIX)
 	add_test(NAME command-fifo COMMAND
 	         ${CMAKE_CURRENT_SOURCE_DIR}/cmdfifo.sh $<TARGET_FILE:${APP_NAME}>)

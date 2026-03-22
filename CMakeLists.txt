@@ -240,6 +240,7 @@ endif(MSVC)
 # ###########################
 
 check_include_files(byteswap.h HAVE_BYTESWAP_H)
+check_include_files(dlfcn.h HAVE_DLFCN_H)
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_files(strings.h HAVE_STRINGS_H)
