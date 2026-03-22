@@ -18,7 +18,7 @@ build-32bit:
                       libgcc1:i386 libportmidi-dev:i386 libpng-dev:i386
                       libglib2.0-dev:i386 zlib1g-dev:i386
                       libsdl2-dev:i386 libudev-dev:i386 libreadline-dev:i386
-                      libarchive-dev:i386
+                      libarchive-dev:i386 retroarch-dev
  - CC="clang" CFLAGS="-m32 -O3 -Werror -D_FORTIFY_SOURCE=3"
    ./configure --enable-debug
  - make -j$(nproc)
