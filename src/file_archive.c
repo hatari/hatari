@@ -26,6 +26,7 @@ const char File_Archive_fileid[] = "Hatari file_archive.c";
 #include "floppy.h"
 #include "floppy_ipf.h"
 #include "floppy_stx.h"
+#include "floppy_scp.h"
 #include "log.h"
 #include "msa.h"
 #include "st.h"
@@ -69,6 +70,7 @@ static const char * const pszDiskNameExts[] =
 	".raw",
 	".ctr",
 	".stx",
+	".scp",
 	NULL
 };
 
@@ -479,12 +481,15 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 
 	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
 
-	/* check for .stx, .ipf, .msa, .dim or .st extension */
+	/* check for .stx, .ipf, scp, .msa, .dim or .st extension */
 	if ( STX_FileNameIsSTX(FileName, false) )
 		*pImageType = FLOPPY_IMAGE_TYPE_STX;
 
 	else if ( IPF_FileNameIsIPF(FileName, false) )
 		*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+
+	else if ( SCP_FileNameIsSCP(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_SCP;
 
 	else if ( MSA_FileNameIsMSA(FileName, false) )
 		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
@@ -499,7 +504,7 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 	if ( pImageType != FLOPPY_IMAGE_TYPE_NONE )
 		return uncompressed_size;
 
-	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF or .STX file.\n" );
+	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF, .STX or .SCP file.\n" );
 	return 0;
 }
 
@@ -632,6 +637,10 @@ DEBUGPRINT (( stderr , "Archive_ReadDisk news path=%s filename=%s\n" , ArchivePa
 		break;
 #endif
 	case FLOPPY_IMAGE_TYPE_STX:
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+	case FLOPPY_IMAGE_TYPE_SCP:
 		/* return buffer */
 		pDiskBuffer = buf;
 		break;
