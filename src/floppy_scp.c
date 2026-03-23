@@ -557,8 +557,8 @@ static int scp_next_flux (struct mfm_stream *s)
 				break;
 		}
 
-//printf ( "idx %04x %04x\n" , scss->dat_idx , be16toh(scss->dat[scss->dat_idx]) );
-		t = be16toh(scss->dat[scss->dat_idx++]);
+//printf ( "idx %04x %04x\n" , scss->dat_idx , be_swap16(scss->dat[scss->dat_idx]) );
+		t = be_swap16(scss->dat[scss->dat_idx++]);
 
 		if (t == 0)	/* overflow */
 		{
