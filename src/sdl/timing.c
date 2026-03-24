@@ -31,7 +31,12 @@
 #endif
 
 #if !defined(HAVE_GETTIMEOFDAY) || !defined(HAVE_SYS_TIMES_H)
+#if ENABLE_SDL3
+#include <SDL3/SDL.h>
+#else
 #include <SDL.h>
+#endif
+
 #endif
 
 static uint32_t nRunVBLs;           /* Whether and how many VBLS to run before exit */
