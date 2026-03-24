@@ -77,7 +77,8 @@ build-mingw:
     - rm -r de fr doxygen
     - cd ../..
     - DLLS=(SDL2.dll capsimg.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
-            libportmidi.dll libstdc++-6.dll libgcc_s_seh-1.dll)
+            libportmidi.dll libstdc++-6.dll libgcc_s_seh-1.dll
+            libarchive-13.dll libbz2-1.dll libcrypto-1_1-x64.dll iconv.dll liblzma-5.dll libxml2-2.dll)
     - cp ${DLLS[@]/#/\/usr\/x86_64-w64-mingw32\/sys-root\/mingw\/bin\//}
          hatari-$VERSION/
     - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
