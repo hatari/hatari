@@ -197,6 +197,17 @@ static int getNumber(const char *str, uint32_t *number, int *nbase)
 	return end - start;
 }
 
+/**
+ * '_' - for normal C symbols
+ * ':' - partial C++ symbol support
+ */
+static bool is_special(char c)
+{
+	if (c == '_' || c == ':') {
+		return true;
+	}
+	return false;
+}
 
 /**
  * Parse unsigned register/symbol/number value and set it to "number"
@@ -210,7 +221,7 @@ static int getValue(const char *str, uint32_t *number, int *base, bool bForDsp)
 	uint32_t mask, *addr;
 	int len;
 
-	for (end = str; *end == '_' || isalnum((unsigned char)*end); end++);
+	for (end = str; is_special(*end) || isalnum((unsigned char)*end); end++);
 
 	len = end-str;
 	if (len >= (int)sizeof(name)) {
@@ -258,6 +269,10 @@ static int getValue(const char *str, uint32_t *number, int *base, bool bForDsp)
 			return len;
 		}
 		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
+			return len;
+		}
+		/* exact match failed => try partial matching */
+		if (Symbols_GetCpuMethodAddress(SYMTYPE_ALL, name, number)) {
 			return len;
 		}
 	}

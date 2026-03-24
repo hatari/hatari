@@ -518,12 +518,39 @@ $ gst2ascii scummvm.ttp | m68k-atari-mint-c++filt &gt; scummvm.sym
 <p>(When symbols are in a file named as "&lt;prgname&gt;.sym", Hatari
 debugger will load symbols from it, not from the program file.)
 
-<p>Note: many demangled C++ symbols contain special characters
-which prevent them from being given as arguments to breakpoints and
-other debugger commands.  One should use (resolved) symbol address
-instead for those commands.</p>
-<p>Addresses for symbols that match user specified substring,
-can be listed like this:</p>
+<p>Note: most demangled C++ symbols, such as method signatures, contain
+special characters which prevent them from being used as arguments to
+breakpoints and other debugger commands. To solve that, debugger
+commands can accept also a part of a C++ method symbol name, if it
+is a complete sub-part of that name, and it matches only a single
+symbol.
+</p>
+
+<p>For example, given the following C++ symbols:</p>
+<pre>
+- void ScummEngine::startScriptQuick()
+- int ScummEngine::startScriptQuick2(int, int)
+- int ScummEngine::startObject(int, char*)
+</pre>
+<p>Following partial names would be accepted:</p>
+<pre>
+- startScriptQuick
+- ScummEngine::startObject
+</pre>
+<p>But these would not:</p>
+<pre>
+- ScummEngine (multiple matches)
+- startObj    (incomplete symbol part match)
+</pre>
+
+<p>This leaves out destructor, template and operator overloading
+method names because those contain characters already reserved for
+breakpoint and debugger expression operations (and without those
+characters, partial name would produce multiple matches).</p>
+
+<p>For rest of the demangled symbols, one needs to use symbol addresses
+instead. Addresses for the loaded symbols (that match user specified
+substring), can be listed like this:</p>
 <pre>
 symbols name XMLParser::parse
 </pre>

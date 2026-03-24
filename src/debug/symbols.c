@@ -22,6 +22,7 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <fnmatch.h>
 #include <assert.h>
 
 #include "config.h"
@@ -651,6 +652,78 @@ bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, uint32_t *addr)
 bool Symbols_GetDspAddress(symtype_t symtype, const char *name, uint32_t *addr)
 {
 	return Symbols_GetAddress(DspSymbolsList, symtype, name, addr);
+}
+
+/**
+ * Return true if char is valid for a symbol name, false otherwise
+ */
+static bool is_sym_char(char c)
+{
+	if (c == '_' || isalnum(c)) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Match (C++ method) symbol name substring, if it matches a specific
+ * part of it completely, i.e. is not surrounded by valid sym char(s).
+ *
+ * (See debugger manual for details.)
+ *
+ * If there's exactly one match, set symbol's address to 'addr'
+ * variable and return true, return false otherwise.
+ */
+bool Symbols_GetCpuMethodAddress(symtype_t symtype, const char *sub, uint32_t *addr)
+{
+	int matches = 0, sublen = strlen(sub);
+	symbol_list_t* list = CpuSymbolsList;
+	const symbol_t *entry;
+
+	if (!(list && list->names)) {
+		return false;
+	}
+
+	assert(addr && sub && *sub);
+
+	entry = list->names;
+	for (int i = 0; i < list->namecount; i++) {
+		const char *start, *name;
+		int offset, namelen;
+
+		/* correct type? */
+		if (!(entry[i].type & symtype)) {
+			continue;
+		}
+
+		/* substring? */
+		name = entry[i].name;
+		if (!(start = strstr(name, sub))) {
+			continue;
+		}
+
+		/* full method name part? */
+		offset = start - name;
+		if (offset > 0 && is_sym_char(name[offset-1])) {
+			continue;
+		}
+		offset += sublen;
+		namelen = strlen(name);
+		if (namelen > offset && is_sym_char(name[offset])) {
+			continue;
+		}
+
+		if (matches) {
+			fprintf(stderr, "Multiple matches for method substring '%s'.\n", sub);
+			return false;
+		}
+
+		/* first match */
+		*addr = entry[i].address;
+		matches++;
+	}
+
+	return (matches == 1);
 }
 
 

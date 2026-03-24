@@ -86,16 +86,19 @@ Emulator improvements:
   - Debugger input file commands can be split to multiple lines
     by adding '\' to end of line to continue it
   - Increase max lenght of accepted debugger file commands to 4k
-  - Always ignore unnamed symbols (= note instead of warnings)
   - Add "--memconv" option to enable locale conversion for non-ASCII
     Atari chars in memory output from the debugger commands, and
     for "--conout" output
+  - Profiler skips "profile stats" output when entering debugger,
+    if it showed (there was data for) a backtrace
+- Symbols:
+  - Always ignore unnamed symbols (= note instead of warnings)
   - Symbol autoloading loads all symbol types, not just TEXT symbols
   - Symbol offsets for "symbols prg" are taken from program basepage
     (user given values are ignored)
   - *.sym files supported also with "symbols prg" command
-  - Profiler skips "profile stats" output when entering debugger,
-    if it showed (there was data for) a backtrace
+  - Best-effort support for using demangled C++ symbols for
+    breakpoints and other debugger commands
 - Mac:
   - AVI recordings & screenshots default to same dir like on other OSes
 - Windows:

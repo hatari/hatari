@@ -519,8 +519,11 @@ static bool BreakCond_ParseSymbol(const char *name, bc_value_t *bc_value)
 	}
 
 	if (!Symbols_GetCpuAddress(symtype, name, &addr)) {
-		EXITFUNC(("-> false (CPU)\n"));
-		return false;
+		/* try partial (C++) symbol matching */
+		if (!Symbols_GetCpuMethodAddress(symtype, name, &addr)) {
+			EXITFUNC(("-> false (CPU)\n"));
+			return false;
+		}
 	}
 	if (addr & 1) {
 		/* only bytes can be at odd addresses */
@@ -1077,8 +1080,9 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		}
 		/* validate & copy other characters */
 		if (!sep) {
-			/* variable/register/symbol or number prefix? */
-			if (!(isalnum((unsigned char)*src) || *src == '_' ||
+			/* register/variable/symbol/C++/num-prefix? */
+			if (!(isalnum((unsigned char)*src) ||
+			      *src == '_' || *src == ':' ||
 			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
@@ -1546,18 +1550,18 @@ const char BreakCond_Description[] =
 static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 {
 	char *option, *next, *filename, *info;
+	char splitter[3] = {' ', marker, '\0'};
 	int skip;
 
 	memset(options, 0, sizeof(*options));
 
-	option = strchr(str, marker);
+	option = strstr(str, splitter);
 	if (option) {
-		/* end breakcond command at options */
-		*option = 0;
+		/* end breakcond command at options + skip space */
+		*option++ = 0;
 	}
 	for (next = option; option; option = next) {
 
-		char splitter[3] = {' ', marker, '\0'};
 		/* skip marker + end & trim this option */
 		option = next + 1;
 		next = strstr(option, splitter);
@@ -1753,9 +1757,9 @@ bool BreakAddr_Command(char *args, bool bForDsp)
 	}
 
 	/* split options */
-	if ((cut = strchr(args, ':'))) {
-		*cut = '\0';
-		cut = Str_Trim(cut+1);
+	if ((cut = strstr(args, " :"))) {
+		cut[1] = '\0';
+		cut = Str_Trim(cut+2);
 		if (strlen(cut) > 5) {
 			cut[5] = '\0';
 		}

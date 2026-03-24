@@ -40,6 +40,7 @@ extern char* Symbols_MatchDspDataAddress(const char *text, int state);
 /* symbol name -> address search */
 extern bool Symbols_GetCpuAddress(symtype_t symtype, const char *name, uint32_t *addr);
 extern bool Symbols_GetDspAddress(symtype_t symtype, const char *name, uint32_t *addr);
+extern bool Symbols_GetCpuMethodAddress(symtype_t symtype, const char *prefix, uint32_t *addr);
 /* symbol address -> name search */
 extern const char* Symbols_GetByCpuAddress(uint32_t addr, symtype_t symtype);
 extern const char* Symbols_GetByDspAddress(uint32_t addr, symtype_t symtype);
