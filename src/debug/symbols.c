@@ -22,7 +22,6 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <fnmatch.h>
 #include <assert.h>
 
 #include "config.h"
