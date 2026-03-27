@@ -1,7 +1,7 @@
 /*
   Hatari - evaluate.c
 
-  Copyright (C) 1994, 2009-2014, 2022-2023 by Eero Tamminen
+  Copyright (C) 1994, 2009-2026 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -210,6 +210,62 @@ static bool is_special(char c)
 }
 
 /**
+ * Check if item is Hatari variable CPU/DSP register name
+ * exact symbol match, or a partial C++ method symbol name.
+ * Return true if that's the case and set 'number' value.
+ */
+static bool getSpecial(const char *name, uint32_t *number, bool bForDsp)
+{
+	uint32_t mask, *addr;
+
+	/* internal Hatari variable? */
+	if (Vars_GetVariableValue(name, number)) {
+		return true;
+	}
+
+	if (bForDsp) {
+		int regsize = DSP_GetRegisterAddress(name, &addr, &mask);
+		/* DSP register or symbol? */
+		switch (regsize) {
+		case 16:
+			*number = (*((uint16_t*)addr) & mask);
+			return true;
+		case 32:
+			*number = (*addr & mask);
+			return true;
+		default:
+			if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
+				return true;
+			}
+		}
+	} else {
+		/* a special case CPU register? */
+		if (strcasecmp(name, "PC") == 0) {
+			*number = M68000_GetPC();
+			return true;
+		}
+		if (strcasecmp(name, "SR") == 0) {
+			*number = M68000_GetSR();
+			return true;
+		}
+		/* a normal CPU  register or symbol? */
+		if (DebugCpu_GetRegisterAddress(name, &addr)) {
+			*number = *addr;
+			return true;
+		}
+		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
+			return true;
+		}
+		/* exact match failed => try partial matching */
+		if (Symbols_GetCpuMethodAddress(SYMTYPE_ALL, name, number)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
  * Parse unsigned register/symbol/number value and set it to "number"
  * and the number base used for parsing to "base".
  * Return how many characters were parsed or zero for error.
@@ -218,7 +274,6 @@ static int getValue(const char *str, uint32_t *number, int *base, bool bForDsp)
 {
 	char name[64];
 	const char *end;
-	uint32_t mask, *addr;
 	int len;
 
 	for (end = str; is_special(*end) || isalnum((unsigned char)*end); end++);
@@ -233,48 +288,8 @@ static int getValue(const char *str, uint32_t *number, int *base, bool bForDsp)
 
 	*base = 0; /* no base (e.g. variable) */
 
-	/* internal Hatari variable? */
-	if (Vars_GetVariableValue(name, number)) {
+	if (len > 0 && getSpecial(name, number, bForDsp)) {
 		return len;
-	}
-
-	if (bForDsp) {
-		int regsize = DSP_GetRegisterAddress(name, &addr, &mask);
-		/* DSP register or symbol? */
-		switch (regsize) {
-		case 16:
-			*number = (*((uint16_t*)addr) & mask);
-			return len;
-		case 32:
-			*number = (*addr & mask);
-			return len;
-		default:
-			if (Symbols_GetDspAddress(SYMTYPE_ALL, name, number)) {
-				return len;
-			}
-		}
-	} else {
-		/* a special case CPU register? */
-		if (strcasecmp(name, "PC") == 0) {
-			*number = M68000_GetPC();
-			return len;
-		}
-		if (strcasecmp(name, "SR") == 0) {
-			*number = M68000_GetSR();
-			return len;
-		}
-		/* a normal CPU  register or symbol? */
-		if (DebugCpu_GetRegisterAddress(name, &addr)) {
-			*number = *addr;
-			return len;
-		}
-		if (Symbols_GetCpuAddress(SYMTYPE_ALL, name, number)) {
-			return len;
-		}
-		/* exact match failed => try partial matching */
-		if (Symbols_GetCpuMethodAddress(SYMTYPE_ALL, name, number)) {
-			return len;
-		}
 	}
 
 	/* none of above, assume it's a number */
