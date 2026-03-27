@@ -195,7 +195,7 @@ const char PSG_fileid[] = "Hatari psg.c";
 
 
 static uint8_t PSGRegisterSelect;		/* Write to 0xff8800 sets the register number used in read/write accesses */
-static uint8_t PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
+static uint8_t PSGRegisterReadData;		/* Value returned when reading from 0xff8800 */
 uint8_t PSGRegisters[MAX_PSG_REGISTERS];	/* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
@@ -260,7 +260,10 @@ void PSG_Set_SelectRegister(uint8_t val)
 	/* When address register is changed, a read from $ff8800 should */
 	/* return the masked value of the register. We set the value here */
 	/* to be returned in case PSG_Get_DataRegister is called */
-	PSGRegisterReadData = PSGRegisters[PSGRegisterSelect];
+	if ( PSGRegisterSelect < MAX_PSG_REGISTERS )
+		PSGRegisterReadData = PSGRegisters[PSGRegisterSelect];
+	else
+		PSGRegisterReadData = 0xff;			/* invalid reg, return 0xff */
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
