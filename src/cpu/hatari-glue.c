@@ -423,6 +423,8 @@ void error_log(const TCHAR *format, ...)
 {
 	va_list parms;
 
+	assert(format && *format);
+
 	va_start(parms, format);
 	vfprintf(stderr, format, parms);
 	va_end(parms);
