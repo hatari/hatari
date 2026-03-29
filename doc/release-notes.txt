@@ -106,14 +106,20 @@ Emulator improvements:
 - Windows:
   - Open Windows console automatically for debugger
 
+Tools:
+- Profile post-processor accepts "fnmatch" patterns for all
+  options that take symbol names
+
 Testing additions:
 - Test for verifying parsing of all Hatari options
 - Test for verifying profiling & breakpoint chaining functionality,
   and output from the "uae" + "ext" disassembly engines
 
-Tools:
-- Profile post-processor accepts "fnmatch" patterns for all
-  options that take symbol names
+Build / dependency changes:
+- Support for building Retroarch Hatari core
+- Libarchive to support more archive formats than Zlib
+- CMake outputs status for all "configure" (helper script) options
+- More fine-grained build debug options
 
 Documentation:
 - (Very) obsolete French manual page removed

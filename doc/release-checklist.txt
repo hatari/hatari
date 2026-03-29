@@ -45,9 +45,12 @@ everything that should work, does still work:
     - Mac GUI
   - All above Hatari builds pass "make test"
   - Run Hatari with valgrind
-  - Check a build with "cmake -D ENABLE_ASAN:BOOL=1".
-    Use this if ASAN prints weird stack traces for leaks:
-    export ASAN_OPTIONS="fast_unwind_on_malloc=0"
+  - Check a build with:
+      -DENABLE_ASAN=1 -DENABLE_SSP=1 -DENABLE_UBSAN=1
+    And enble asserts with:
+      -DCMAKE_BUILD_TYPE=<Debug|RelWithDebInfo>
+    Use this if ASAN prints weird stack traces for Hatari leaks:
+      export ASAN_OPTIONS="fast_unwind_on_malloc=0"
   - Check that everything built fine on Travis and Cirrus-CI:
       https://travis-ci.com/github/hatari/hatari
       https://cirrus-ci.com/github/hatari/hatari
