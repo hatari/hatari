@@ -613,6 +613,7 @@ const char* Log_SetExceptionDebugMask (const char *FlagsStr)
 {
 	const char *errstr;
 
+	/* config var is int, but parser function takes *uint64_t */
 	uint64_t mask = ConfigureParams.Debugger.nExceptionDebugMask;
 	errstr = Log_ParseOptionFlags(FlagsStr, ExceptionFlags, ARRAY_SIZE(ExceptionFlags), &mask);
 	ConfigureParams.Debugger.nExceptionDebugMask = mask;

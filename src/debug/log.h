@@ -29,10 +29,10 @@
 #define	EXCEPT_LINEF     (1<<10)
 
 /* DSP exception flags */
-#define EXCEPT_DSP	 (1<<30)
+#define EXCEPT_DSP	 (1<<29)
 
 /* whether to enable exception debugging on autostart */
-#define EXCEPT_AUTOSTART (1<<31)
+#define EXCEPT_AUTOSTART (1<<30)
 
 /* general flags */
 #define	EXCEPT_NONE	 (0)

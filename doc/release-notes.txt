@@ -23,7 +23,9 @@ Following features are deprecated and will be removed in a future release:
 API changes:
 - "--avirecord" option requires now bool argument to enable AVI
   recording. This is to support skipping recording of the TOS boot
-  (using option "event" prefix to enable it later)
+  (using option <event> prefix to enable it later)
+- Config file "nExceptionDebugMask" option values for "dsp" and "autostart"
+  items has changed (one should use <event> prefix for latter instead)
 - Configuration file "Debugger" section "bSymbolsAutoLoad" (boolean)
   option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
   the same (program symbols loaded on debugger invocation)
