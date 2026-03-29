@@ -516,25 +516,66 @@ else()
   message( "  - capstone :\tnot found, install it to use extend disassembly options" )
 endif(Capstone_FOUND)
 
-if (HATARI_HAVE_LFS)
-	message("  - LFS :\tLarge File Support is available (size of off_t = ${SIZEOF_OFF_T}),")
-	message("         \tAVI recording and HD image files can be bigger than 2 GB")
-else()
-	message("  - LFS :\tLarge File Support is NOT available (size of off_t = ${SIZEOF_OFF_T}),")
-	message("         \tAVI recording and HD image files will be limited to 2 GB")
-endif()
-
 if(ENABLE_LIBRETRO)
-  message("  - libretro :\tenabled (include dir = '${LIBRETRO_INCLUDE_DIR}'),")
+  message("  - libretro :\tfound (include dir = '${LIBRETRO_INCLUDE_DIR}'),")
   message("              \tretroarch core will be built")
 else()
-  message("  - libretro :\tnot enabled (libretro.h header has not been found),")
+  message("  - libretro :\tnot found (libretro.h header missing),")
   message("              \tretroarch core won't be built")
 endif(ENABLE_LIBRETRO)
 
+# summarize configure options status
+
+message( "
+Hatari / toolchain features support summary :
+---------------------------------------------
+")
+
+# relevant only if enabled
+
+if(ENABLE_OSX_BUNDLE)
+  message("  - OSX_BUNDLE :\tMac application bundling enabled")
+endif(ENABLE_OSX_BUNDLE)
+
+if(ENABLE_ASAN)
+  message("  - ASAN :\tCompiler Address Sanitizer enabled")
+endif(ENABLE_ASAN)
+
+if(ENABLE_UBSAN)
+  message("  - UBSAN :\tCompiler Undefined Behavior Sanitizer enabled")
+endif(ENABLE_UBSAN)
+
+if(ENABLE_WERROR)
+  message("  - WERROR :\tCompiler warnings treated as errors")
+endif(ENABLE_WERROR)
+
+# Hatari feature status
+
+if(ENABLE_DSP_EMU)
+  message("  - DSP_EMU :\tAtari Falcon DSP emulation support enabled")
+else()
+  message("  - DSP_EMU :\tAtari Falcon DSP emulation support disabled")
+endif(ENABLE_DSP_EMU)
+
+if(ENABLE_TRACING)
+  message("  - TRACING :\tOS call & HW feature tracing support enabled")
+else()
+  message("  - TRACING :\tOS call & HW feature tracing support disabled")
+endif(ENABLE_TRACING)
+
+if(HATARI_HAVE_LFS)
+  message("  - LFS :\tLarge File Support is available (size of off_t = ${SIZEOF_OFF_T})")
+  message("         \t=> AVI recording & HD image sizes can be >2 GiB")
+else()
+  message("  - LFS :\tLarge File Support is NOT available (size of off_t = ${SIZEOF_OFF_T})")
+  message("         \t=> AVI recording & HD image sizes limited to 2 GiB")
+endif()
+
+# relevant only if disabled
+
 if(NOT HAVE_SYS_TIMES_H)
   message("\n  Note: times() function is missing (sys/times.h is not available)")
-  message("        ==> using inaccurate SDL_GetTicks() instead")
+  message("        => using inaccurate SDL_GetTicks() instead")
 endif()
 
 message( "" )
