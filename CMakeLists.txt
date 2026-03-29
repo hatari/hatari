@@ -67,14 +67,10 @@ else()
 	    CACHE BOOL "Build a core for libretro (experimental)")
 endif(LIBRETRO_INCLUDE_DIR)
 
-# Run-time checks with GCC / LLVM (Clang) AddressSanitizer:
-# - stack protection
-# - checking of pointer accesses
-#
 # Configure Hatari with AddressSanitizer:
 #   cd build; make clean; cmake -D ENABLE_ASAN:BOOL=1 -D ..
 # If everything's fine, CMake output should include:
-#   Performing Test ASAN_AVAILABLE - Success"
+#  - ASAN : Compiler Address Sanitizer enabled
 #
 # After (re-)building Hatari, run it as following to see
 # available AddressSanitizer options (and that it works):
@@ -82,11 +78,12 @@ endif(LIBRETRO_INCLUDE_DIR)
 #
 # For more info:
 #   https://github.com/google/sanitizers/wiki/AddressSanitizer
+#   https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
 #
 CHECK_C_COMPILER_FLAG("-fsanitize=address" ASAN_AVAILABLE)
 if(ASAN_AVAILABLE)
 	set(ENABLE_ASAN 0
-	    CACHE BOOL "Enable GCC/LLVM run-time stack/pointer debugging (~2x slowdown)")
+	    CACHE BOOL "Enable GCC/LLVM run-time address debugging (~2x slowdown)")
 endif(ASAN_AVAILABLE)
 
 CHECK_C_COMPILER_FLAG("-fsanitize=undefined" UBSAN_AVAILABLE)
@@ -94,6 +91,18 @@ if(UBSAN_AVAILABLE)
 	set(ENABLE_UBSAN 0
 	    CACHE BOOL "Enable GCC/LLVM run-time undefined behavior debugging")
 endif(UBSAN_AVAILABLE)
+
+CHECK_C_COMPILER_FLAG("-fstack-protector-all -fsanitize=bounds-strict" SSP_AVAILABLE)
+if(SSP_AVAILABLE)
+	set(ENABLE_SSP 0
+	    CACHE BOOL "Enable GCC/LLVM run-time stack protection")
+endif(SSP_AVAILABLE)
+
+CHECK_C_COMPILER_FLAG("-fhardened" HARDENED_AVAILABLE)
+if(HARDENED_AVAILABLE)
+	set(ENABLE_HARDENED 0
+	    CACHE BOOL "Enable GCC/LLVM run-time hardening options (for production / distros not enabling them by default)")
+endif(HARDENED_AVAILABLE)
 
 find_program(GZIP gzip)
 if(UNIX AND GZIP)
@@ -274,12 +283,8 @@ check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 # Other CFLAGS:
 # #############
 
-# GCC/Clang stack/pointer debugging (~2x slowdown)
+# GCC/Clang address pointer access debugging (~2x slowdown)
 if(ENABLE_ASAN)
-	# better backtraces
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fno-omit-frame-pointer")
-	# enable stack protection
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-all")
 	# enable AddressSanitizer with global variable tracking
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
 endif(ENABLE_ASAN)
@@ -289,6 +294,24 @@ if(ENABLE_UBSAN)
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
 	add_definitions(-DENABLE_UBSAN=1)
 endif(ENABLE_UBSAN)
+
+# GCC/Clang stack protection options (overlaps with HARDENED)
+if(ENABLE_SSP)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-all -fsanitize=bounds-strict")
+endif(ENABLE_SSP)
+
+# GCC/Clang production hardening option (overlaps with SSP)
+if(ENABLE_HARDENED)
+	if(ENABLE_SSP)
+		message(FATAL_ERROR "Enabled either HARDENED or SSP, not both!")
+	endif(ENABLE_SSP)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fhardened")
+endif(ENABLE_HARDENED)
+
+# Debug & protection options require better backtraces
+if(ENABLE_ASAN OR ENABLE_SSP OR ENABLE_UBSAN)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fno-omit-frame-pointer")
+endif(ENABLE_ASAN OR ENABLE_SSP OR ENABLE_UBSAN)
 
 # GCC/Clang specific flags:
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -544,6 +567,14 @@ endif(ENABLE_ASAN)
 if(ENABLE_UBSAN)
   message("  - UBSAN :\tCompiler Undefined Behavior Sanitizer enabled")
 endif(ENABLE_UBSAN)
+
+if(ENABLE_SSP)
+  message("  - SSP :\tCompiler stack protections enabled")
+endif(ENABLE_SSP)
+
+if(ENABLE_HARDENED)
+  message("  - HARDENED :\tCompiler hardening options enabled")
+endif(ENABLE_HARDENED)
 
 if(ENABLE_WERROR)
   message("  - WERROR :\tCompiler warnings treated as errors")
