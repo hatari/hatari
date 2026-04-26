@@ -3,21 +3,21 @@
 set -e
 set -x
 
-SDLVERSION=2.30.11
+SDLVERSION=3.4.4
 PNGVERSION=1.6.48
 
 if [ ! -d dl_cache ]; then
   mkdir dl_cache
 fi
 
-# Download and install precompiled SDL2 Framework
-if [ ! -f dl_cache/SDL2-$SDLVERSION.dmg ]; then
-  wget -O dl_cache/SDL2-$SDLVERSION.dmg \
-    https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL2-$SDLVERSION.dmg
+# Download and install precompiled SDL3 Framework
+if [ ! -f dl_cache/SDL3-$SDLVERSION.dmg ]; then
+  wget -O dl_cache/SDL3-$SDLVERSION.dmg \
+    https://github.com/libsdl-org/SDL/releases/download/release-$SDLVERSION/SDL3-$SDLVERSION.dmg
   echo "SDL" > libs-changed.txt
 fi
-hdiutil attach dl_cache/SDL2-$SDLVERSION.dmg
-sudo cp -a /Volumes/SDL2/SDL2.framework /Library/Frameworks/
+hdiutil attach dl_cache/SDL3-$SDLVERSION.dmg
+sudo cp -a /Volumes/SDL3/SDL3.xcframework /Volumes/SDL3/share /Library/Frameworks/
 
 # Download, compile and install libpng Framework
 if [ ! -e dl_cache/png.framework ]; then

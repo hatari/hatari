@@ -53,7 +53,7 @@ jobs:
     - name: Install libraries via brew
       run: |
         brew update
-        brew install sdl2 libpng make tidy-html5 imagemagick capstone
+        brew install make sdl3 capstone tidy-html5 imagemagick
 
     - name: Compile and test Hatari
       run: |

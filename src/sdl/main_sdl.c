@@ -11,7 +11,7 @@
 
 #if ENABLE_SDL3
 # include <SDL3/SDL.h>
-# if defined(__APPLE__)
+# if SDL_MAIN_NEEDED
 #  define main SDL_main   /* See SDLMain.m */
 # endif
 #else
