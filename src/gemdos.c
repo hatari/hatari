@@ -1290,7 +1290,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 
 	/* append separator */
 	pathlen = strlen(path);
-	if (pathlen >= maxlen)
+	if (pathlen >= maxlen - 1)
 		return false;
 	path[pathlen++] = PATHSEP;
 	path[pathlen] = '\0';
@@ -1303,8 +1303,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 	if (match)
 	{
-		/* use strncat so that string is always nul terminated */
-		strncat(path+pathlen, match, maxlen-pathlen);
+		Str_Copy(path + pathlen, match, maxlen - pathlen);
 		free(match);
 		return true;
 	}
@@ -1319,7 +1318,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
-			strncat(path+pathlen, match, maxlen-pathlen);
+			Str_Copy(path + pathlen, match, maxlen - pathlen);
 			free(match);
 			return true;
 		}
@@ -1366,7 +1365,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
-			strncat(path+pathlen, match, maxlen-pathlen);
+			Str_Copy(path + pathlen, match, maxlen - pathlen);
 			free(match);
 			return true;
 		}
@@ -1390,7 +1389,7 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 		match = match_host_dir_entry(path, name, use_pattern, only_invalid);
 		if (match)
 		{
-			strncat(path+pathlen, match, maxlen-pathlen);
+			Str_Copy(path + pathlen, match, maxlen - pathlen);
 			free(match);
 			return true;
 		}
@@ -1411,7 +1410,6 @@ static bool add_path_component(char *path, int maxlen, const char *origname, boo
 	while (*origname)
 		*tmp++ = chr_conv(*origname++);
 	*tmp = '\0';
-	/* strncat(path+pathlen, name, maxlen-pathlen); */
 	Str_Filename_Atari2Host(name, path+pathlen, maxlen-pathlen, INVALID_CHAR);
 	return false;
 }
@@ -1456,41 +1454,37 @@ static void add_remaining_path(const char *src, char *dstpath, int dstlen)
  * it's always long enough and let callers free it. Assert if alloc
  * fails so that callers' don't need to.
  */
-void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
-                                    char *pszDestName, int nDestNameLen)
+void GemDOS_CreateHardDriveFileName(const int Drive, const char *pszFileName,
+                                    char *pszDestName, const int nDestNameLen)
 {
 	const char *s, *filename = pszFileName;
 	int minlen;
-
-	/* make sure that more convenient strncat() can be used on the
-	 * destination string (it always null terminates unlike strncpy()) */
-	*pszDestName = 0;
 
 	/* Is it a valid hard drive? */
 	assert(GemDOS_IsDriveEmulated(Drive));
 
 	/* Check for valid string */
 	if (filename[0] == '\0')
+	{
+		*pszDestName = 0;
 		return;
+	}
 
-	/* strcat writes n+1 chars, so decrease len */
-	nDestNameLen--;
-	
 	/* full filename with drive "C:\foo\bar" */
 	if (filename[1] == ':')
 	{
-		strncat(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
+		Str_Copy(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
 		filename += 2;
 	}
 	/* filename referenced from root: "\foo\bar" */
 	else if (filename[0] == '\\')
 	{
-		strncat(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
+		Str_Copy(pszDestName, emudrives[Drive-2]->hd_emulation_dir, nDestNameLen);
 	}
 	/* filename relative to current directory */
 	else
 	{
-		strncat(pszDestName, emudrives[Drive-2]->fs_currpath, nDestNameLen);
+		Str_Copy(pszDestName, emudrives[Drive-2]->fs_currpath, nDestNameLen);
 	}
 
 	minlen = strlen(emudrives[Drive-2]->hd_emulation_dir);
@@ -1500,7 +1494,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	 * should(?) be rare in paths, so this info to user should be
 	 * good enough.
 	 */
-	if (nDestNameLen < minlen + (int)strlen(pszFileName) + 2)
+	if (nDestNameLen <= minlen + (int)strlen(pszFileName) + 2)
 	{
 		Log_AlertDlg(LOG_ERROR, "Appending GEMDOS path '%s' to HDD emu host root dir doesn't fit to %d chars (current Hatari limit)!",
 			     pszFileName, nDestNameLen);
@@ -1581,13 +1575,12 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 		if (strchr(filename,'?') || strchr(filename,'*'))
 		{
 			int len = strlen(pszDestName);
-			if (len < nDestNameLen)
+			if (len < nDestNameLen - 1)
 			{
 				pszDestName[len++] = PATHSEP;
 				pszDestName[len] = '\0';
 			}
-			/* use strncat so that string is always nul terminated */
-			/* strncat(pszDestName+len, filename, nDestNameLen-len); */
+
 			Str_Filename_Atari2Host(filename, pszDestName+len, nDestNameLen-len, INVALID_CHAR);
 		}
 		else if (!add_path_component(pszDestName, nDestNameLen, filename, false))
@@ -2829,8 +2822,8 @@ static bool GemDOS_GetDir(uint32_t Params)
 		char path[MAX_GEMDOS_PATH];
 		int i,len,c;
 
-		*path = '\0';
-		strncat(path,&emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)], sizeof(path)-1);
+		Str_Copy(path, &emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)],
+		         sizeof(path));
 
 		// convert it to ST path (DOS)
 		File_CleanFileName(path);
