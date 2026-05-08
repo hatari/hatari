@@ -1441,6 +1441,8 @@ Working demos:
 - Yeti3D (port by Gildor)
 
 Working games:
+- ALIS: Colorado, Ishar I-III, Robinson's Requiem etc
+  - Reverse-engineered Open Source Silmarils game VM implementation
 - Capy (by YesCREW)
 - DGEM v0.16 (Dungeon Master GEM version)
   - Start from TT-med (or use 640x400@16 VDI mode on ST/e)
