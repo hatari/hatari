@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 if(APPLE)
 	option(HATARI_PREFER_HOST_ARCH "Prefer the native host architecture for macOS builds" ON)
+	option(HATARI_APPLE_SILICON_ONLY "Build macOS application bundles for Apple Silicon only" ON)
 endif()
 
 # Set build type to "Release" if user did not specify any build type yet
@@ -10,7 +11,12 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-if(APPLE AND HATARI_PREFER_HOST_ARCH AND NOT CMAKE_CROSSCOMPILING)
+if(APPLE AND HATARI_APPLE_SILICON_ONLY)
+	if(NOT "${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
+		set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "Target architectures" FORCE)
+		message(STATUS "Configuring macOS build for Apple Silicon architecture: arm64")
+	endif()
+elseif(APPLE AND HATARI_PREFER_HOST_ARCH AND NOT CMAKE_CROSSCOMPILING)
 	execute_process(
 		COMMAND /usr/bin/uname -m
 		OUTPUT_VARIABLE _HATARI_HOST_ARCH
@@ -32,7 +38,11 @@ if(APPLE AND HATARI_PREFER_HOST_ARCH AND NOT CMAKE_CROSSCOMPILING)
 endif()
 
 if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
-	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Target minimum macOS version")
+	if(HATARI_APPLE_SILICON_ONLY)
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Target minimum macOS version")
+	else()
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Target minimum macOS version")
+	endif()
 endif()
 
 if(APPLE)
@@ -163,6 +173,14 @@ set(HATARI_ENABLE_PYTHON_TOOLS 1)
 if(APPLE AND ENABLE_MACOS_NATIVE_UI)
 	set(HATARI_ENABLE_PYTHON_TOOLS 0)
 endif()
+
+set(_HATARI_ENABLE_SCRIPT_TOOLS_DEFAULT 1)
+if(APPLE AND ENABLE_MACOS_NATIVE_UI)
+	set(_HATARI_ENABLE_SCRIPT_TOOLS_DEFAULT 0)
+endif()
+set(HATARI_ENABLE_SCRIPT_TOOLS ${_HATARI_ENABLE_SCRIPT_TOOLS_DEFAULT}
+    CACHE BOOL "Install script-based helper tools")
+unset(_HATARI_ENABLE_SCRIPT_TOOLS_DEFAULT)
 
 if(ENABLE_OSX_BUNDLE)
 	set(APP_NAME "Hatari")
@@ -613,6 +631,14 @@ endif(ENABLE_OSX_BUNDLE)
 
 if(APPLE AND ENABLE_MACOS_NATIVE_UI)
   message("  - MACOS_NATIVE_UI :\tPython-free AppKit path enabled")
+endif()
+
+if(APPLE AND HATARI_APPLE_SILICON_ONLY)
+  message("  - APPLE_SILICON :\tmacOS build targets arm64 only")
+endif()
+
+if(APPLE AND ENABLE_MACOS_NATIVE_UI AND NOT HATARI_ENABLE_SCRIPT_TOOLS)
+  message("  - SCRIPT_TOOLS :\tskipped for native macOS application path")
 endif()
 
 if(ENABLE_ASAN)

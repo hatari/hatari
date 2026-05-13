@@ -5,8 +5,12 @@ INSTALL(FILES authors.txt bugs.txt emutos.txt keymap-sample.txt
 	video-recording.txt
 	DESTINATION ${DOCDIR})
 
-INSTALL(FILES compatibility.html manual.html debugger.html
-        hatari-ui.html manual.css toc.js
+set(HATARI_DOC_FILES compatibility.html manual.html debugger.html
+        hatari-ui.html manual.css)
+if(HATARI_ENABLE_SCRIPT_TOOLS)
+	list(APPEND HATARI_DOC_FILES toc.js)
+endif(HATARI_ENABLE_SCRIPT_TOOLS)
+INSTALL(FILES ${HATARI_DOC_FILES}
 	DESTINATION ${DOCDIR})
 
 INSTALL(DIRECTORY images

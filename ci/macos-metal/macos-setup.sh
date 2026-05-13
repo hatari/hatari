@@ -32,8 +32,8 @@ if [ ! -e dl_cache/png.framework ]; then
   tar -xJf dl_cache/libpng-$PNGVERSION.tar.xz
   cd libpng-$PNGVERSION
   cmake -DPNG_FRAMEWORK=ON -DPNG_HARDWARE_OPTIMIZATIONS=OFF \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
-        -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="11.0" \
+        -DCMAKE_OSX_ARCHITECTURES:STRING="arm64" .
   cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu)
   codesign --force -s - png.framework
   cd ..
