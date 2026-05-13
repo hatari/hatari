@@ -9,9 +9,13 @@ if(UNIX)
 			COMMAND make clean)
 	endif()
 	# Clean up Hatari specific files:
-	foreach(CLEAN_FILE config.h install_manifest.txt python-ui/conftypes.py
+	set(HATARI_DIST_CLEAN_FILES config.h install_manifest.txt
 			src/*cpu/cpudefs.c src/*cpu/cpuemu*.c
 			src/*cpu/cpustbl.c src/*cpu/cputbl.h)
+	if(HATARI_ENABLE_PYTHON_TOOLS)
+		list(APPEND HATARI_DIST_CLEAN_FILES python-ui/conftypes.py)
+	endif(HATARI_ENABLE_PYTHON_TOOLS)
+	foreach(CLEAN_FILE ${HATARI_DIST_CLEAN_FILES})
 		add_custom_command(TARGET distclean POST_BUILD
 			COMMAND rm -f ${CLEAN_FILE})
 	endforeach(CLEAN_FILE)
