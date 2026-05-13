@@ -72,6 +72,7 @@ Emulator improvements:
   - Also sound recording shows recording time in Hatari titlebar
 - VDI mode:
   - Support 8-bit VDI mode (up to 800x600@256) on TT & Falcon
+  - Allow VDI mode use also with TOS v4, but warn about its stability
 - Virtual INF file (used with autostart/TOS-resolution options):
   - Fix: resolution setting for EmuTOS with saved Falcon EMUDESK.INF
   - Fix: Boot drive window specified in the virtual INF file when

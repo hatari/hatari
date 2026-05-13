@@ -306,60 +306,65 @@ void STMemory_SetDefaultConfig(void)
 			STMemory_WriteLong(0x4ba, 80 * 200);
 	}
 
-	/* VDI screen size. Needs to leave extra space for 16x16 area
-	 * between end of screen & RAM end, or <= v2.x TOS versions
-	 * crash when mouse moves to bottom right corner of screen.
-	 */
-	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes + 16*16*VDIPlanes/8;
-	/* Use 32 kiB in normal screen mode or when the screen size
-	 * is smaller than 32 kiB
-	 */
-	if (!bUseVDIRes || screensize < 0x8000)
-		screensize = 0x8000;
-	/* mem top - upper end of user memory (right before the screen memory)
-	 * memtop / phystop must be divisible by 512 or TOS crashes
+	if (bUseVDIRes)
+	{
+		/* VDI screen size */
+		screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
+		/* Extra space for 16x16 area between end of screen & RAM end,
+		 * to avoid <= v2.x TOS versions crash when mouse moves to
+		 * VDI screen bottom right corner.
+		 */
+		screensize += 16*16*VDIPlanes/8;
+		/* TOS v4 crashes in larger resolutions unless there's
+		 * some extra buffer
+		 */
+		if (TosVersion >= 0x400)
+			screensize += 256;
+		/* memtop / phystop must be divisible by 512 or TOS crashes */
+		screensize = (screensize + 511) & 0xfffffe00;
+		/* Phystop checks below require 32 kiB at minimum */
+		if (screensize < 32*1024)
+			screensize = 32*1024;
+	}
+	else
+		screensize = 32*1024;
+
+	/* mem top: upper end of user memory (right before the screen memory).
+	 * memtop / phystop must be divisible by 512 or TOS crashes.
 	 */
 	memtop = (STRamEnd - screensize) & 0xfffffe00;
-	/* phys top - 32k gap causes least issues with apps & TOS
-	 * as that's the largest _common_ screen size. EmuTOS behavior
-	 * depends on machine type.
-	 *
-	 * TODO: what to do about _native_ TT & Videl resolutions
-	 * which size is >32k?  Should memtop be adapted also for
-	 * those?
+
+	/* phys top: 32k gap to memtop causes least issues with apps & TOS
+	 * as that's the largest _common_ screen size.
 	 */
 	switch (ConfigureParams.System.nMachineType)
 	{
-	case MACHINE_FALCON:
-		/* TOS v4 doesn't work with VDI mode (yet), and
-		 * EmuTOS works with correct gap, so use that */
-		phystop = STRamEnd;
-		break;
-	case MACHINE_TT:
-		/* For correct TOS v3 memory detection, phystop should be
+		/* For correct TOS memory detection, phystop should be
 		 * at the end of memory, not at memtop + 32k.
 		 *
 		 * However:
+		 * - Even EmuTOS does not support Hatari's largest VDI
+		 *   screen sizes without phystop lowering
 		 * - TOS v3 crashes/hangs if phystop-memtop gap is larger
 		 *   than largest real HW screen size (150k)
-		 * - NVDI hangs if gap is larger than 32k in any other than
-		 *   monochrome mode
+		 * - NVDI (v2.5) hangs if gap is larger than 32k in
+		 *   any other than monochrome mode
 		 */
+	case MACHINE_FALCON:
+	case MACHINE_TT:
 		if (VDIPlanes == 1)
-			limit = 1280*960/8;
+			limit = 1280*960/8;  // 150 KiB
 		else
-			limit = 0x8000;
+			limit = 32*1024;
 		if (screensize > limit)
-		{
 			phystop = memtop + limit;
-			Log_Printf(LOG_WARN, "too large VDI mode for TOS v3 memory detection to work correctly!\n");
-		}
 		else
 			phystop = STRamEnd;
 		break;
 	default:
-		phystop = memtop + 0x8000;
+		phystop = memtop + 32*1024;
 	}
+
 	STMemory_WriteLong(0x436, memtop);
 	STMemory_WriteLong(0x42e, phystop);
 	if (bUseVDIRes)

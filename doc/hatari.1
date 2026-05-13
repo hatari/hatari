@@ -254,11 +254,11 @@ Whether to do monitor aspect ratio correction (enabled by default)
 .SS "VDI options"
 .TP
 .B \-\-vdi <bool>
-Whether to use VDI screen mode.  Doesn't work with TOS v4. TOS v3
-memory detection isn't compatible with larger VDI modes (i.e. you need
-to skip the detection at boot). Original TOS desktops use wrong window
-size in 2-plane (4 color) VDI mode when screen height >= 400 pixels.
-Because of these issues, using EmuTOS is recommended for VDI mode
+Whether to use VDI screen mode.  TOS v4 works only with specific VDI
+configurations. TOS v3 memory detection doesn't work with larger VDI
+modes. Original TOS desktops use wrong window size in 2-plane (4
+color) VDI mode when screen height >= 400 pixels. Because of these
+issues, using EmuTOS is recommended for VDI mode
 .TP
 .B \-\-vdi\-planes <int>
 Use extended VDI resolution with bit depth <int> (1/2/4/8)
@@ -271,9 +271,10 @@ Use extended VDI resolution with height <int> (160-1280)
 .PP
 Because TOS and popular GEM programs have problems with certain screen
 sizes, Hatari enforces restrictions on VDI screen size.  In total VDI
-screen size is limited to 32-300kB, width to multiple of 16/planes,
-and height to multiple of 8 pixels (smaller system font height). That
-translates to following maximum standard resolutions for the VDI mode:
+screen size is limited to 300kiB for 1-4 bit modes and to 468KiB for
+8-bit mode, VDI width to multiple of 16/planes, and height to multiple
+of 8 pixels (smaller system font height). That translates to following
+maximum (standard) resolutions for the VDI mode:
 .TP
 .B monochrome
 FullHD (1920x1080), WUXGA (1920x1200) and QWXGA (2048x1152)
@@ -283,6 +284,9 @@ HD (1280x720), WXGA (1280x768) and XGA+ (1152x864)
 .TP
 .B 4 plane mode (16-colors)
 qHD (960x540), DVGA (960x640) and WSVGA (1024x600)
+.TP
+.B 8 plane mode (256-colors)
+SVGA (800x600)
 
 .SS "Screen capture options"
 .TP

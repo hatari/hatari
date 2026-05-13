@@ -31,8 +31,8 @@
  * For 8-bit mode, limit is raised to 480KB (800*600) as there's
  * a program that actually requires that large resolution.
  */
-#define MAX_VDI8_BYTES (800*600)   /* 480KB for 8-bit */
-#define MAX_VDI_BYTES  (300*1024)  /* 300KB for others */
+#define MAX_VDI8_BYTES (800*600)   /* ~468KiB for 8-bit */
+#define MAX_VDI_BYTES  (300*1024)  /*  300KiB for 1-4 bits */
 #define MAX_VDI_WIDTH  2048
 #define MAX_VDI_HEIGHT 1280
 /* smaller doesn't make sense even for testing */

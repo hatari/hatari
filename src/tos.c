@@ -959,11 +959,12 @@ static void TOS_CheckSysConfig(void)
 		Log_AlertDlg(LOG_ERROR, "Please use at least TOS v1.04 for the HD directory emulation "
 			     "(all required GEMDOS functionality isn't completely emulated for this TOS version).");
 	}
+
 	if (Config_IsMachineFalcon() && bUseVDIRes && !bIsEmuTOS)
 	{
-		Log_AlertDlg(LOG_ERROR, "VDI mode does not work with TOS v4 => disabled.\n"
-			     "Use 512k/1024k EmuTOS for VDI mode on Falcon.");
-		bUseVDIRes = false;
+		Log_AlertDlg(LOG_ERROR, "VDI mode is unstable with TOS v4.\n"
+			     "If there are problems, try higher bitdepth,\n"
+			     "smaller resolution or switch to EmuTOS.");
 	}
 }
 
