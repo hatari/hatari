@@ -15,8 +15,8 @@ mkdir build
 cd build
 
 # Configure the build and compile it
-cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
-      -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .. \
+cmake -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="11.0" \
+      -DCMAKE_OSX_ARCHITECTURES:STRING="arm64" .. \
   || { cat config.log; exit 1; }
 cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu) -t Hatari
 

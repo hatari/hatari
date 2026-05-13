@@ -90,7 +90,10 @@ if(ENABLE_OSX_BUNDLE)
 	    ${TOS_IMG_FILE})
 	set(GUIOSX_DOCS
 	    ${CMAKE_SOURCE_DIR}/doc/manual.html ${CMAKE_SOURCE_DIR}/doc/images
-	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html ${CMAKE_SOURCE_DIR}/doc/toc.js )
+	    ${CMAKE_SOURCE_DIR}/doc/compatibility.html)
+	if(HATARI_ENABLE_SCRIPT_TOOLS)
+		list(APPEND GUIOSX_DOCS ${CMAKE_SOURCE_DIR}/doc/toc.js)
+	endif()
 	# these are the macOS Interface Builder Files
 	set (HATARI_XIBS en.lproj/SDLMain fr.lproj/SDLMain)
 elseif(APPLE)
