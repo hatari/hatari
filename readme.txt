@@ -257,6 +257,10 @@ Their main run-time dependencies are:
 - mtools (atari-hd-image / zip2st)
 - unzip (zip2st)
 
+On macOS application bundle builds, Hatari uses its native AppKit UI path by
+default.  That path does not require Python or Gtk at run-time; the Python
+tools remain available for non-macOS and developer workflows.
+
 
  6) Hatari source subdirectory contents
  --------------------------------------

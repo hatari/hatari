@@ -78,6 +78,9 @@ if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m gui-osx/paths.m)
+	if(ENABLE_MACOS_NATIVE_UI)
+		list(APPEND GUIOSX_SOURCES gui-osx/MacControlClient.m)
+	endif()
 	if(ENABLE_METAL_RENDERER)
 		list(APPEND GUIOSX_SOURCES gui-osx/screen_metal.m)
 	endif()

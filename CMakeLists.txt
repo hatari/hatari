@@ -149,11 +149,20 @@ endif()
 if(APPLE)
 	set(ENABLE_OSX_BUNDLE 1
 	    CACHE BOOL "Built Hatari as macOS application bundle")
+	set(ENABLE_MACOS_NATIVE_UI 1
+	    CACHE BOOL "Use native AppKit UI and skip Python UI/tools for macOS bundles")
 	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
 else()
 	set(ENABLE_OSX_BUNDLE 0
 	    CACHE BOOL "Built Hatari as macOS application bundle")
+	set(ENABLE_MACOS_NATIVE_UI 0
+	    CACHE BOOL "Use native AppKit UI and skip Python UI/tools for macOS bundles")
 endif(APPLE)
+
+set(HATARI_ENABLE_PYTHON_TOOLS 1)
+if(APPLE AND ENABLE_MACOS_NATIVE_UI)
+	set(HATARI_ENABLE_PYTHON_TOOLS 0)
+endif()
 
 if(ENABLE_OSX_BUNDLE)
 	set(APP_NAME "Hatari")
@@ -474,27 +483,29 @@ if(NOT CMAKE_CROSSCOMPILING)
 	add_subdirectory(tests)
 endif(NOT CMAKE_CROSSCOMPILING)
 
-include(FindPython)
-if(Python_Interpreter_FOUND AND Python_VERSION_MAJOR LESS 3)
-	message("Note: Hatari needs at least Python 3 ... ignoring older version")
-	unset(Python_Interpreter_FOUND)
-endif()
 set(PYTHON_GTK_FOUND 0)
-if(Python_Interpreter_FOUND)
-	execute_process(COMMAND ${Python_EXECUTABLE} -c "\
+if(HATARI_ENABLE_PYTHON_TOOLS)
+	include(FindPython)
+	if(Python_Interpreter_FOUND AND Python_VERSION_MAJOR LESS 3)
+		message("Note: Hatari needs at least Python 3 ... ignoring older version")
+		unset(Python_Interpreter_FOUND)
+	endif()
+	if(Python_Interpreter_FOUND)
+		execute_process(COMMAND ${Python_EXECUTABLE} -c "\
 import gi\n\
 gi.require_version('Gtk', '3.0')\n\
 from gi.repository import Gtk\n\
 from gi.repository import Gdk\n\
 from gi.repository import GdkPixbuf\n\
 from gi.repository import GLib"
-			RESULT_VARIABLE PYTHON_GTK_RESULT
-			OUTPUT_QUIET ERROR_QUIET)
-	if(${PYTHON_GTK_RESULT} EQUAL 0)
-		set(PYTHON_GTK_FOUND 1)
-		add_subdirectory(python-ui)
-	endif()
-endif(Python_Interpreter_FOUND)
+				RESULT_VARIABLE PYTHON_GTK_RESULT
+				OUTPUT_QUIET ERROR_QUIET)
+		if(${PYTHON_GTK_RESULT} EQUAL 0)
+			set(PYTHON_GTK_FOUND 1)
+			add_subdirectory(python-ui)
+		endif()
+	endif(Python_Interpreter_FOUND)
+endif(HATARI_ENABLE_PYTHON_TOOLS)
 
 if(UNIX AND NOT ENABLE_OSX_BUNDLE)
 	add_subdirectory(share)
@@ -555,11 +566,13 @@ else()
   message( "  - capsimage :\tv5 not found, install it to use .IPF, .RAW and .CTR disk images" )
 endif(CapsImage_FOUND)
 
-if(PYTHON_GTK_FOUND)
+if(APPLE AND ENABLE_MACOS_NATIVE_UI)
+  message( "  - macOS UI :\tnative AppKit UI enabled, Python/Gtk UI skipped" )
+elseif(PYTHON_GTK_FOUND)
   message( "  - python Gtk:\tfound, python-ui can be used" )
 else()
   message( "  - python Gtk:\tnot found, install it to enable the python-ui" )
-endif(PYTHON_GTK_FOUND)
+endif()
 
 if(Udev_FOUND)
   message( "  - udev :\tfound, required for media change detection in NatFeats SCSI" )
@@ -597,6 +610,10 @@ Hatari / toolchain features support summary :
 if(ENABLE_OSX_BUNDLE)
   message("  - OSX_BUNDLE :\tMac application bundling enabled")
 endif(ENABLE_OSX_BUNDLE)
+
+if(APPLE AND ENABLE_MACOS_NATIVE_UI)
+  message("  - MACOS_NATIVE_UI :\tPython-free AppKit path enabled")
+endif()
 
 if(ENABLE_ASAN)
   message("  - ASAN :\tCompiler Address Sanitizer enabled")
