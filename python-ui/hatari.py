@@ -5,11 +5,15 @@
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import atexit
 import os
-import time
+import select
+import shutil
 import signal
 import socket
-import select
+import subprocess
+import tempfile
+import time
 from config import ConfigStore
 
 
@@ -21,12 +25,6 @@ def _path_quote(path):
 # Running Hatari instance
 class Hatari:
     "running hatari instance and methods for communicating with it"
-    basepath = "/tmp/hatari-ui-" + str(os.getpid())
-    logpath = basepath + ".log"
-    tracepath = basepath + ".trace"
-    debugpath = basepath + ".debug"
-    controlpath = basepath + ".socket"
-    server = None # singleton due to path being currently one per user
 
     def __init__(self, hataribin = None):
         # collect hatari process zombies without waitpid()
@@ -35,25 +33,57 @@ class Hatari:
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
+        self.server = None
+        self._tmpdir = tempfile.mkdtemp(prefix="hatari-ui-")
+        self.logpath = os.path.join(self._tmpdir, "hatari.log")
+        self.tracepath = os.path.join(self._tmpdir, "hatari.trace")
+        self.debugpath = os.path.join(self._tmpdir, "hatari.debug")
+        self.controlpath = os.path.join(self._tmpdir, "hatari.socket")
+        atexit.register(self._cleanup_tempdir)
         self._create_server()
         self.control = None
         self.paused = False
         self.pid = 0
 
+    def _resolve_hatari_binary(self):
+        "return validated Hatari binary path or None"
+        if os.path.sep in self.hataribin:
+            if os.path.isfile(self.hataribin) and os.access(self.hataribin, os.X_OK):
+                return self.hataribin
+            return None
+        return shutil.which(self.hataribin)
+
+    def _run_hatari_command(self, *args):
+        "run Hatari subprocess without shell, return CompletedProcess or None"
+        hataribin = self._resolve_hatari_binary()
+        if not hataribin:
+            return None
+        try:
+            return subprocess.run(
+                [hataribin, *args],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+        except OSError:
+            return None
+
+    def _cleanup_tempdir(self):
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def is_compatible(self):
         "check Hatari compatibility and return error string if it's not"
         lines = control = mmu = False
-        pipe = os.popen(self.hataribin + " -h")
-        for line in pipe.readlines():
+        process = self._run_hatari_command("-h")
+        if not process:
+            return "'%s' not found!" % self.hataribin
+        for line in process.stdout.splitlines():
             if line.find("--control-socket") >= 0:
                 control = True
             elif line.find("--mmu") >= 0:
                 mmu = True
             lines = True
-        try:
-            pipe.close()
-        except IOError:
-            pass
         if not lines:
             return "'%s' not found!" % self.hataribin
         if not control:
@@ -64,8 +94,10 @@ class Hatari:
 
     def save_config(self):
         "ask Hatari to save config.  Return None on success, otherwise Hatari return code"
-        pipe = os.popen(self.hataribin + " --saveconfig")
-        return pipe.close()
+        process = self._run_hatari_command("--saveconfig")
+        if not process:
+            return 1
+        return process.returncode or None
 
     def _create_server(self):
         if self.server:
@@ -207,17 +239,21 @@ class Hatari:
                 print("connected!")
         else:
             # child runs Hatari
-            env = os.environ
+            hataribin = self._resolve_hatari_binary()
+            if not hataribin:
+                print("ERROR: '%s' not found!" % self.hataribin)
+                os._exit(1)
+            env = os.environ.copy()
             if parent_id:
                 self._set_embed_env(env, parent_id)
             # callers need to take care of confirming quitting
-            args = [self.hataribin, "--confirm-quit", "off"]
+            args = [hataribin, "--confirm-quit", "off"]
             if self.server:
                 args += ["--control-socket", self.controlpath]
             if extra_args:
                 args += extra_args
             print("RUN:", args)
-            os.execvpe(self.hataribin, args, env)
+            os.execvpe(hataribin, args, env)
 
     def _set_embed_env(self, env, win_id):
         # tell SDL to use given widget's window
@@ -242,6 +278,10 @@ class Hatari:
         if self.control:
             self.control.close()
             self.control = None
+        if self.server:
+            self.server.close()
+            self.server = None
+        self._cleanup_tempdir()
 
 
 # Mapping of requested values both to Hatari configuration

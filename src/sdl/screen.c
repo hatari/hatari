@@ -10,6 +10,7 @@
 const char Screen_fileid[] = "Hatari screen.c";
 
 #include <assert.h>
+#include <strings.h>
 
 #include "main.h"
 
@@ -31,6 +32,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "paths.h"
 #include "options.h"
 #include "screen.h"
+#include "screen_metal.h"
 #include "screen_sdl.h"
 #include "sdlgui.h"
 #include "spec512.h"
@@ -64,11 +66,47 @@ static SDL_Texture *sdlTexture;
 static bool bUseSdlRenderer;            /* true when using SDL2 renderer */
 static bool bIsSoftwareRenderer;
 static int desktop_width, desktop_height;
+static SDL_Rect ScreenContentRect;
+
+typedef enum
+{
+	SCREEN_BACKEND_SOFTWARE = 0,
+	SCREEN_BACKEND_SDL_RENDERER,
+	SCREEN_BACKEND_METAL
+} screen_backend_t;
+
+static screen_backend_t ScreenBackend = SCREEN_BACKEND_SOFTWARE;
+
+
+static const char* Screen_GetBackendName(screen_backend_t backend)
+{
+	switch (backend)
+	{
+	case SCREEN_BACKEND_METAL:
+		return "metal";
+	case SCREEN_BACKEND_SDL_RENDERER:
+		return "sdl";
+	default:
+		return "software";
+	}
+}
+
+
+static bool Screen_ShouldForceMacRenderer(const char *value, const char *name)
+{
+	return value && !strcasecmp(value, name);
+}
 
 
 void Screen_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
 {
-	if (bUseSdlRenderer)
+	if (ScreenBackend == SCREEN_BACKEND_METAL)
+	{
+		(void)numrects;
+		(void)rects;
+		ScreenMetal_Update(screen);
+	}
+	else if (bUseSdlRenderer)
 	{
 		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
 		/* Need to clear the renderer context for certain accelerated cards */
@@ -107,6 +145,8 @@ uint32_t Screen_MapRGB(uint8_t red, uint8_t green, uint8_t blue)
 
 static void Screen_FreeSDL2Resources(void)
 {
+	if (ScreenBackend == SCREEN_BACKEND_METAL)
+		ScreenMetal_UnInit();
 	if (sdlTexture)
 	{
 		SDL_DestroyTexture(sdlTexture);
@@ -114,7 +154,7 @@ static void Screen_FreeSDL2Resources(void)
 	}
 	if (sdlscrn)
 	{
-		if (bUseSdlRenderer)
+		if (ScreenBackend != SCREEN_BACKEND_SOFTWARE)
 			SDL_FreeSurface(sdlscrn);
 		sdlscrn = NULL;
 	}
@@ -123,6 +163,7 @@ static void Screen_FreeSDL2Resources(void)
 		SDL_DestroyRenderer(sdlRenderer);
 		sdlRenderer = NULL;
 	}
+	ScreenBackend = SCREEN_BACKEND_SOFTWARE;
 }
 
 
@@ -177,6 +218,45 @@ void Screen_GetDimension(uint32_t **pixels, int *width, int *height, int *pitch)
 		*height = sdlscrn ? sdlscrn->h : 0;
 	if (pitch)
 		*pitch = sdlscrn ? sdlscrn->pitch : 0;
+}
+
+
+bool Screen_UsesWindowSurface(void)
+{
+	return ScreenBackend == SCREEN_BACKEND_SOFTWARE;
+}
+
+
+void Screen_RefreshWindowSurface(void)
+{
+	if (!Screen_UsesWindowSurface())
+		return;
+	sdlscrn = SDL_GetWindowSurface(sdlWindow);
+	ConvST_SetFullUpdate();
+	Statusbar_Init(sdlscrn);
+}
+
+
+void Screen_GetContentRect(int *x, int *y, int *width, int *height)
+{
+	if (x)
+		*x = ScreenContentRect.x;
+	if (y)
+		*y = ScreenContentRect.y;
+	if (width)
+		*width = ScreenContentRect.w;
+	if (height)
+		*height = ScreenContentRect.h;
+}
+
+
+bool Screen_IsMouseGrabbed(void)
+{
+#if ENABLE_SDL3
+	return SDL_GetWindowRelativeMouseMode(sdlWindow);
+#else
+	return SDL_GetRelativeMouseMode();
+#endif
 }
 
 
@@ -346,6 +426,15 @@ void Screen_SetTextureScale(int width, int height, int win_width, int win_height
 
 	DEBUGPRINT(("%dx%d / %dx%d -> scale = %g, nearest pixel = %d\n",
 		    win_width, win_height, width, height, scale, nearest));
+	Log_Printf(LOG_DEBUG, "Screen texture scale update (%s): source=%dx%d window=%dx%d nearest=%s force=%s\n",
+	           Screen_GetBackendName(ScreenBackend), width, height, win_width, win_height,
+	           nearest ? "yes" : "no", bForce ? "yes" : "no");
+
+	if (ScreenBackend == SCREEN_BACKEND_METAL)
+	{
+		ScreenMetal_SetTextureScale(width, height, win_width, win_height, nearest);
+		return;
+	}
 
 	if (bForce || nearest != prev_nearest)
 	{
@@ -388,7 +477,10 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 {
 	Uint32 sdlVideoFlags;
 	const char *psSdlVideoDriver;
+	const char *psMacRendererOverride;
 	bool bUseDummyMode;
+	bool bPreferAccelerated;
+	bool bUseMetal = false;
 	static bool bPrevUseVsync = false;
 	static bool bPrevInFullScreen;
 	int win_width, win_height;
@@ -405,6 +497,7 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	}
 
 	psSdlVideoDriver = SDL_getenv("SDL_VIDEODRIVER");
+	psMacRendererOverride = SDL_getenv("HATARI_MAC_RENDERER");
 	bUseDummyMode = psSdlVideoDriver && !strcmp(psSdlVideoDriver, "dummy");
 
 	if (bInFullScreen)
@@ -413,12 +506,36 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		Screen_ReparentWindow(width, height, bInFullScreen);
 	}
 
-	bUseSdlRenderer = ConfigureParams.Screen.bUseSdlRenderer && !bUseDummyMode;
+	bPreferAccelerated = ConfigureParams.Screen.bUseSdlRenderer && !bUseDummyMode;
+#if defined(ENABLE_METAL_RENDERER) && ENABLE_METAL_RENDERER && defined(__APPLE__)
+	if (Screen_ShouldForceMacRenderer(psMacRendererOverride, "sdl"))
+	{
+		Log_Printf(LOG_INFO, "Using SDL renderer on macOS due to HATARI_MAC_RENDERER=%s override.\n",
+		           psMacRendererOverride);
+	}
+	else if (bPreferAccelerated && ScreenMetal_Available())
+		bUseMetal = true;
+	if (Screen_ShouldForceMacRenderer(psMacRendererOverride, "metal"))
+	{
+		if (bPreferAccelerated && ScreenMetal_Available())
+		{
+			bUseMetal = true;
+			Log_Printf(LOG_INFO, "Using Metal renderer on macOS due to HATARI_MAC_RENDERER=%s override.\n",
+			           psMacRendererOverride);
+		}
+		else
+		{
+			Log_Printf(LOG_WARN, "HATARI_MAC_RENDERER=%s requested, but Metal renderer is unavailable.\n",
+			           psMacRendererOverride);
+		}
+	}
+#endif
+	bUseSdlRenderer = bPreferAccelerated && !bUseMetal;
 
 	/* SDL Video attributes: */
 	win_width = width;
 	win_height = height;
-	if (bUseSdlRenderer)
+	if (bPreferAccelerated)
 	{
 		scale = ConfigureParams.Screen.nZoomFactor;
 		win_width *= scale;
@@ -438,12 +555,12 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	{
 		if (getenv("PARENT_WIN_ID") != NULL)	/* Embedded window? */
 			sdlVideoFlags = SDL_WINDOW_BORDERLESS|SDL_WINDOW_HIDDEN;
-		else if (ConfigureParams.Screen.bResizable && bUseSdlRenderer)
+		else if (ConfigureParams.Screen.bResizable && bPreferAccelerated)
 			sdlVideoFlags = SDL_WINDOW_RESIZABLE;
 		else
 			sdlVideoFlags = 0;
 		/* Make sure that window is not bigger than current desktop */
-		if (bUseSdlRenderer)
+		if (bPreferAccelerated)
 		{
 			if (win_width > desktop_width)
 				win_width = desktop_width;
@@ -484,6 +601,14 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 	/* Set new video mode */
 	DEBUGPRINT(("SDL screen request: %d x %d (%s) -> window: %d x %d\n", width, height,
 	           (bInFullScreen ? "fullscreen" : "windowed"), win_width, win_height));
+	Log_Printf(LOG_INFO, "Screen mode request: %dx%d (%s), window=%dx%d, accelerated=%s, backend=%s\n",
+	           width, height, bInFullScreen ? "fullscreen" : "windowed",
+	           win_width, win_height, bPreferAccelerated ? "yes" : "no",
+	           bUseMetal ? "metal" : (bUseSdlRenderer ? "sdl" : "software"));
+	ScreenContentRect.x = 0;
+	ScreenContentRect.y = 0;
+	ScreenContentRect.w = win_width;
+	ScreenContentRect.h = win_height;
 
 	if (sdlWindow)
 	{
@@ -516,7 +641,42 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 			Main_ErrorExit("Failed to create window:", SDL_GetError(), -1);
 		}
 	}
-	if (bUseSdlRenderer)
+	if (bUseMetal)
+	{
+		int rm, bm, gm;
+
+		rm = 0x00FF0000;
+		gm = 0x0000FF00;
+		bm = 0x000000FF;
+#if ENABLE_SDL3
+		sdlscrn = SDL_CreateSurface(width, height,
+					    SDL_GetPixelFormatForMasks(32, rm, gm, bm, 0));
+#else
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, 32, rm, gm, bm, 0);
+#endif
+		if (!sdlscrn || !ScreenMetal_Init(sdlWindow, width, height, win_width, win_height))
+		{
+			Log_Printf(LOG_WARN, "Failed to initialize macOS Metal renderer, falling back to SDL renderer.\n");
+			if (sdlscrn)
+			{
+				SDL_FreeSurface(sdlscrn);
+				sdlscrn = NULL;
+			}
+			ScreenMetal_UnInit();
+			bUseMetal = false;
+			bUseSdlRenderer = bPreferAccelerated;
+		}
+		else
+		{
+			bIsSoftwareRenderer = false;
+			ScreenBackend = SCREEN_BACKEND_METAL;
+			Log_Printf(LOG_INFO, "Using macOS Metal renderer for %dx%d output.\n", width, height);
+			Screen_SetTextureScale(width, height, win_width, win_height, true);
+			ScreenMetal_GetContentRect(&ScreenContentRect.x, &ScreenContentRect.y,
+			                           &ScreenContentRect.w, &ScreenContentRect.h);
+		}
+	}
+	if (!bUseMetal && bUseSdlRenderer)
 	{
 		int rm, bm, gm;
 
@@ -561,12 +721,16 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		bIsSoftwareRenderer = sRenderInfo.flags & SDL_RENDERER_SOFTWARE;
 #endif
 
+		ScreenBackend = SCREEN_BACKEND_SDL_RENDERER;
+		Log_Printf(LOG_INFO, "Using SDL renderer backend for %dx%d output.\n", width, height);
 		Screen_SetTextureScale(width, height, win_width, win_height, true);
 	}
-	else
+	else if (!bUseMetal)
 	{
 		sdlscrn = SDL_GetWindowSurface(sdlWindow);
 		bIsSoftwareRenderer = true;
+		ScreenBackend = SCREEN_BACKEND_SOFTWARE;
+		Log_Printf(LOG_INFO, "Using software surface backend for %dx%d output.\n", width, height);
 	}
 
 	/* Exit if we can not open a screen */
@@ -856,7 +1020,20 @@ bool Screen_UngrabMouse(void)
 
 void Screen_GrabMouseIfNecessary(void)
 {
-	SDL_SetWindowRelativeMouseMode(sdlWindow, bInFullScreen || bGrabMouse);
+	bool want_grab = bInFullScreen || bGrabMouse;
+
+	if (!sdlWindow)
+		return;
+	if (SDL_SetWindowRelativeMouseMode(sdlWindow, want_grab) < 0)
+	{
+		Log_Printf(LOG_WARN, "Failed to %s mouse grab: %s\n",
+		           want_grab ? "enable" : "disable", SDL_GetError());
+		return;
+	}
+	Log_Printf(LOG_DEBUG, "Mouse grab request=%s active=%s backend=%s\n",
+	           want_grab ? "on" : "off",
+	           Screen_IsMouseGrabbed() ? "yes" : "no",
+	           Screen_GetBackendName(ScreenBackend));
 }
 
 

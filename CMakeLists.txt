@@ -1,15 +1,45 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
+if(APPLE)
+	option(HATARI_PREFER_HOST_ARCH "Prefer the native host architecture for macOS builds" ON)
+endif()
+
 # Set build type to "Release" if user did not specify any build type yet
 # Other possible values: Debug, Release, RelWithDebInfo and MinSizeRel
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
-	set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Target architectures")
+if(APPLE AND HATARI_PREFER_HOST_ARCH AND NOT CMAKE_CROSSCOMPILING)
+	execute_process(
+		COMMAND /usr/bin/uname -m
+		OUTPUT_VARIABLE _HATARI_HOST_ARCH
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET
+	)
+	if(NOT _HATARI_HOST_ARCH MATCHES "^(arm64|x86_64)$")
+		if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+			set(_HATARI_HOST_ARCH "arm64")
+		else()
+			set(_HATARI_HOST_ARCH "x86_64")
+		endif()
+	endif()
+	if(NOT "${CMAKE_OSX_ARCHITECTURES}" STREQUAL "${_HATARI_HOST_ARCH}")
+		set(CMAKE_OSX_ARCHITECTURES "${_HATARI_HOST_ARCH}" CACHE STRING "Target architectures" FORCE)
+		message(STATUS "Configuring macOS build for native host architecture: ${_HATARI_HOST_ARCH}")
+	endif()
+	unset(_HATARI_HOST_ARCH)
+endif()
+
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
 	set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Target minimum macOS version")
-endif(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Release")
+endif()
+
+if(APPLE)
+	set(ENABLE_METAL_RENDERER 1 CACHE BOOL "Enable native Metal renderer on macOS")
+else()
+	set(ENABLE_METAL_RENDERER 0 CACHE BOOL "Enable native Metal renderer on macOS")
+endif()
 
 project(Hatari C)
 enable_testing()
@@ -21,6 +51,7 @@ include(CheckFunctionExists)
 include(CheckStructHasMember)
 include(CheckSymbolExists)
 include(CheckCCompilerFlag)
+include(CheckCSourceCompiles)
 include(DistClean)
 include(CheckTypeSize)
 
@@ -98,7 +129,11 @@ if(SSP_AVAILABLE)
 	    CACHE BOOL "Enable GCC/LLVM run-time stack protection")
 endif(SSP_AVAILABLE)
 
-CHECK_C_COMPILER_FLAG("-fhardened" HARDENED_AVAILABLE)
+set(_HATARI_REQUIRED_FLAGS_SAVE "${CMAKE_REQUIRED_FLAGS}")
+set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -fhardened")
+check_c_source_compiles("int main(void) { return 0; }" HARDENED_AVAILABLE)
+set(CMAKE_REQUIRED_FLAGS "${_HATARI_REQUIRED_FLAGS_SAVE}")
+unset(_HATARI_REQUIRED_FLAGS_SAVE)
 if(HARDENED_AVAILABLE)
 	set(ENABLE_HARDENED 0
 	    CACHE BOOL "Enable GCC/LLVM run-time hardening options (for production / distros not enabling them by default)")
@@ -305,6 +340,9 @@ if(ENABLE_HARDENED)
 	if(ENABLE_SSP)
 		message(FATAL_ERROR "Enabled either HARDENED or SSP, not both!")
 	endif(ENABLE_SSP)
+	if(NOT HARDENED_AVAILABLE)
+		message(FATAL_ERROR "ENABLE_HARDENED requested, but '-fhardened' is not supported by this compiler toolchain")
+	endif()
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fhardened")
 endif(ENABLE_HARDENED)
 

@@ -36,9 +36,13 @@ uint32_t Screen_GetGenConvHeight(void);
 int Screen_SaveBMP(const char *filename);
 void Screen_StatusbarMessage(const char *msg, uint32_t msecs);
 int Screen_GetUISocket(void);
+bool Screen_UsesWindowSurface(void);
+void Screen_RefreshWindowSurface(void);
 void Screen_SetTitle(const char *title);
 void Screen_MinimizeWindow(void);
 uint32_t Screen_GetMouseState(int *mx, int *my);
 bool Screen_ShowCursor(bool show);
+void Screen_GetContentRect(int *x, int *y, int *width, int *height);
+bool Screen_IsMouseGrabbed(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */

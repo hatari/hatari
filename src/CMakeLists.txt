@@ -6,6 +6,7 @@ set(SOURCES
 	acia.c
 	avi_record.c
 	bios.c
+	buserror.c
 	blitter.c
 	cart.c
 	cfgopts.c
@@ -77,6 +78,9 @@ if(ENABLE_OSX_BUNDLE)
 	set(GUIOSX_SOURCES
 	    gui-osx/AlertHooks.m gui-osx/PrefsController.m gui-osx/Shared.m
 	    gui-osx/CreateFloppyController.m gui-osx/SDLMain.m gui-osx/paths.m)
+	if(ENABLE_METAL_RENDERER)
+		list(APPEND GUIOSX_SOURCES gui-osx/screen_metal.m)
+	endif()
 	set_source_files_properties(${GUIOSX_SOURCES} PROPERTIES LANGUAGE C)
 	set(GUIOSX_RSRCS
 	    Hatari.icns gui-osx/stdisk.png gui-osx/en.lproj gui-osx/fr.lproj
@@ -182,7 +186,12 @@ if(ENABLE_OSX_BUNDLE)
 		set(COPY_PNG cp -R ${PNG_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
 	endif()
 	if(CapsImage_FOUND)
-		set(COPY_CAPSIMAGE cp -R ${CAPSIMAGE_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
+		if(CAPSIMAGE_LIBRARY MATCHES "\\.framework/")
+			string(REGEX REPLACE "(.+\\.framework)/.*" "\\1" CAPSIMAGE_FRAMEWORK ${CAPSIMAGE_LIBRARY})
+			set(COPY_CAPSIMAGE cp -R ${CAPSIMAGE_FRAMEWORK} ${BUNDLE_CONTENTS}/Frameworks/)
+		else()
+			set(COPY_CAPSIMAGE cp -R ${CAPSIMAGE_LIBRARY} ${BUNDLE_CONTENTS}/Frameworks/)
+		endif()
 	endif()
 	# Create the Hatari.icns file
 	set(ICONSDIR ${CMAKE_SOURCE_DIR}/share/icons/hicolor/)
@@ -302,7 +311,7 @@ if(ENABLE_LIBRETRO)
 			$<TARGET_OBJECTS:UiRetro>)
 endif(ENABLE_LIBRETRO)
 
-target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
+	target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
 
 if(Math_FOUND AND NOT APPLE)
 	target_link_libraries(${APP_NAME} ${MATH_LIBRARY})
@@ -329,7 +338,7 @@ if(LibArchive_FOUND)
 	endif(ENABLE_LIBRETRO)
 endif(LibArchive_FOUND)
 
-if(PNG_FOUND)
+	if(PNG_FOUND)
 	target_link_libraries(${APP_NAME} ${PNG_LIBRARY})
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${PNG_LIBRARY})
@@ -373,7 +382,11 @@ if(APPLE)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari "-framework Cocoa")
 	endif(ENABLE_LIBRETRO)
-endif()
+	endif()
+	if(ENABLE_METAL_RENDERER)
+		target_compile_definitions(${APP_NAME} PRIVATE ENABLE_METAL_RENDERER=1)
+		target_link_libraries(${APP_NAME} "-framework Metal" "-framework QuartzCore")
+	endif()
 
 if(WIN32)
 	# Needed for socket() on Windows

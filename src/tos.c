@@ -983,7 +983,15 @@ static uint8_t *TOS_LoadImage(void)
 
 	if (!pTosFile || nFileSize < 0x40)
 	{
+#ifdef __APPLE__
+		Log_AlertDlg(LOG_FATAL,
+		             "Can not load TOS file:\n'%s'\n\n"
+		             "Hatari.app on macOS expects an external TOS ROM when no local bundle ROM is available.\n"
+		             "Start Hatari with '--tos <path-to-rom>' or configure a TOS image path.",
+		             ConfigureParams.Rom.szTosImageFileName);
+#else
 		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
+#endif
 		free(pTosFile);
 		return NULL;
 	}
