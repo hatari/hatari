@@ -565,62 +565,6 @@ void M68000_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check whether bus error reporting should be reported or not.
- * We do not want to print messages when TOS is testing for available HW
- * or when a program just checks for the floating point co-processor.
- */
-bool M68000_IsVerboseBusError(uint32_t pc, uint32_t addr)
-{
-	const uint32_t nTosProbeAddrs[] =
-	{
-		0xf00039, 0xff8900, 0xff8a00, 0xff8c83,
-		0xff8e0d, 0xff8e09, 0xfffa40
-	};
-	const uint32_t nEmuTosProbeAddrs[] =
-	{
-		0xf0001d, 0xf0005d, 0xf0009d, 0xf000dd, 0xff8006, 0xff8282,
-		0xff8400, 0xff8701, 0xff8901, 0xff8943, 0xff8961, 0xff8c80,
-		0xff8a3c, 0xff9201, 0xfffa81, 0xfffe00
-	};
-	int idx;
-
-	if (ConfigureParams.Log.nTextLogLevel == LOG_DEBUG)
-		return true;
-
-	if (ConfigureParams.System.bAddressSpace24
-	    || (addr & 0xff000000) == 0xff000000)
-	{
-		addr &= 0xffffff;
-	}
-
-	/* Program just probing for FPU? A lot of C startup code is always
-	 * doing this, so reporting bus errors here would be annoying */
-	if (addr == 0xfffa42)
-		return false;
-
-	/* Always report other bus errors from normal programs */
-	if (pc < TosAddress || pc > TosAddress + TosSize)
-		return true;
-
-	for (idx = 0; idx < ARRAY_SIZE(nTosProbeAddrs); idx++)
-	{
-		if (nTosProbeAddrs[idx] == addr)
-			return false;
-	}
-
-	if (bIsEmuTOS)
-	{
-		for (idx = 0; idx < ARRAY_SIZE(nEmuTosProbeAddrs); idx++)
-		{
-			if (nEmuTosProbeAddrs[idx] == addr)
-				return false;
-		}
-	}
-
-	return true;
-}
-
-/**
  * BUSERROR - Access outside valid memory range.
  *   ReadWrite : BUS_ERROR_READ in case of a read or BUS_ERROR_WRITE in case of write
  *   Size : BUS_ERROR_SIZE_BYTE or BUS_ERROR_SIZE_WORD or BUS_ERROR_SIZE_LONG
@@ -1781,5 +1725,4 @@ void	wait_cpu_cycle_write_megaste_16 (uaecptr addr, int mode, uae_u32 v)
 /*----------------------------------------------------------------------*/
 /*			MegaSTE 16MHz and  cache			*/
 /*----------------------------------------------------------------------*/
-
 

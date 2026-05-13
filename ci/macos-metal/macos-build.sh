@@ -1,4 +1,10 @@
 #!/bin/sh
+#
+# Hatari - macos-build.sh
+# Copyright (C) 2026 by manni07
+# Created: 2026-05-13
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 set -e
 set -x

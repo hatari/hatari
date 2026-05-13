@@ -42,6 +42,8 @@ const char File_Archive_fileid[] = "Hatari file_archive.c";
 #if HAVE_LIBARCHIVE
 
 #define FILE_ARCHIVE_PATH_MAX  256
+#define FILE_ARCHIVE_MAX_SIZE  (64 * 1024 * 1024)
+#define DIM_HEADER_SIZE        32
 
 
 /* Possible file extensions to handle with libarchive */
@@ -78,6 +80,30 @@ static const char * const pszDiskNameExts[] =
 
 //#define DEBUGPRINT(x) fprintf x
 #define DEBUGPRINT(x)
+
+
+static bool Archive_GetSafeSize(const char *path, la_int64_t entry_size, size_t *size_out)
+{
+	if (entry_size <= 0)
+	{
+		Log_Printf(LOG_ERROR, "Archive entry '%s' has invalid size %lld\n",
+		           path, (long long)entry_size);
+		return false;
+	}
+	if ((uint64_t)entry_size > FILE_ARCHIVE_MAX_SIZE)
+	{
+		Log_Printf(LOG_ERROR, "Archive entry '%s' is too large (%lld bytes)\n",
+		           path, (long long)entry_size);
+		return false;
+	}
+	if ((uint64_t)entry_size > SIZE_MAX)
+	{
+		Log_Printf(LOG_ERROR, "Archive entry '%s' exceeds host size limits\n", path);
+		return false;
+	}
+	*size_out = (size_t)entry_size;
+	return true;
+}
 
 
 
@@ -467,7 +493,7 @@ static bool Arc_LocateFile ( struct archive *arc , struct archive_entry	**arc_en
 static long Archive_CheckImageFile ( struct archive *arc, char *FileName, int *pImageType )
 {
 	struct archive_entry	*arc_entry;
-	int			uncompressed_size;
+	size_t			uncompressed_size;
 
 
 DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
@@ -477,7 +503,8 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 		Log_Printf(LOG_ERROR, "File \"%s\" not found in the archive!\n", FileName);
 		return -1;
 	}
-	uncompressed_size = archive_entry_size ( arc_entry );
+	if (!Archive_GetSafeSize(FileName, archive_entry_size(arc_entry), &uncompressed_size))
+		return -1;
 
 	*pImageType = FLOPPY_IMAGE_TYPE_NONE;
 
@@ -502,7 +529,7 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 
 	/* Known extension found, return uncompressed size */
 	if ( pImageType != FLOPPY_IMAGE_TYPE_NONE )
-		return uncompressed_size;
+		return (long)uncompressed_size;
 
 	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF, .STX or .SCP file.\n" );
 	return 0;
@@ -519,10 +546,15 @@ static void *Archive_ExtractFile ( struct archive *arc, size_t size )
 {
 	uint8_t *	buf;
 	size_t		size_buf;
-	size_t		last_read;
 	size_t		total_read;
+	la_ssize_t	last_read;
 
 	size_buf = size;
+	if (size_buf == 0)
+	{
+		Log_Printf(LOG_ERROR, "Archive_ExtractFile: refusing empty file extraction\n");
+		return NULL;
+	}
 	buf = malloc ( size_buf );
 	if ( !buf )
 	{
@@ -534,9 +566,9 @@ static void *Archive_ExtractFile ( struct archive *arc, size_t size )
 	/* Handle the case where archive_read_data returns less than size_buf bytes */
 	total_read = 0;
 	while ( ( last_read = archive_read_data ( arc, buf + total_read , size_buf - total_read ) ) > 0 )
-		total_read += last_read;
+		total_read += (size_t)last_read;
 
-	if ( total_read != size_buf )
+	if ( last_read < 0 || total_read != size_buf )
 	{
 		Log_Printf ( LOG_ERROR, "Archive_ExtractFile: could not read file\n" );
 		free(buf);
@@ -652,8 +684,14 @@ DEBUGPRINT (( stderr , "Archive_ReadDisk news path=%s filename=%s\n" , ArchivePa
 		break;
 	case FLOPPY_IMAGE_TYPE_DIM:
 		/* Skip DIM header */
-		ImageSize -= 32;
-		memmove ( buf, buf+32, ImageSize );
+		if (ImageSize <= DIM_HEADER_SIZE)
+		{
+			Log_Printf(LOG_ERROR, "Archive_ReadDisk: DIM image '%s' is too small\n", FileName);
+			free(buf);
+			return NULL;
+		}
+		ImageSize -= DIM_HEADER_SIZE;
+		memmove ( buf, buf + DIM_HEADER_SIZE, ImageSize );
 		/* return buffer */
 		pDiskBuffer = buf;
 		break;
@@ -684,7 +722,7 @@ uint8_t		*Archive_ReadFirstFile ( const char *FileName, long *pImageSize, const 
 	int		r;
 	uint8_t		*pBuffer = NULL;
 	char		*ArchivePath;
-	int		uncompressed_size;
+	size_t		uncompressed_size;
 
 
 DEBUGPRINT (( stderr , "Archive_ReadFirstFile new filename=%s\n", FileName ));
@@ -715,12 +753,13 @@ DEBUGPRINT (( stderr , "Archive_ReadFirstFile new filename=%s\n", FileName ));
 		Log_Printf(LOG_ERROR, "Can not locate '%s' in the archive!\n", ArchivePath);
 		goto cleanup;
 	}
-	uncompressed_size = archive_entry_size ( arc_entry );
+	if (!Archive_GetSafeSize(ArchivePath, archive_entry_size(arc_entry), &uncompressed_size))
+		goto cleanup;
 
 	/* Extract the current archive entry set by Archive_CheckImageFile */
 	pBuffer = Archive_ExtractFile ( arc, uncompressed_size );
 	if ( pBuffer )
-		*pImageSize = uncompressed_size;
+		*pImageSize = (long)uncompressed_size;
 
 cleanup:
 	archive_read_free ( arc );

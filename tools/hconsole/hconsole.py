@@ -15,6 +15,10 @@ import time
 import signal
 import socket
 import readline
+import atexit
+import shutil
+import subprocess
+import tempfile
 
 class Scancode:
     "Atari scancodes for keys without alphanumeric characters"
@@ -80,7 +84,6 @@ class Scancode:
 
 # running Hatari instance
 class Hatari:
-    controlpath = "/tmp/hatari-console-" + str(os.getpid()) + ".socket"
     hataribin = "hatari"
 
     def __init__(self, args):
@@ -94,6 +97,9 @@ class Hatari:
         self.winuae = False
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+        self._tmpdir = tempfile.mkdtemp(prefix="hatari-console-")
+        self.controlpath = os.path.join(self._tmpdir, "hatari.socket")
+        atexit.register(self._cleanup_tempdir)
         self._assert_hatari_compatibility()
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         if os.path.exists(self.controlpath):
@@ -104,22 +110,50 @@ class Hatari:
             print("ERROR: failed to run Hatari")
             sys.exit(1)
 
+    def _resolve_hatari_binary(self):
+        if os.path.sep in self.hataribin:
+            if os.path.isfile(self.hataribin) and os.access(self.hataribin, os.X_OK):
+                return self.hataribin
+            return None
+        return shutil.which(self.hataribin)
+
+    def _run_hatari_command(self, *args):
+        hataribin = self._resolve_hatari_binary()
+        if not hataribin:
+            return None
+        try:
+            return subprocess.run(
+                [hataribin, *args],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True
+            )
+        except OSError:
+            return None
+
+    def _cleanup_tempdir(self):
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def _assert_hatari_compatibility(self):
         "check Hatari compatibility and return error string if it's not"
+        hataribin = self._resolve_hatari_binary()
         print("Using following Hatari binary:")
-        os.system("which %s" % self.hataribin)
+        if hataribin:
+            print(hataribin)
+        else:
+            print(self.hataribin)
         error = "Hatari lacks '--control-socket' option (Windows?)"
-        pipe = os.popen(self.hataribin + " -h")
-        for line in pipe.readlines():
+        process = self._run_hatari_command("-h")
+        if not process:
+            print("ERROR: '%s' not found!" % self.hataribin)
+            sys.exit(-1)
+        for line in process.stdout.splitlines():
             if line.find("--addr24") >= 0:
                 self.winuae = True
             if line.find("--control-socket") >= 0:
                 error = None
                 break
-        try:
-            pipe.close()
-        except IOError:
-            pass
         if error:
             print("ERROR: %s" % error)
             sys.exit(-1)
@@ -155,9 +189,13 @@ class Hatari:
             return self.control
         else:
             # child runs Hatari
-            allargs = [self.hataribin, "--control-socket", self.controlpath] + args
+            hataribin = self._resolve_hatari_binary()
+            if not hataribin:
+                print("ERROR: '%s' not found!" % self.hataribin)
+                os._exit(1)
+            allargs = [hataribin, "--control-socket", self.controlpath] + args
             print('RUN: "%s"' % ' '.join(allargs))
-            os.execvp(self.hataribin, allargs)
+            os.execvp(hataribin, allargs)
 
     def send_message(self, msg, fast = False):
         if self.control:

@@ -43,11 +43,19 @@ static bool bAllowMouseWarp = true;         /* disabled when window loses mouse 
  */
 void GuiEvent_WarpMouse(int x, int y, bool restore)
 {
+	int vx, vy, vw, vh;
+
 	if (!(restore || ConfigureParams.Screen.bMouseWarp))
 		return;
 	if (!bAllowMouseWarp)
 		return;
 
+	Screen_GetContentRect(&vx, &vy, &vw, &vh);
+	if (vw > 0 && vh > 0)
+	{
+		x += vx;
+		y += vy;
+	}
 	SDL_WarpMouseInWindow(sdlWindow, x, y);
 	bIgnoreNextMouseMotion = true;
 }
@@ -89,26 +97,43 @@ static void GuiEvent_HandleMouseMotion(int dx, int dy)
 	if (!bInFullScreen)			/* Consider window scaling? */
 	{
 		static int wx, wy;
-		int win_width, win_height, ndx, ndy;
+		int view_x, view_y, view_width, view_height, ndx, ndy;
 
-		SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
-
-		if (sdlscrn->w != win_width)
+		Screen_GetContentRect(&view_x, &view_y, &view_width, &view_height);
+		(void)view_x;
+		(void)view_y;
+		if (view_width <= 0 || view_height <= 0)
+		{
+			SDL_GetWindowSize(sdlWindow, &view_width, &view_height);
+		}
+		if (sdlscrn->w != view_width)
 		{
 			ndx = dx * sdlscrn->w;
-			dx = (ndx + wx) / win_width;
-			wx = (ndx + wx) % win_width;
+			dx = (ndx + wx) / view_width;
+			wx = (ndx + wx) % view_width;
 		}
-		if (sdlscrn->h != win_height)
+		if (sdlscrn->h != view_height)
 		{
 			ndy = dy * sdlscrn->h;
-			dy = (ndy + wy) / win_height;
-			wy = (ndy + wy) % win_height;
+			dy = (ndy + wy) / view_height;
+			wy = (ndy + wy) % view_height;
 		}
 	}
 
 	KeyboardProcessor.Mouse.dx += dx;
 	KeyboardProcessor.Mouse.dy += dy;
+
+	/* Keep host cursor away from the window edge when using grab in
+	 * windowed mode, otherwise macOS can hand it back to the desktop
+	 * before Atari mouse reaches the visible screen edge. */
+	if (bGrabMouse && !bInFullScreen && bAllowMouseWarp)
+	{
+		int vw, vh;
+
+		Screen_GetContentRect(NULL, NULL, &vw, &vh);
+		if (vw > 0 && vh > 0)
+			GuiEvent_WarpMouse(vw / 2, vh / 2, false);
+	}
 }
 
 
@@ -245,22 +270,24 @@ void GuiEvent_EventHandler(void)
 			switch(event.window.event) {
 #endif
 			case SDL_WINDOWEVENT_EXPOSED:
-				if (!ConfigureParams.Screen.bUseSdlRenderer)
+				if (Screen_UsesWindowSurface())
 				{
 					/* Hack: Redraw screen here when going into
 					 * fullscreen mode without SDL renderer */
-					sdlscrn = SDL_GetWindowSurface(sdlWindow);
-					ConvST_SetFullUpdate();
-					Statusbar_Init(sdlscrn);
+					Screen_RefreshWindowSurface();
 				}
 				/* fall through */
 			case SDL_WINDOWEVENT_RESTORED:
+				Log_Printf(LOG_DEBUG, "Window restored, refreshing %s backend.\n",
+				           Screen_UsesWindowSurface() ? "software" : "accelerated");
 				/* Note: any changes here should most likely
 				 * be done also in sdlgui.c::SDLGui_DoDialog()
 				 */
 				Screen_UpdateRect(sdlscrn, 0, 0, 0, 0);
 				break;
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
+				Log_Printf(LOG_DEBUG, "Window size changed to %dx%d.\n",
+				           event.window.data1, event.window.data2);
 				/* internal & external window size changes */
 				Screen_SetTextureScale(sdlscrn->w, sdlscrn->h,
 						       event.window.data1,
@@ -282,6 +309,11 @@ void GuiEvent_EventHandler(void)
 				bAllowMouseWarp = true;
 				break;
 			case SDL_WINDOWEVENT_LEAVE:
+				if (Screen_IsMouseGrabbed())
+				{
+					bAllowMouseWarp = true;
+					break;
+				}
 				Screen_GetMouseState(&mleave_x, &mleave_y);
 				/* fall through */
 			case SDL_WINDOWEVENT_FOCUS_LOST:
