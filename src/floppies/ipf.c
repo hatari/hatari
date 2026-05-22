@@ -39,23 +39,12 @@ const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
 #endif
 
 
-/* To handle RAW stream images with one file per track/side */
-#define	IPF_MAX_TRACK_RAW_STREAM_IMAGE	84				/* track number can be 0 .. 83 */
-#define	IPF_MAX_SIDE_RAW_STREAM_IMAGE	2				/* side number can be 0 or 1 */
-
-struct
-{
-	int		TrackSize;
-	uint8_t		*TrackData;
-} IPF_RawStreamImage[ MAX_FLOPPYDRIVES ][ IPF_MAX_TRACK_RAW_STREAM_IMAGE ][ IPF_MAX_SIDE_RAW_STREAM_IMAGE ];
-
-
 
 typedef struct
 {
 #ifdef HAVE_CAPSIMAGE
-	uint32_t			CapsLibRelease;
-	uint32_t			CapsLibRevision;
+	uint32_t		CapsLibRelease;
+	uint32_t		CapsLibRevision;
 
 	struct CapsFdc		Fdc;				/* Fdc state */
 	struct CapsDrive 	Drive[ MAX_FLOPPYDRIVES ];	/* Physical drives */
@@ -70,24 +59,25 @@ typedef struct
 #endif
 
 	int64_t			FdcClock;			/* Current value of CyclesGlobalClockCounter */
+
 } IPF_STRUCT;
 
 
-static IPF_STRUCT	IPF_State;			/* All variables related to the IPF support */
+static IPF_STRUCT		IPF_State;			/* All variables related to the IPF support */
 
 
-static bool	IPF_Eject_RawStreamImage ( int Drive );
+
+/*--------------------------------------------------------------*/
+/* Local functions prototypes					*/
+/*--------------------------------------------------------------*/
+
 #ifdef HAVE_CAPSIMAGE
-static char	*IPF_FilenameFindTrackSide (char *FileName);
-static bool	IPF_Insert_RawStreamImage ( int Drive );
-
 static void	IPF_CallBack_Trk ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Irq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State );
 static void	IPF_Drive_Update_Enable_Side ( void );
 static void	IPF_FDC_LogCommand ( uint8_t Command );
 #endif
-
 
 
 
@@ -101,9 +91,6 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 {
 	int	StructSize;
 	int	Drive;
-	int	Track , Side;
-	int	TrackSize;
-	uint8_t	*p;
 
 
 	if ( bSave )					/* Saving snapshot */
@@ -113,18 +100,6 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 		if ( StructSize > 0 )
 		{
 			MemorySnapShot_Store(&IPF_State, sizeof(IPF_State));
-
-			/* Save the content of IPF_RawStreamImage[] */
-			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
-				for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-					for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-					{
-						TrackSize = IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize;
-//						fprintf ( stderr , "IPF : save raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
-						MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
-						if ( TrackSize > 0 )
-							MemorySnapShot_Store(IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData, TrackSize);
-					}
 		}
 	}
 
@@ -172,44 +147,20 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 
 			/* Call IPF_Insert to recompute IPF_State.CapsImage[ Drive ] */
 			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
+			{
 				if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+				{
 					if ( IPF_Insert ( Drive , EmulationDrives[Drive].pBuffer , EmulationDrives[Drive].nImageBytes ) == false )
 					{
 						Log_AlertDlg(LOG_ERROR, "Error restoring IPF image %s in drive %d" ,
 							EmulationDrives[Drive].sFileName , Drive );
 						return;
 					}
-
-			/* Restore the content of IPF_RawStreamImage[] */
-			/* NOTE  : IPF_Insert above might already have read the raw tracks from disk, */
-			/* so we free all those tracks and read them again from the snapshot instead */
-			/* (not very efficient, but it's a rare case anyway) */
-			for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
-			{
-				IPF_Eject_RawStreamImage ( Drive );
-				for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-					for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-					{
-						MemorySnapShot_Store(&TrackSize, sizeof(TrackSize));
-//						fprintf ( stderr , "IPF : restore raw stream drive=%d track=%d side=%d : %d\n" , Drive , Track , Side , TrackSize );
-						IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = TrackSize;
-						IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
-						if ( TrackSize > 0 )
-						{
-							p = malloc ( TrackSize );
-							if ( p == NULL )
-							{
-								Log_AlertDlg(LOG_ERROR, "Error restoring IPF raw track drive %d track %d side %d size %d" ,
-									Drive, Track, Side , TrackSize );
-								return;
-							}
-							MemorySnapShot_Store(p, TrackSize);
-							IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = p;
-						}
-					}
+				}
 			}
-			Log_Printf ( LOG_DEBUG , "ipf load ok\n" );
 		}
+
+		Log_Printf ( LOG_DEBUG , "ipf load ok\n" );
 	}
 }
 
@@ -218,54 +169,19 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .IPF or .RAW or .CTR extension ? If so, return true.
- * .RAW and .CTR support requires caps lib >= 5.1
+ * Does filename end with a .IPF or .CTR extension ? If so, return true.
+ * .CTR support requires caps lib >= 5.1
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
 	return ( File_DoesFileExtensionMatch(pszFileName,".ipf" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
-		|| File_DoesFileExtensionMatch(pszFileName,".raw" )
-		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
 		|| File_DoesFileExtensionMatch(pszFileName,".ctr" )
 		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ctr.gz") )
 		);
 }
 
 
-/*
- * Return a pointer to the part "tt.s.raw" at the end of the filename
- * (there can be an extra suffix to ignore if the file is compressed).
- * If we found a string where "tt" and "s" are digits, then we return
- * a pointer to this string.
- * If not found, we return NULL
- */
-#ifdef HAVE_CAPSIMAGE
-static char *IPF_FilenameFindTrackSide (char *FileName)
-{
-	char	ext[] = ".raw";
-	int	len;
-	char	*p;
-
-	len = strlen ( FileName );
-	len -= strlen ( ext );
-
-	while ( len >= 4 )				/* need at least 4 chars for "tt.s" */
-	{
-		if ( strncasecmp ( ext , FileName + len , strlen ( ext ) ) == 0 )
-		{
-			p = FileName + len - 4;
-			if ( isdigit( p[0] ) && isdigit( p[1] )
-			  && ( p[2] == '.' ) && isdigit( p[3] ) )
-				return p;
-		}
-
-		len--;
-	}
-
-	return NULL;
-}
-#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -296,6 +212,8 @@ uint8_t *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int 
 	return pIPFFile;
 #endif
 }
+
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -459,19 +377,6 @@ bool	IPF_Insert ( int Drive , uint8_t *pImageBuffer , long ImageSize )
 		return false;
 	}
 
-
-	/* Special case for RAW stream image, we load all the tracks now */
-	if ( ImageType == citKFStream )
-	{
-		if ( IPF_Insert_RawStreamImage ( Drive ) == false )
-		{
-			Log_Printf ( LOG_ERROR , "IPF : can't load raw stream files\n" );
-			CAPSRemImage ( ImageId ) ;
-			return false;
-		}
-	}
-
-
 	if ( CAPSLockImageMemory ( ImageId , pImageBuffer , (CapsULong)ImageSize , DI_LOCK_MEMREF ) == imgeOk )
 	{
 		struct CapsImageInfo cii;
@@ -531,89 +436,6 @@ bool	IPF_Insert ( int Drive , uint8_t *pImageBuffer , long ImageSize )
 }
 
 
-/*
- * Load all the raw stream files for all tracks/sides of a dump.
- * We use the filename of the raw file in drive 'Drive' as a template
- * where we replace track and side will all the possible values.
- */
-#ifdef HAVE_CAPSIMAGE
-static bool	IPF_Insert_RawStreamImage ( int Drive )
-{
-	int	Track , Side;
-	char	TrackFileName[ FILENAME_MAX ];
-	char	*TrackSide_pointer;
-	char	TrackSide_buf[ 4 + 1 ];			/* "tt.s" + \0 */
-	int	TrackCount;
-	int	TrackCount_0 , TrackCount_1;
-	uint8_t	*p;
-	long	Size;
-
-
-return true;						/* This function is not used for now, always return true */
-	/* Ensure the previous tracks are removed from memory */
-	IPF_Eject_RawStreamImage ( Drive );
-
-
-	/* Get the path+filename of the raw file that was inserted in 'Drive' */
-	/* then parse it to find the part with track/side */
-	strcpy ( TrackFileName , ConfigureParams.DiskImage.szDiskFileName[Drive] );
-
-	TrackSide_pointer = IPF_FilenameFindTrackSide ( TrackFileName );
-	if ( TrackSide_pointer == NULL )
-	{
-		Log_Printf ( LOG_ERROR , "IPF : error parsing track/side in raw filename\n" );
-		return false;
-	}
-
-	/* We try to load all the tracks for all the sides */
-	/* We ignore errors, as some tracks/side can really be missing from the image dump */
-	TrackCount = 0;
-	TrackCount_0 = 0;
-	TrackCount_1 = 0;
-	for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-	{
-		for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-		{
-			sprintf ( TrackSide_buf , "%02d.%d" , Track , Side );
-			memcpy ( TrackSide_pointer , TrackSide_buf , 4 );
-			Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-
-			p = File_Read ( TrackFileName , &Size , NULL);
-			if ( p )
-			{
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = p;
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = Size;
-				TrackCount++;
-				if ( Side==0 )		TrackCount_0++;
-				else			TrackCount_1++;
-			}
-			else
-			{
-				Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d track=%d side=%d %s -> not found\n" , Drive , Track , Side , TrackFileName );
-				/* File not loaded : either this track really doesn't exist or there was a system error */
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = 0;
-			}
-		}
-	}
-
-
-	/* If we didn't load any track, there's a problem, we stop here */
-	if ( TrackCount == 0 )
-	{
-		Log_Printf ( LOG_WARN , "IPF : error, no raw track file could be loaded for %s\n" , ConfigureParams.DiskImage.szDiskFileName[Drive] );
-		/* Free all the tracks that were loaded so far */
-		IPF_Eject_RawStreamImage ( Drive );
-		return false;
-	}
-
-	Log_Printf ( LOG_INFO , "IPF : insert raw stream drive=%d, loaded %d tracks for side 0 and %d tracks for side 1\n", Drive, TrackCount_0, TrackCount_1 );
-
-	return true;
-}
-#endif
-
-
 
 /*
  * When ejecting a disk, free the resources associated with an IPF image
@@ -640,43 +462,10 @@ bool	IPF_Eject ( int Drive )
 		return false;
 	}
 
-	/* Special case for RAW stream image, we must free all the tracks */
-	if ( IPF_State.CapsImageType[ Drive ] == citKFStream )
-		IPF_Eject_RawStreamImage ( Drive );
-
 	IPF_State.CapsImage[ Drive ] = -1;
 	IPF_State.CapsImageType[ Drive ] = -1;
 
 	IPF_State.Drive[ Drive ].diskattr &= ~CAPSDRIVE_DA_IN;
-
-	return true;
-#endif
-}
-
-
-/*
- * When ejecting a RAW stream image we must free all the individual tracks
- */
-static bool	IPF_Eject_RawStreamImage ( int Drive )
-{
-#ifndef HAVE_CAPSIMAGE
-	return true;
-
-#else
-	int	Track , Side;
-
-return true;						/* This function is not used for now, always return true */
-	for ( Track=0 ; Track<IPF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
-		for ( Side=0 ; Side<IPF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
-		{
-			if ( IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData != NULL )
-			{
-				Log_Printf ( LOG_DEBUG , "IPF : eject raw stream drive=%d track=%d side=%d\n" , Drive , Track , Side );
-				free ( IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData );
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackData = NULL;
-				IPF_RawStreamImage[ Drive ][ Track ][Side].TrackSize = 0;
-			}
-		}
 
 	return true;
 #endif
