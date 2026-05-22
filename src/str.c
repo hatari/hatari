@@ -204,6 +204,22 @@ bool Str_IsHex(const char *str)
 #endif
 
 /**
+ * Search for a string (\0 terminated) into a memory region
+ */
+uint8_t *Str_FindInMem(const uint8_t *pString , uint8_t *Mem , int MemLen)
+{
+	uint8_t *p;
+	int StringLen = strlen(pString);
+
+	for ( p=Mem ; p <= Mem + MemLen - StringLen ; p++ )
+	{
+		if ( memcmp ( p , pString , StringLen ) == 0 )
+			return p;		/* match */
+	}
+	return NULL;
+}
+
+/**
  * Convert "\e", "\n", "\t", "\\" backslash escapes in given string to
  * corresponding byte values, anything else as left as-is.
  */
