@@ -262,9 +262,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (diskbuf) {
-		free(diskbuf);
-	}
+	free(diskbuf);
 	free(dstfile);
 
 	return retval;
