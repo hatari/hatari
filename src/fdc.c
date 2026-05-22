@@ -27,6 +27,7 @@ const char FDC_fileid[] = "Hatari fdc.c";
 #include "floppies/ipf.h"
 #include "floppies/stx.h"
 #include "floppies/scp.h"
+#include "floppies/kfs.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -1847,6 +1848,8 @@ int	FDC_GetBytesPerTrack ( uint8_t Drive , uint8_t Track , uint8_t Side )
 			return FDC_GetBytesPerTrack_STX ( Drive , Track , Side );
 		else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
 			return FDC_GetBytesPerTrack_SCP ( Drive , Track , Side );
+		else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
+			return FDC_GetBytesPerTrack_KFS ( Drive , Track , Side );
 
 		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 		if ( SectorsPerTrack >= 36 )
@@ -1978,6 +1981,8 @@ static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 		return FDC_GetCyclesPerRev_FdcCycles_STX ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
 		return FDC_GetCyclesPerRev_FdcCycles_SCP ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
+		return FDC_GetCyclesPerRev_FdcCycles_KFS ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 
 	/* Assume a standard length for all tracks for ST/MSA images */
 	FdcCyclesPerRev = (uint64_t)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 );

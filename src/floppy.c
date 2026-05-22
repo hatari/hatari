@@ -42,6 +42,7 @@ const char Floppy_fileid[] = "Hatari floppy.c";
 #include "floppies/st.h"
 #include "floppies/stx.h"
 #include "floppies/scp.h"
+#include "floppies/kfs.h"
 #include "file_archive.h"
 #include "str.h"
 #include "video.h"
@@ -554,6 +555,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = STX_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (SCP_FileNameIsSCP(filename, true))
 		EmulationDrives[Drive].pBuffer = SCP_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
+	else if (KFS_FileNameIsKFS(filename, true))
+		EmulationDrives[Drive].pBuffer = KFS_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (Archive_FileNameIsSupported(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
@@ -602,6 +605,18 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		}
 	}
 
+	/* For Kryoflux streams, call specific function to handle the inserted image */
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_KFS )
+	{
+		if ( KFS_Insert ( Drive , filename , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		{
+			free ( EmulationDrives[Drive].pBuffer );
+			EmulationDrives[Drive].pBuffer = NULL;
+			Log_AlertDlg(LOG_INFO, "KFS image '%s' loading failed", filename);
+			return false;
+		}
+	}
+
 	/* Store image filename (required for ejecting the disk later!) */
 	strcpy(EmulationDrives[Drive].sFileName, filename);
 
@@ -619,6 +634,8 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	else if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
 		EmulationDrives[Drive].bOKToSave = false;
 	else if ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
+		EmulationDrives[Drive].bOKToSave = false;
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_KFS )
 		EmulationDrives[Drive].bOKToSave = false;
 	else
 		EmulationDrives[Drive].bOKToSave = false;
@@ -667,6 +684,8 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 					bSaved = STX_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (SCP_FileNameIsSCP(psFileName, true))
 					bSaved = SCP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (KFS_FileNameIsKFS(psFileName, true))
+					bSaved = KFS_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (Archive_FileNameIsSupported(psFileName))
 					bSaved = Archive_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
@@ -695,6 +714,9 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	/* Free data used by this SCP image */
 	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_SCP )
 		SCP_Eject ( Drive );
+	/* Free data used by this KFS image */
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
+		KFS_Eject ( Drive );
 
 
 	/* Drive is now empty */
@@ -1011,7 +1033,8 @@ bool Floppy_WriteSectors(int Drive, uint8_t *pBuffer, uint16_t Sector,
  */
 bool	Floppy_ImageIsMFM ( int ImageType )
 {
-	if ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
+	if ( ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
+	  || ( ImageType == FLOPPY_IMAGE_TYPE_KFS ) )
 		return true;
 
 	return false;

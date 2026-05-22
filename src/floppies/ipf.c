@@ -9,8 +9,7 @@
   IPF files are handled using the capsimage library, which emulates the FDC
   at low level and allows to read complex protections.
 
-  RAW stream files made with KryoFlux board or CT RAW dumped with an Amiga are also handled
-  by the capsimage library.
+  CT RAW dumped with an Amiga are also handled by the capsimage library.
 */
 const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
 

@@ -32,6 +32,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "floppies/ipf.h"
 #include "floppies/stx.h"
 #include "floppies/scp.h"
+#include "floppies/kfs.h"
 #include "gemdos.h"
 #include "acia.h"
 #include "ikbd.h"

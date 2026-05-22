@@ -29,6 +29,7 @@ const char File_Archive_fileid[] = "Hatari file_archive.c";
 #include "floppies/st.h"
 #include "floppies/stx.h"
 #include "floppies/scp.h"
+#include "floppies/kfs.h"
 #include "log.h"
 #include "str.h"
 #include "file_archive.h"
@@ -491,6 +492,9 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 	else if ( SCP_FileNameIsSCP(FileName, false) )
 		*pImageType = FLOPPY_IMAGE_TYPE_SCP;
 
+	else if ( KFS_FileNameIsKFS(FileName, false) )
+		*pImageType = FLOPPY_IMAGE_TYPE_KFS;
+
 	else if ( MSA_FileNameIsMSA(FileName, false) )
 		*pImageType = FLOPPY_IMAGE_TYPE_MSA;
 
@@ -504,7 +508,7 @@ DEBUGPRINT (( stderr , "Archive_CheckImageFile new file=%s\n", FileName ));
 	if ( pImageType != FLOPPY_IMAGE_TYPE_NONE )
 		return uncompressed_size;
 
-	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF, .STX or .SCP file.\n" );
+	Log_Printf ( LOG_ERROR, "Not an .ST, .MSA, .DIM, .IPF, .STX, .SCP or .RAW (KFS) file.\n" );
 	return 0;
 }
 
@@ -641,6 +645,10 @@ DEBUGPRINT (( stderr , "Archive_ReadDisk news path=%s filename=%s\n" , ArchivePa
 		pDiskBuffer = buf;
 		break;
 	case FLOPPY_IMAGE_TYPE_SCP:
+		/* return buffer */
+		pDiskBuffer = buf;
+		break;
+	case FLOPPY_IMAGE_TYPE_KFS:
 		/* return buffer */
 		pDiskBuffer = buf;
 		break;

@@ -26,6 +26,7 @@
 #define	FLOPPY_IMAGE_TYPE_IPF			4		/* handled by capsimage library */
 #define	FLOPPY_IMAGE_TYPE_STX			5
 #define	FLOPPY_IMAGE_TYPE_SCP			6
+#define	FLOPPY_IMAGE_TYPE_KFS			7		/* Kryoflux stream raw */
 
 #define	FLOPPY_BOOT_SECTOR_EXE_SUM		0x1234
 

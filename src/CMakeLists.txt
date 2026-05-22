@@ -23,6 +23,7 @@ set(SOURCES
 	fdc.c
 	floppy.c
 	floppies/ipf.c
+	floppies/kfs.c
 	floppies/stx.c
 	floppies/scp.c
 	gemdos.c
