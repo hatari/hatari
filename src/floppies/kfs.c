@@ -38,11 +38,8 @@ static KFS_STRUCT		KFS_State;
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
-//static bool	SCP_Insert_internal ( int Drive , const char *FilenameSCP , uint8_t *pImageBuffer , long ImageSize , bool KeepState );
-//static void	SCP_FreeStruct ( SCP_MAIN_STRUCT *pScpMain );
+static bool	KFS_Insert_Internal ( int Drive , bool KeepState );
 static char	*KFS_FilenameFindTrackSide (char *FileName);
-
-
 
 static unsigned int *kfs_decode_index(unsigned char *dat, unsigned int datsz);
 
@@ -63,6 +60,7 @@ void	KFS_MemorySnapShot_Capture(bool bSave)
 	int	Track , Side;
 	int	TrackSize;
 	uint8_t	*p;
+	bool	KeepState;
 
 
 	if ( bSave )					/* Saving snapshot */
@@ -91,10 +89,10 @@ void	KFS_MemorySnapShot_Capture(bool bSave)
 		/* (not very efficient, but it's a rare case anyway) */
 		for ( Drive=0 ; Drive < MAX_FLOPPYDRIVES ; Drive++ )
 		{
-			MemorySnapShot_Store(&KFS_State.KFS_Stream[ Drive ], sizeof(struct kfs_stream));
-
-			/* Restore the content of KFS_State.TracksImage[ Drive ] */
+			/* If a KFS floppy is already loaded when restoring, we free its data first */
 			KFS_Eject ( Drive );
+
+			MemorySnapShot_Store(&KFS_State.KFS_Stream[ Drive ], sizeof(struct kfs_stream));
 
 			for ( Track=0 ; Track<KF_MAX_TRACK_RAW_STREAM_IMAGE ; Track++ )
 				for ( Side=0 ; Side<KF_MAX_SIDE_RAW_STREAM_IMAGE ; Side++ )
@@ -116,6 +114,26 @@ void	KFS_MemorySnapShot_Capture(bool bSave)
 						KFS_State.TracksImage[ Drive ][ Track ][Side].TrackData = p;
 					}
 				}
+
+			if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
+			{
+				KeepState = true;
+				if ( KFS_Insert_Internal ( Drive , KeepState ) == false )
+				{
+					Log_AlertDlg(LOG_ERROR, "Error restoring KFS image %s in drive %d" ,
+						EmulationDrives[Drive].sFileName , Drive );
+					return;
+				}
+
+				/* If a track was loaded/selected at the time the snapshot was saved, */
+				/* we need to reload/select it now */
+				if ( KFS_State.KFS_Stream[ Drive ].track >= 0 )
+				{
+					Track = KFS_State.KFS_Stream[ Drive ].track;
+					KFS_State.KFS_Stream[ Drive ].track = -1;	/* Force a reload */
+					kfs_select_track ( &MFM_STREAMS[ Drive ] , Track );
+				}
+			}
 		}
 	}
 }
@@ -224,6 +242,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 	int	TrackCount_0 , TrackCount_1;
 	uint8_t	*p;
 	long	Size;
+	bool	KeepState;
 
 
 	/* Ensure the previous tracks are removed from memory */
@@ -291,28 +310,48 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 	}
 
 
+	KeepState = false;
+	if ( KFS_Insert_Internal ( Drive , KeepState ) == false )
+	{
+		Log_Printf ( LOG_WARN , "KFS : error insert internal for %s\n" , ConfigureParams.DiskImage.szDiskFileName[Drive] );
+		/* Free all the tracks that were loaded so far */
+		KFS_Eject ( Drive );
+		return false;
+	}
 
-	mfm_stream_setup ( &(MFM_STREAMS[ Drive ]) , 300 , 300 );
+	Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d, loaded %d tracks for side 0 and %d tracks for side 1\n", Drive, TrackCount_0, TrackCount_1 );
+
+	return true;
+}
+
+
+
+
+static bool	KFS_Insert_Internal ( int Drive , bool KeepState )
+{
+	Log_Printf ( LOG_DEBUG , "KFS : KFS_Insert_internal drive=%d\n" , Drive );
+
+
+	/* Init the flux decoder for a KFS stream + reset all variables */
+	if ( !KeepState )
+		mfm_stream_setup ( &(MFM_STREAMS[ Drive ]) , 300 , 300 );
 
 	MFM_STREAMS[ Drive ].type.select_track = kfs_select_track;
 	MFM_STREAMS[ Drive ].type.reset = kfs_reset;
 	MFM_STREAMS[ Drive ].type.next_flux = kfs_next_flux;
 	MFM_STREAMS[ Drive ].type.flux_struct_param = &(KFS_State.KFS_Stream[ Drive ]);
 
-	mfm_stream_reset ( &(MFM_STREAMS[ Drive ]) );
+	if ( !KeepState )
+		mfm_stream_reset ( &(MFM_STREAMS[ Drive ]) );
 
 	KFS_State.KFS_Stream[ Drive ].Drive = Drive;
-	KFS_State.KFS_Stream[ Drive ].dat = NULL;		/* no track loaded with scp_select_track */
+	KFS_State.KFS_Stream[ Drive ].dat = NULL;		/* no track loaded with kfs_select_track */
+	KFS_State.KFS_Stream[ Drive ].idxs = NULL;		/* no indexes loaded with kfs_select_track */
 //TODO		KFS_State.KFS_Stream[ Drive ].revs = KFS_State.ImageStruct[ Drive ]->RevolutionsNbr;
-
-
-
-
-
-	Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d, loaded %d tracks for side 0 and %d tracks for side 1\n", Drive, TrackCount_0, TrackCount_1 );
 
 	return true;
 }
+
 
 
 
@@ -337,6 +376,13 @@ bool	KFS_Eject ( int Drive )
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackSize = 0;
 			}
 		}
+
+	/* Free the track's indexes if needed */
+	if ( KFS_State.KFS_Stream[ Drive ].idxs )
+	{
+		free ( KFS_State.KFS_Stream[ Drive ].idxs );
+		KFS_State.KFS_Stream[ Drive ].idxs = NULL;
+	}
 
 	return true;
 }
