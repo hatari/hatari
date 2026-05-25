@@ -432,9 +432,11 @@ fprintf ( stderr , "kfs_decode_index\n" );
 		case 0xa: /* nop3 */
 		case 0xc: /* value16 */
 			i++;
+			/* fall through */
 		case 0x00 ... 0x07:
 		case 0x9: /* nop2 */
 			i++;
+			/* fall through */
 		case 0x8: /* nop1 */
 		case 0xb: /* overflow16 */
 		default: /* 1-byte sample */
