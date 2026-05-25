@@ -277,7 +277,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 			if ( p )
 			{
 				/* Basic check : raw track has "KryoFlux" string in the 1st 200 bytes in OOB "info" */
-				if ( Str_FindInMem ( (const uint8_t *)"KryoFlux" , p , 200 ) == NULL )
+				if ( Str_FindInMem ( "KryoFlux" , p , 200 ) == NULL )
 				{
 					Log_Printf ( LOG_ERROR , "KFS : no Kryoflux signature in raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
 					free(p);

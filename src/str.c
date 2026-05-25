@@ -206,7 +206,7 @@ bool Str_IsHex(const char *str)
 /**
  * Search for a string (\0 terminated) into a memory region
  */
-uint8_t *Str_FindInMem(const uint8_t *pString , uint8_t *Mem , int MemLen)
+uint8_t *Str_FindInMem(const char *pString , uint8_t *Mem , int MemLen)
 {
 	uint8_t *p;
 	int StringLen = strlen(pString);
