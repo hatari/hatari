@@ -537,11 +537,11 @@ static int kfs_next_flux(struct mfm_stream *s)
 			goto two_byte_sample;
 		case 0xd: /* oob */ {
 			uint32_t pos;
-			uint16_t sz = le16toh(*(uint16_t *)&dat[i+2]);
-// TODO 		uint16_t sz = le_swap16(*(uint16_t *)&dat[i+2]);
+//			uint16_t sz = le16toh(*(uint16_t *)&dat[i+2]);
+			uint16_t sz = le_swap16(*(uint16_t *)&dat[i+2]);
 			i += 4;
-			pos = le32toh(*(uint32_t *)&dat[i+0]);
-// TODO 		pos = le_swap32(*(uint32_t *)&dat[i+0]);
+//			pos = le32toh(*(uint32_t *)&dat[i+0]);
+			pos = le_swap32(*(uint32_t *)&dat[i+0]);
 			switch (dat[i-3]) {
 			case 0x1: /* stream read */
 			case 0x3: /* stream end */
