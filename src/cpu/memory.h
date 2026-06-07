@@ -15,6 +15,7 @@ extern void memory_reset(void);
 extern int special_mem;
 extern int special_mem_default;
 extern int jit_n_addr_unsafe;
+extern int jit_n_addr_bank_unsafe;
 #endif
 
 #define S_READ 1

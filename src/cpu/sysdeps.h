@@ -50,7 +50,8 @@ using namespace std;
 #define UAE
 #endif
 
-#if defined(_M_ARM64) || defined(_M_ARM64EC) || defined(__aarch64__)
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC) 
+#define CPU_AARCH64 1
 #define CPU_arm 1
 #define ARM_ASSEMBLY 1
 #define CPU_64_BIT 1

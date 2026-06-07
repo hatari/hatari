@@ -80,6 +80,7 @@ int candirect = -1;
 int special_mem, special_mem_default;
 /* do not use get_n_addr */
 int jit_n_addr_unsafe;
+int jit_n_addr_bank_unsafe;
 #endif
 
 #ifdef NATMEM_OFFSET
@@ -1910,7 +1911,12 @@ static void map_banks2 (addrbank *bank, int start, int size, int realsize, int q
 
 #ifdef JIT
 	if ((bank->jit_read_flag | bank->jit_write_flag) & S_N_ADDR) {
+		if (!jit_n_addr_bank_unsafe) {
+			write_log(_T("JIT: jit_n_addr_unsafe enabled by bank '%s' at %08x (r=%d w=%d)\n"),
+				bank->name ? bank->name : _T("<unnamed>"), start << 16, bank->jit_read_flag, bank->jit_write_flag);
+		}
 		jit_n_addr_unsafe = 1;
+		jit_n_addr_bank_unsafe = 1;
 	}
 #endif
 
