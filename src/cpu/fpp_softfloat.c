@@ -360,11 +360,9 @@ static void fp_getman(fpdata *a, fpdata *b)
 }
 static void fp_mod(fpdata *a, fpdata *b, uae_u64 *q, uae_u8 *s)
 {
-#ifndef WINUAE_FOR_HATARI
-	a->fpx = floatx80_mod(a->fpx, b->fpx, q, s, &fs);
-#else
-	a->fpx = floatx80_mod(a->fpx, b->fpx, (uint64_t *)q, s, &fs);
-#endif
+	uint64_t quotient = *q;
+	a->fpx = floatx80_mod(a->fpx, b->fpx, &quotient, s, &fs);
+	*q = quotient;
 }
 static void fp_sgldiv(fpdata *a, fpdata *b)
 {
@@ -376,11 +374,9 @@ static void fp_sglmul(fpdata *a, fpdata *b)
 }
 static void fp_rem(fpdata *a, fpdata *b, uae_u64 *q, uae_u8 *s)
 {
-#ifndef WINUAE_FOR_HATARI
-	a->fpx = floatx80_rem(a->fpx, b->fpx, q, s, &fs);
-#else
-	a->fpx = floatx80_rem(a->fpx, b->fpx, (uint64_t *)q, s, &fs);
-#endif
+	uint64_t quotient = *q;
+	a->fpx = floatx80_rem(a->fpx, b->fpx, &quotient, s, &fs);
+	*q = quotient;
 }
 static void fp_scale(fpdata *a, fpdata *b)
 {
