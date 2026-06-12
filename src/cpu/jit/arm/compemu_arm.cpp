@@ -11586,7 +11586,7 @@ uae_u32 REGPARAM2 op_48a0_0_comp_ff(uae_u32 opcode) {
 	int i;
 	signed char offset = 0;
 	int srca = dstreg + 8;
-	if (!special_mem) {
+	if (!special_mem && !(mask & (1 << (7 - dstreg)))) {
 		int native = alloc_scratch();
 		get_n_addr(srca, native);
 		for (i = 0; i < 16; i++) {
@@ -11597,10 +11597,15 @@ uae_u32 REGPARAM2 op_48a0_0_comp_ff(uae_u32 opcode) {
 		}
 		lea_l_brr(8 + dstreg, srca, (uae_s32) offset);
 	} else {
+		int base = alloc_scratch();
+		lea_l_brr(base, srca, -2);
 		for (i = 0; i < 16; i++) {
 			if ((mask >> i) & 1) {
+				int value = 15 - i;
 				arm_SUB_l_ri8(srca, 2);
-				writeword(srca, 15 - i);
+				if (value == srca)
+					value = base;
+				writeword(srca, value);
 			}
 		}
 		mov_l_rr(8 + dstreg, srca);
@@ -11793,7 +11798,7 @@ uae_u32 REGPARAM2 op_48e0_0_comp_ff(uae_u32 opcode) {
 	int i;
 	signed char offset = 0;
 	int srca = dstreg + 8;
-	if (!special_mem) {
+	if (!special_mem && !(mask & (1 << (7 - dstreg)))) {
 		int native = alloc_scratch();
 		get_n_addr(srca, native);
 		for (i = 0; i < 16; i++) {
@@ -11804,10 +11809,15 @@ uae_u32 REGPARAM2 op_48e0_0_comp_ff(uae_u32 opcode) {
 		}
 		lea_l_brr(8 + dstreg, srca, (uae_s32) offset);
 	} else {
+		int base = alloc_scratch();
+		lea_l_brr(base, srca, -4);
 		for (i = 0; i < 16; i++) {
 			if ((mask >> i) & 1) {
+				int value = 15 - i;
 				arm_SUB_l_ri8(srca, 4);
-				writelong(srca, 15 - i);
+				if (value == srca)
+					value = base;
+				writelong(srca, value);
 			}
 		}
 		mov_l_rr(8 + dstreg, srca);
@@ -38782,7 +38792,7 @@ uae_u32 REGPARAM2 op_48a0_0_comp_nf(uae_u32 opcode) {
 	int i;
 	signed char offset = 0;
 	int srca = dstreg + 8;
-	if (!special_mem) {
+	if (!special_mem && !(mask & (1 << (7 - dstreg)))) {
 		int native = alloc_scratch();
 		get_n_addr(srca, native);
 		for (i = 0; i < 16; i++) {
@@ -38793,10 +38803,15 @@ uae_u32 REGPARAM2 op_48a0_0_comp_nf(uae_u32 opcode) {
 		}
 		lea_l_brr(8 + dstreg, srca, (uae_s32) offset);
 	} else {
+		int base = alloc_scratch();
+		lea_l_brr(base, srca, -2);
 		for (i = 0; i < 16; i++) {
 			if ((mask >> i) & 1) {
+				int value = 15 - i;
 				arm_SUB_l_ri8(srca, 2);
-				writeword(srca, 15 - i);
+				if (value == srca)
+					value = base;
+				writeword(srca, value);
 			}
 		}
 		mov_l_rr(8 + dstreg, srca);
@@ -38988,7 +39003,7 @@ uae_u32 REGPARAM2 op_48e0_0_comp_nf(uae_u32 opcode) {
 	int i;
 	signed char offset = 0;
 	int srca = dstreg + 8;
-	if (!special_mem) {
+	if (!special_mem && !(mask & (1 << (7 - dstreg)))) {
 		int native = alloc_scratch();
 		get_n_addr(srca, native);
 		for (i = 0; i < 16; i++) {
@@ -38999,10 +39014,15 @@ uae_u32 REGPARAM2 op_48e0_0_comp_nf(uae_u32 opcode) {
 		}
 		lea_l_brr(8 + dstreg, srca, (uae_s32) offset);
 	} else {
+		int base = alloc_scratch();
+		lea_l_brr(base, srca, -4);
 		for (i = 0; i < 16; i++) {
 			if ((mask >> i) & 1) {
+				int value = 15 - i;
 				arm_SUB_l_ri8(srca, 4);
-				writelong(srca, 15 - i);
+				if (value == srca)
+					value = base;
+				writelong(srca, value);
 			}
 		}
 		mov_l_rr(8 + dstreg, srca);

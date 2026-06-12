@@ -1,6 +1,3 @@
-#if defined(CPU_AARCH64) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#include "arm/compemu_support_arm.cpp"
-#else
 /*
  * compiler/compemu_support.cpp - Core dynamic translation engine
  *
@@ -28,8 +25,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with ARAnyM; if not, write to the Free Software Foundation,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA
+ * along with ARAnyM; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include "sysdeps.h"
 
@@ -69,9 +66,9 @@
 
 #ifdef UAE
 #define bug write_log
-#include "options_cpu.h"
+#include "options.h"
 #include "events.h"
-#include "memory.h"
+#include "uae/memory.h"
 #include "custom.h"
 #else
 #include "cpu_emulation.h"
@@ -83,9 +80,9 @@
 #include "readcpu.h"
 #endif
 #include "newcpu.h"
-#include "comptbl.h"
+#include "comptbl_x86.h"
 #ifdef UAE
-#include "compemu.h"
+#include "compemu_x86.h"
 #ifdef FSUAE
 #include "codegen_udis86.h"
 #endif
@@ -567,7 +564,7 @@ extern bool canbang;
 extern int jit_n_addr_unsafe;
 extern int jit_n_addr_bank_unsafe;
 
-#include "compemu_prefs.cpp"
+#include "../compemu_prefs.cpp"
 
 #define uint32 uae_u32
 #define uint8 uae_u8
@@ -646,10 +643,10 @@ void jit_abort(const char *format, ...)
 #endif
 #endif
 
-#include <signal.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <assert.h>
+# include <csignal>
+# include <cstdlib>
+# include <cerrno>
+# include <cassert>
 
 #if defined(CPU_x86_64) && 0
 #define RECORD_REGISTER_USAGE		1
@@ -1622,7 +1619,7 @@ static inline void reset_data_buffer(void)
 #include "codegen_arm.cpp"
 #endif
 #if defined(CPU_i386) || defined(CPU_x86_64)
-#include "codegen_x86.c"
+#include "codegen_x86.cpp"
 #endif
 
 
@@ -3283,7 +3280,7 @@ static void prepare_for_call_2(void)
 #endif
 
 #if defined(CPU_i386) || defined(CPU_x86_64)
-#include "compemu_midfunc_x86.c"
+#include "compemu_midfunc_x86.cpp"
 #endif
 
 
@@ -6477,5 +6474,3 @@ setjmpagain:
 #endif
 
 #endif /* JIT */
-
-#endif /* CPU_AARCH64 */

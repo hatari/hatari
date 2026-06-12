@@ -23,8 +23,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software Foundation,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #define CC_FOR_BUILD 1
@@ -100,7 +100,7 @@
 #ifdef FSUAE
 #define GEN_PATH "gen/"
 #else
-#define GEN_PATH "jit/"
+#define GEN_PATH "jit/x86/"
 #endif
 #define RETURN "return 0;"
 #define RETTYPE "uae_u32"
@@ -137,42 +137,6 @@ static int global_fpu;
 static char endstr[1000];
 
 #include "flags_x86.h"
-
-#ifdef UAE
-static void write_winuae_header_prefix(FILE *f)
-{
-	fprintf(f, "#if defined(CPU_AARCH64)\n");
-	fprintf(f, "#include \"%s\"\n", "arm/comptbl_arm.h");
-	fprintf(f, "#else\n");
-}
-
-static void write_winuae_header_suffix(FILE *f)
-{
-	fprintf(f, "#endif /* CPU_AARCH64 */\n");
-}
-
-static void write_winuae_source_prefix(FILE *f, const char *arm_source)
-{
-	fprintf(f, "#if defined(CPU_AARCH64) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)\n");
-	fprintf(f, "#include \"%s\"\n", arm_source);
-	fprintf(f, "#else\n");
-}
-
-static void write_winuae_compemu_prefix(FILE *f)
-{
-	write_winuae_source_prefix(f, "arm/compemu_arm.cpp");
-}
-
-static void write_winuae_compemu_suffix(FILE *f)
-{
-	fprintf(f, "#endif /* CPU_AARCH64 */\n");
-}
-
-static void write_winuae_source_suffix(FILE *f)
-{
-	fprintf(f, "#endif /* CPU_AARCH64 */\n");
-}
-#endif
 
 #ifndef __attribute__
 #  ifndef __GNUC__
@@ -2087,7 +2051,6 @@ gen_opcode(unsigned int opcode)
 #ifdef DISABLE_I_BCC
 		failure;
 #endif
-		comprintf("\tuae_u32 v,v1,v2;\n");
 		genamode(curi->smode, "srcreg", curi->size, "src", GENA_GETV_FETCH, GENA_MOVEM_DO_INC);
 		/* That source is an immediate, so we can clobber it with abandon */
 		switch (curi->size) {
@@ -3195,7 +3158,11 @@ generate_includes(FILE *f)
 #endif
 	fprintf(f, "#include \"readcpu.h\"\n");
 	fprintf(f, "#include \"newcpu.h\"\n");
+#ifdef UAE
+	fprintf(f, "#include \"comptbl_x86.h\"\n");
+#else
 	fprintf(f, "#include \"comptbl.h\"\n");
+#endif
 	fprintf(f, "#include \"debug.h\"\n");
 }
 
@@ -3549,14 +3516,7 @@ generate_func(int noflags)
 			"#define PART_6 1\n"
 			"#define PART_7 1\n"
 			"#define PART_8 1\n"
-#ifdef UAE
-			"#endif\n");
-		if (!noflags)
-			write_winuae_compemu_suffix(stdout);
-		printf("\n");
-#else
 			"#endif\n\n");
-#endif
 #ifdef UAE
 
 		printf("#ifdef USE_JIT_FPU\n");
@@ -3609,29 +3569,27 @@ int main(void)
 	 * cputbl.h that way), but cpuopti can't cope.  That could be fixed, but
 	 * I don't dare to touch the 68k version.  */
 
-	headerfile = fopen(GEN_PATH "comptbl.h", "wb");
-#ifdef UAE
-	write_winuae_header_prefix(headerfile);
-#endif
+	headerfile = fopen(GEN_PATH "comptbl_x86.h", "wb");
 	fprintf(headerfile, ""
 		"extern const struct comptbl op_smalltbl_0_comp_nf[];\n"
 		"extern const struct comptbl op_smalltbl_0_comp_ff[];\n"
 		"");
 
-	stblfile = fopen(GEN_PATH "compstbl.cpp", "wb");
-	if (freopen(GEN_PATH "compemu.cpp", "wb", stdout) == NULL) {
+	stblfile = fopen(GEN_PATH "compstbl_x86.cpp", "wb");
+	if (freopen(GEN_PATH "compemu_x86.cpp", "wb", stdout) == NULL) {
 		abort();
 	}
 
-#ifdef UAE
-	write_winuae_source_prefix(stblfile, "arm/compstbl_arm.cpp");
-	write_winuae_compemu_prefix(stdout);
-#endif
 	generate_includes(stdout);
 	generate_includes(stblfile);
 
+#ifdef UAE
+	printf("#include \"compemu_x86.h\"\n");
+	printf("#include \"flags_x86.h\"\n");
+#else
 	printf("#include \"" JIT_PATH "compemu.h\"\n");
 	printf("#include \"" JIT_PATH "flags_x86.h\"\n");
+#endif
 
 	noflags = 0;
 	generate_func(noflags);
@@ -3651,10 +3609,6 @@ int main(void)
 
 	printf("#endif\n");
 	fprintf(stblfile, "#endif\n");
-#ifdef UAE
-	write_winuae_source_suffix(stblfile);
-	write_winuae_header_suffix(headerfile);
-#endif
 
 	free(opcode_map);
 	free(opcode_last_postfix);

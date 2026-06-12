@@ -1,6 +1,3 @@
-#if defined(CPU_AARCH64) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#include "arm/compemu_fpp_arm.cpp"
-#else
 /*
  * compiler/compemu_fpp.cpp - Dynamic translation of FPU instructions
  *
@@ -44,14 +41,14 @@
 
 #ifdef JIT
 
-#include <math.h>
-#include <stdio.h>
-#include <assert.h>
+#include <cmath>
+#include <cstdio>
+#include <cassert>
 
 #include "memory-uae.h"
 #include "readcpu.h"
 #include "newcpu.h"
-#include "compemu.h"
+#include "compemu_x86.h"
 //#include "fpu/fpu.h"
 //#include "fpu/flags.h"
 //#include "fpu/exceptions.h"
@@ -2140,5 +2137,3 @@ void comp_fpp_opp(uae_u32 opcode, uae_u16 extra)
 }
 
 #endif
-
-#endif /* CPU_AARCH64 */

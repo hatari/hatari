@@ -1,6 +1,3 @@
-#if defined(CPU_AARCH64) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#include "arm/compemu_arm.cpp"
-#else
 #include "sysconfig.h"
 #if defined(JIT)
 #include "sysdeps.h"
@@ -8,10 +5,10 @@
 #include "uae/memory.h"
 #include "readcpu.h"
 #include "newcpu.h"
-#include "comptbl.h"
+#include "comptbl_x86.h"
 #include "debug.h"
-#include "jit/compemu.h"
-#include "jit/flags_x86.h"
+#include "compemu_x86.h"
+#include "flags_x86.h"
 
 #if !defined(PART_1) && !defined(PART_2) && !defined(PART_3) && !defined(PART_4) && !defined(PART_5) && !defined(PART_6) && !defined(PART_7) && !defined(PART_8)
 #define PART_1 1
@@ -23,7 +20,7 @@
 #define PART_7 1
 #define PART_8 1
 #endif
-#endif /* CPU_AARCH64 */
+#endif /* JIT */
 
 #ifdef USE_JIT_FPU
 extern void comp_fpp_opp();
@@ -103781,6 +103778,4 @@ uae_u32 REGPARAM2 op_f620_0_comp_nf(uae_u32 opcode) /* MOVE16 */
 	}
 	return 0;
 }
-#endif
-
 #endif

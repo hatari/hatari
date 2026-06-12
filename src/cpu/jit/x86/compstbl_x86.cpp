@@ -1,6 +1,3 @@
-#if defined(CPU_AARCH64) || defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM64EC)
-#include "arm/compstbl_arm.cpp"
-#else
 #include "sysconfig.h"
 #if defined(JIT)
 #include "sysdeps.h"
@@ -8,7 +5,7 @@
 #include "uae/memory.h"
 #include "readcpu.h"
 #include "newcpu.h"
-#include "comptbl.h"
+#include "comptbl_x86.h"
 #include "debug.h"
 const struct comptbl op_smalltbl_0_comp_ff[] = {
 { op_0_0_comp_ff, 0, COMP_OPCODE_LONG_OPCODE }, /* OR */
@@ -3759,4 +3756,3 @@ const struct comptbl op_smalltbl_0_comp_nf[] = {
 { NULL, 63488, COMP_OPCODE_ISJUMP }, /* LPSTOP */
 { 0, 65536, 0 }};
 #endif
-#endif /* CPU_AARCH64 */

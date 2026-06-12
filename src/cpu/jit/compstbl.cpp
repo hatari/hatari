@@ -1,12 +1,7 @@
-#ifndef WINUAE_JIT_COMPEMU_H
-#define WINUAE_JIT_COMPEMU_H
-
 #if defined(CPU_arm) || defined(CPU_AARCH64) || defined(__aarch64__) || \
     defined(_M_ARM64) || defined(_M_ARM64EC)
-#include "arm/compemu_arm.h"
+#include "arm/compstbl_arm.cpp"
 #elif defined(CPU_i386) || defined(CPU_x86_64) || defined(__i386__) || \
     defined(__x86_64__) || defined(_M_IX86) || defined(_M_AMD64)
-#include "x86/compemu_x86.h"
+#include "x86/compstbl_x86.cpp"
 #endif
-
-#endif /* WINUAE_JIT_COMPEMU_H */
