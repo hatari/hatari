@@ -819,6 +819,7 @@ static void	FDC_IndexPulse_Init ( int Drive );
 static void	FDC_IndexPulse_Increase ( uint64_t IP_Time );
 static void	FDC_IndexPulse_Increase_Now ( void );
 
+static void	FDC_SetCommand ( int Command , int CommandState );
 static void	FDC_Update_STR ( uint8_t DisableBits , uint8_t EnableBits );
 static int	FDC_CmdCompleteCommon ( bool DoInt );
 static bool	FDC_VerifyTrack ( void );
@@ -2374,6 +2375,18 @@ void FDC_InterruptHandler_Update ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set a new command and its initial state
+ */
+static void FDC_SetCommand ( int Command , int CommandState )
+{
+
+	FDC.Command = Command;
+	FDC.CommandState = CommandState;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Return the type of a command, based on the upper bits of CR
  */
 uint8_t FDC_GetCmdType ( uint8_t CR )
@@ -2425,8 +2438,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 	if ( DoInt )
 		FDC_SetIRQ ( FDC_IRQ_SOURCE_COMPLETE );
 
-	FDC.Command = FDCEMU_CMD_MOTOR_STOP;				/* Fake command to stop the motor */
-	FDC.CommandState = FDCEMU_RUN_MOTOR_STOP;
+	FDC_SetCommand( FDCEMU_CMD_MOTOR_STOP , FDCEMU_RUN_MOTOR_STOP );	/* Fake command to stop the motor */
 	return FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 }
 
@@ -4056,8 +4068,7 @@ static int FDC_TypeI_Restore(void)
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
-	FDC.Command = FDCEMU_CMD_RESTORE;
-	FDC.CommandState = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
+	FDC_SetCommand ( FDCEMU_CMD_RESTORE , FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO );
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
@@ -4081,8 +4092,7 @@ static int FDC_TypeI_Seek ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to chosen track */
-	FDC.Command = FDCEMU_CMD_SEEK;
-	FDC.CommandState = FDCEMU_RUN_SEEK_TOTRACK;
+	FDC_SetCommand ( FDCEMU_CMD_SEEK , FDCEMU_RUN_SEEK_TOTRACK );
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
@@ -4106,8 +4116,7 @@ static int FDC_TypeI_Step ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step (using same direction as latest seek executed, ie 'FDC.StepDirection') */
-	FDC.Command = FDCEMU_CMD_STEP;
-	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
+	FDC_SetCommand ( FDCEMU_CMD_STEP , FDCEMU_RUN_STEP_ONCE );
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
 
@@ -4130,8 +4139,7 @@ static int FDC_TypeI_StepIn(void)
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step in (direction = +1) */
-	FDC.Command = FDCEMU_CMD_STEP;
-	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
+	FDC_SetCommand ( FDCEMU_CMD_STEP , FDCEMU_RUN_STEP_ONCE );
 	FDC.StepDirection = 1;						/* Increment track*/
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
@@ -4155,8 +4163,7 @@ static int FDC_TypeI_StepOut ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to step out (direction = -1) */
-	FDC.Command = FDCEMU_CMD_STEP;
-	FDC.CommandState = FDCEMU_RUN_STEP_ONCE;
+	FDC_SetCommand ( FDCEMU_CMD_STEP , FDCEMU_RUN_STEP_ONCE );
 	FDC.StepDirection = -1;						/* Decrement track */
 
 	FDC_Update_STR ( FDC_STR_BIT_INDEX | FDC_STR_BIT_CRC_ERROR | FDC_STR_BIT_RNF , FDC_STR_BIT_BUSY );
@@ -4189,8 +4196,7 @@ static int FDC_TypeII_ReadSector ( void )
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read sector(s) */
-	FDC.Command = FDCEMU_CMD_READSECTORS;
-	FDC.CommandState = FDCEMU_RUN_READSECTORS_READDATA;
+	FDC_SetCommand ( FDCEMU_CMD_READSECTORS , FDCEMU_RUN_READSECTORS_READDATA );
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
@@ -4215,8 +4221,7 @@ static int FDC_TypeII_WriteSector ( void )
 		  FDC_GetDMAAddress(), nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a sector(s) */
-	FDC.Command = FDCEMU_CMD_WRITESECTORS;
-	FDC.CommandState = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+	FDC_SetCommand ( FDCEMU_CMD_WRITESECTORS , FDCEMU_RUN_WRITESECTORS_WRITEDATA );
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE , FDC_STR_BIT_BUSY );
@@ -4248,8 +4253,7 @@ static int FDC_TypeIII_ReadAddress ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to seek to track zero */
-	FDC.Command = FDCEMU_CMD_READADDRESS;
-	FDC.CommandState = FDCEMU_RUN_READADDRESS;
+	FDC_SetCommand ( FDCEMU_CMD_READADDRESS , FDCEMU_RUN_READADDRESS );
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
@@ -4273,8 +4277,7 @@ static int FDC_TypeIII_ReadTrack ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to read a single track */
-	FDC.Command = FDCEMU_CMD_READTRACK;
-	FDC.CommandState = FDCEMU_RUN_READTRACK;
+	FDC_SetCommand ( FDCEMU_CMD_READTRACK , FDCEMU_RUN_READTRACK );
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
@@ -4298,8 +4301,7 @@ static int FDC_TypeIII_WriteTrack ( void )
 		  nVBLs, FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC());
 
 	/* Set emulation to write a single track */
-	FDC.Command = FDCEMU_CMD_WRITETRACK;
-	FDC.CommandState = FDCEMU_RUN_WRITETRACK;
+	FDC_SetCommand ( FDCEMU_CMD_WRITETRACK , FDCEMU_RUN_WRITETRACK );
 
 	FDC_Update_STR ( FDC_STR_BIT_DRQ | FDC_STR_BIT_LOST_DATA | FDC_STR_BIT_CRC_ERROR
 		| FDC_STR_BIT_RNF | FDC_STR_BIT_RECORD_TYPE | FDC_STR_BIT_WPRT , FDC_STR_BIT_BUSY );
