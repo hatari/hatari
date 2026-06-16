@@ -98,7 +98,8 @@ Emulator improvements:
     Atari chars in memory output from the debugger commands, and
     for "--conout" output
   - Profiler skips "profile stats" output when entering debugger,
-    if it showed (there was data for) a backtrace
+    if it showed (there was data for) a backtrace, and does not
+    anymore print info on its internal workings
 - Symbols:
   - Always ignore unnamed symbols (= note instead of warnings)
   - Symbol autoloading loads all symbol types, not just TEXT symbols

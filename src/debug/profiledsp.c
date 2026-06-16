@@ -1,7 +1,7 @@
 /*
  * Hatari - profiledsp.c
  * 
- * Copyright (C) 2010-2019 by Eero Tamminen
+ * Copyright (C) 2010-2026 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -24,6 +24,13 @@ const char Profiledsp_fileid[] = "Hatari profiledsp.c";
 #include "debug_priv.h"
 /* for VBL info */
 #include "video.h"
+
+#define DEBUG 0
+#if DEBUG
+#define Dprintf(...) fprintf(__VA_ARGS__)
+#else
+#define Dprintf(...)
+#endif
 
 static callinfo_t dsp_callinfo;
 
@@ -362,7 +369,7 @@ void Profile_DspFree(void)
 	if (dsp_profile.data) {
 		free(dsp_profile.data);
 		dsp_profile.data = NULL;
-		fprintf(stderr, "Freed previous DSP profile buffers.\n");
+		Dprintf(stderr, "Freed previous DSP profile buffers.\n");
 	}
 }
 
@@ -386,7 +393,7 @@ bool Profile_DspStart(void)
 		perror("ERROR, new DSP profile buffer alloc failed");
 		return false;
 	}
-	fprintf(stderr, "Allocated DSP profile buffer (%d KB).\n",
+	Dprintf(stderr, "Allocated DSP profile buffer (%d KB).\n",
 	       (int)sizeof(*dsp_profile.data)*DSP_PROFILE_ARR_SIZE/1024);
 
 	Profile_AllocCallinfo(&(dsp_callinfo), Symbols_DspCodeCount(), "DSP");
@@ -715,7 +722,7 @@ void Profile_DspStop(void)
 		dsp_profile.data = NULL;
 		return;
 	}
-	fprintf(stderr, "Allocated DSP profile address buffer (%d KB).\n",
+	Dprintf(stderr, "Allocated DSP profile address buffer (%d KB).\n",
 	       (int)sizeof(*sort_arr)*(dsp_profile.ram.active+512)/1024);
 	dsp_profile.sort_arr = sort_arr;
 

@@ -35,6 +35,13 @@ const char Profile_fileid[] = "Hatari profile.c";
 #include "m68000.h"
 #include "dsp.h"
 
+#define DEBUG 0
+#if DEBUG
+#define Dprintf(...) fprintf(__VA_ARGS__)
+#else
+#define Dprintf(...)
+#endif
+
 profile_loop_t profile_loop;
 
 #define CALLER_SEPARATOR ','
@@ -186,9 +193,7 @@ void Profile_ShowCallers(FILE *fp, int sites, callee_t *callsite, const char * (
 		}
 		fputs("\n", fp);
 		if (total) {
-#if DEBUG
-			fprintf(stderr, "WARNING: %llu differences in call and instruction counts for '%s'!\n", total, name);
-#endif
+			Dprintf(stderr, "WARNING: %lu differences in call and instruction counts for '%s'!\n", total, name);
 			countdiff += total;
 			countissues++;
 		}
@@ -469,7 +474,9 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 	if (!callinfo->depth) {
 		return;
 	}
-	fprintf(stderr, "Finalizing costs for %d non-returned functions:\n", callinfo->depth);
+	Dprintf(stderr, "Finalizing costs for %d non-returned functions.\n", callinfo->depth);
+
+	fprintf(stderr, "Profiler backtrace:\n");
 
 	i = 0;
 	dots = false;
@@ -538,7 +545,7 @@ static void Profile_ShowStack(bool forDsp)
 		caller_addr = M68000_GetPC();
 	}
 	if (!callinfo->depth) {
-		fprintf(stderr, "Empty stack.\n");
+		fprintf(stderr, "Profiler call stack has no unprocessed data.\n");
 		return;
 	}
 
@@ -587,7 +594,7 @@ int Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *name)
 		/* alloc & clear new data */
 		callinfo->site = calloc(count, sizeof(callee_t));
 		if (callinfo->site) {
-			fprintf(stderr, "Allocated %s profile callsite buffer for %d symbols.\n", name, count);
+			Dprintf(stderr, "Allocated %s profile callsite buffer for %d symbols.\n", name, count);
 			callinfo->prev_pc = callinfo->return_pc = PC_UNDEFINED;
 		} else {
 			fprintf(stderr, "ERROR: callsite buffer alloc failed!\n");

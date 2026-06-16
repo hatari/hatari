@@ -46,6 +46,9 @@ const char Profilecpu_fileid[] = "Hatari profilecpu.c";
 #define DEBUG 0
 #if DEBUG
 #include "debugui.h"
+#define Dprintf(...) fprintf(__VA_ARGS__)
+#else
+#define Dprintf(...)
 #endif
 
 /* whether to track & show all cache stats for all instructions */
@@ -853,7 +856,7 @@ void Profile_CpuFree(void)
 	if (cpu_profile.data) {
 		free(cpu_profile.data);
 		cpu_profile.data = NULL;
-		fprintf(stderr, "Freed previous CPU profile buffers.\n");
+		Dprintf(stderr, "Freed previous CPU profile buffers.\n");
 	}
 }
 
@@ -885,7 +888,7 @@ bool Profile_CpuStart(void)
 		perror("ERROR, new CPU profile buffer alloc failed");
 		return false;
 	}
-	fprintf(stderr, "Allocated CPU profile buffer (%d MB).\n",
+	Dprintf(stderr, "Allocated CPU profile buffer (%d MB).\n",
 	       (int)sizeof(*cpu_profile.data)*size/(1024*1024));
 	cpu_profile.size = size;
 
@@ -1424,7 +1427,7 @@ void Profile_CpuStop(void)
 		cpu_profile.data = NULL;
 		return;
 	}
-	fprintf(stderr, "Allocated CPU profile address buffer (%d KB).\n",
+	Dprintf(stderr, "Allocated CPU profile address buffer (%d KB).\n",
 	       (int)sizeof(*sort_arr)*(active+512)/1024);
 	cpu_profile.sort_arr = sort_arr;
 	cpu_profile.active = active;
@@ -1435,7 +1438,6 @@ void Profile_CpuStop(void)
 	sort_arr = index_area(&cpu_profile.rom, sort_arr);
 	sort_arr = index_area(&cpu_profile.ttram, sort_arr);
 	assert(sort_arr == cpu_profile.sort_arr + cpu_profile.active);
-	//printf("%d/%d/%d\n", area->active, sort_arr-cpu_profile.sort_arr, active);
 
 	/* if callstack shown, skip profile stats showing */
 	if (depth) {
