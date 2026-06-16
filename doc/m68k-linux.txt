@@ -132,7 +132,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel sources:
-     $ release=v7.0
+     $ release=v7.1
      $ repo=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    Either just the latest release (= faster):
      $ git clone --depth 1 --branch $release $repo
@@ -306,8 +306,8 @@ Notes:
 1. Set suitable options in lilo.cfg, for example:
 -------------------------------------
 [LILO]
-Kernel = vmlinux-v7.0
-Symbols = System.map-v7.0
+Kernel = vmlinux
+Symbols = System.map
 Ramdisk =
 Args = video=atafb:sthigh console=tty
 KernelToFastRam = FALSE
@@ -680,9 +680,9 @@ $ aranym-mmu -l linux.config
 10.1 Known issues with workarounds
 ----------------------------------
 
-- Builds configured for performance (-O2) instead of size (-Os),
-  and built with current Debian stable (cross) m68k GCC (12.2),
-  will Oops once boot reaches user-space
+- Builds configured for performance (-O2) instead of size (-Os), and
+  built with Debian 12 (bookworm) m68k GCC (12.2), will Oops once boot
+  reaches user-space
 
   Workaround: kernel configured for size (in included kernel.config)
 
@@ -746,7 +746,7 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 ------------------------------------------------------------
   Only SCSI & IDE drives are recognized
 
-- with Hatari 2.5, Linux works again[1] on 040 & 060, when CPU data
+- with Hatari >=2.5, Linux works again[1] on 040 & 060, when CPU data
   cache emulation is disabled (--data-cache off).
 
   However, when data cache is enabled, boots crash to double bus
