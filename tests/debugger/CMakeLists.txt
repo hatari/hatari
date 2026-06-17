@@ -11,6 +11,7 @@ add_library(DebuggerTestLib test-dummies.c  ${CMAKE_SOURCE_DIR}/src/str.c
 	    ${CMAKE_SOURCE_DIR}/src/debug/history.c
 	    ${CMAKE_SOURCE_DIR}/src/debug/evaluate.c
 	    ${CMAKE_SOURCE_DIR}/src/debug/symbols.c
+	    ${CMAKE_SOURCE_DIR}/src/debug/stacktrace.c
 	    ${CMAKE_SOURCE_DIR}/src/debug/vars.c)
 
 add_executable(test-breakcond test-breakcond.c)

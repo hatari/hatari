@@ -10,7 +10,7 @@ endif(ENABLE_DSP_EMU)
 add_library(Debug OBJECT
 	    log.c debugui.c breakcond.c debugcpu.c debugInfo.c
 	    ${DSPDBG_C} evaluate.c history.c symbols.c vars.c
-	    profile.c profilecpu.c profiledsp.c
+	    profile.c profilecpu.c profiledsp.c stacktrace.c
 	    natfeats.c console.c 68kDisass.c)
 
 if(ENABLE_LIBRETRO)
