@@ -467,7 +467,7 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 {
 	const char *sym, *caller;
 	uint32_t sym_addr, caller_addr;
-	int i, lines, offset;
+	int i, lines, offset, width;
 	bool dots;
 	char sign;
 
@@ -476,6 +476,11 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 	}
 	Dprintf(stderr, "Finalizing costs for %d non-returned functions.\n", callinfo->depth);
 
+	if (ConfigureParams.System.bAddressSpace24) {
+		width = 6;
+	} else {
+		width = 8;
+	}
 	fprintf(stderr, "Profiler backtrace:\n");
 
 	i = 0;
@@ -495,7 +500,7 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 		 */
 		if (i >= 32 && callinfo->depth > 32) {
 			if (!dots) {
-				fprintf(stderr, "- ...\n");
+				fprintf(stderr, " ...\n");
 				dots = true;
 			}
 		} else {
@@ -505,10 +510,11 @@ void Profile_FinalizeCalls(uint32_t pc, callinfo_t *callinfo, counters_t *totalc
 			if (sym) {
 				offset = caller_addr - sym_addr;
 				sign = offset >= 0 ? '+' : '-';
-				fprintf(stderr, "- %d. 0x%06x: %s %c0x%x",
-					i, caller_addr, sym, sign, abs(offset));
+				fprintf(stderr, "#%-2d 0x%0*x: %s %c0x%x",
+					i, width, caller_addr, sym, sign, abs(offset));
 			} else {
-				fprintf(stderr, "- %d. 0x%06x", i, caller_addr);
+				fprintf(stderr, "#%-2d 0x%0*x",
+					i, width, caller_addr);
 			}
 
 			sym_addr = caller_addr;
@@ -534,7 +540,7 @@ static void Profile_ShowStack(bool forDsp)
 	const char *(*get_caller)(uint32_t*);
 	const char *(*get_symbol)(uint32_t, symtype_t);
 	uint32_t sym_addr, caller_addr;
-	int i, offset, depth, top;
+	int i, offset, depth, top, width;
 	callinfo_t *callinfo;
 
 	if (forDsp) {
@@ -549,6 +555,12 @@ static void Profile_ShowStack(bool forDsp)
 		return;
 	}
 
+	if (ConfigureParams.System.bAddressSpace24) {
+		width = 6;
+	} else {
+		width = 8;
+	}
+
 	depth = callinfo->depth;
 	top = ConfigureParams.Debugger.nBacktraceLines;
 	if (top > 0 && top < depth) {
@@ -556,6 +568,7 @@ static void Profile_ShowStack(bool forDsp)
 	} else {
 		top = 0;
 	}
+
 	i = 0;
 	while (depth-- > top) {
 		i++;
@@ -565,10 +578,10 @@ static void Profile_ShowStack(bool forDsp)
 		sym = get_symbol(sym_addr, SYMTYPE_CODE);
 		if (sym) {
 			char sign = offset >= 0 ? '+' : '-';
-			fprintf(stderr, "- %d. 0x%06x: %s %c0x%x",
-				i, caller_addr, sym, sign, abs(offset));
+			fprintf(stderr, "#%-2d 0x%0*x: %s %c0x%x",
+				i, width, caller_addr, sym, sign, abs(offset));
 		} else {
-			fprintf(stderr, "- %d. 0x%06x", i, caller_addr);
+			fprintf(stderr, "#%-2d 0x%0*x", i, width, caller_addr);
 		}
 
 		sym_addr = caller_addr;
