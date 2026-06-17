@@ -779,32 +779,6 @@ const char* Symbols_GetBeforeDspAddress(uint32_t *addr)
 }
 
 /**
- * Print code symbol name for address, using the nearest lower symbol
- * plus hexadecimal offset when there is no exact match.
- */
-void Symbols_PrintAddress(FILE *fp, uint32_t addr, bool forDsp)
-{
-	uint32_t sym_addr = addr;
-	const char *name;
-
-	if (forDsp) {
-		name = Symbols_GetBeforeDspAddress(&sym_addr);
-	} else {
-		name = Symbols_GetBeforeCpuAddress(&sym_addr);
-	}
-	if (name) {
-		uint32_t off = addr - sym_addr;
-		if (off) {
-			fprintf(fp, "%s+0x%x", name, off);
-		} else {
-			fputs(name, fp);
-		}
-	} else {
-		fprintf(fp, "0x%06x", addr);
-	}
-}
-
-/**
  * Binary search symbol by address in given sorted list.
  * Return symbol index if address matches, -1 otherwise.
  *

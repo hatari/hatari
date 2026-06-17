@@ -46,8 +46,6 @@ extern const char* Symbols_GetByCpuAddress(uint32_t addr, symtype_t symtype);
 extern const char* Symbols_GetByDspAddress(uint32_t addr, symtype_t symtype);
 extern const char* Symbols_GetBeforeCpuAddress(uint32_t *addr);
 extern const char* Symbols_GetBeforeDspAddress(uint32_t *addr);
-/* address -> nearest code symbol name (+hex offset) */
-extern void Symbols_PrintAddress(FILE *fp, uint32_t addr, bool forDsp);
 /* TEXT symbol address -> index */
 extern int Symbols_GetCpuCodeIndex(uint32_t addr);
 extern int Symbols_GetDspCodeIndex(uint32_t addr);

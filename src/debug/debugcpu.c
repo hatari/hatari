@@ -1532,15 +1532,14 @@ static const dbgcommand_t cpucommands[] =
 	  Symbols_Description,
 	  false },
 	{ StackTrace_Command, NULL,
-	  "bt", "",
+	  "backtrace", "bt",
 	  "stack backtrace using A6 frame pointer chain",
-	  "[fp] [max]\n"
+	  "[max [fp]]\n"
 	  "\tWalk the A6 frame pointer chain and show call sites with symbols.\n"
 	  "\tFrame #0 is the current PC; further frames use return addresses\n"
-	  "\t(call site = return address - 2). Optional <fp> sets the first\n"
-	  "\tframe pointer (default A6). Optional <max> limits depth; otherwise\n"
-	  "\tnBacktraceLines is used (0 = 256 frame safety limit).\n"
-	  "\tA single numeric argument sets <max> only, e.g. 'bt 32'.\n",
+	  "\t(call site = return address - 2). <max> sets backtrace depth,\n"
+	  "\t'nBacktraceLines' is used otherwise (0 = 256 frame safety limit).\n"
+	  "\t<fp> value is the first frame pointer (default A6).\n",
 	  false },
 	{ DebugCpu_Step, NULL,
 	  "step", "s",
