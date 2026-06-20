@@ -433,7 +433,8 @@ fprintf ( stderr , "kfs_decode_index\n" );
 		case 0xc: /* value16 */
 			i++;
 			/* fall through */
-		case 0x00 ... 0x07:
+		case 0x00: case 0x01: case 0x02: case 0x03:
+		case 0x04: case 0x05: case 0x06: case 0x07:
 		case 0x9: /* nop2 */
 			i++;
 			/* fall through */
@@ -514,11 +515,13 @@ static int kfs_next_flux(struct mfm_stream *s)
 
 	while (!done && (i < kfss->datsz)) {
 		switch (dat[i]) {
-		case 0x00 ... 0x07: two_byte_sample:
-		val += ((uint32_t)dat[i] << 8) + dat[i+1];
-		i += 2; kfss->stream_idx += 2;
-		done = 1;
-		break;
+		case 0x00: case 0x01: case 0x02: case 0x03:
+		case 0x04: case 0x05: case 0x06: case 0x07:
+		two_byte_sample:
+			val += ((uint32_t)dat[i] << 8) + dat[i+1];
+			i += 2; kfss->stream_idx += 2;
+			done = 1;
+			break;
 		case 0x8: /* nop1 */
 			i += 1; kfss->stream_idx += 1;
 			break;
