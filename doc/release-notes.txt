@@ -25,7 +25,7 @@ API changes:
   recording. This is to support skipping recording of the TOS boot
   (using option <event> prefix to enable it later)
 - Config file "nExceptionDebugMask" option values for "dsp" and "autostart"
-  items has changed (one should use <event> prefix for latter instead)
+  items have changed (one should use <event> prefix for latter instead)
 - Configuration file "Debugger" section "bSymbolsAutoLoad" (boolean)
   option changed to a "nSymbolsAutoLoad" (integer) one.  Default is
   the same (program symbols loaded on debugger invocation)
@@ -51,13 +51,16 @@ Emulator improvements:
 - CLI options:
   - Fix: delayed --log-level / --trace options effect on Hatari init
   - Both "" and "none" can be used to disable devices that are enabled
-    by providing a <file> or <dir name> (revert v2.6.1 API change)
+    by providing a <file> or <dir name> (reverts v2.6.1 API change)
   - "event" prefixes support for a subset of options (listed in manual).
     They delay applying specified option until given emulation event.
     E.g. to fast-forward until program starts (from GEMDOS HD),
     use: "--fast-forward boot:on --fast-forward prg:off"
   - New "--symload" option for specifying when program symbols are loaded
   - New "--vsync" option to enable screen update vsyncing
+  - New "--memconv" option to enable locale conversion for non-ASCII
+    Atari chars in memory output from the debugger commands, and
+    for "--conout" output
   - Hatari exits with return value 1 on option errors
   - Stricter validation of integer option values
 - SDL GUI:
@@ -94,23 +97,25 @@ Emulator improvements:
     better support GUI usage automation
 - Tracing:
   - "event" option for tracing option changes on events
+  - "cpu_exception" trace includes also MMU page faults
 - Debugger:
   - Fix: dysfunctional WinUAE CPU core disasm wrapper and
     stack overwrites with long symbol names in disassembly
   - Fix: separate arguments output by "echo" command with a space
   - Fix: breakpoint options missing from Hatari debugger state save
-  - String arguments (e.g. to echo/struct commands) can be quoted
-    with double quotes ("")
+  - String arguments (e.g. to "echo"/"struct" commands) can be
+    quoted with double quotes ("")
   - Add ':print' option for annotating conditional breakpoints
   - Debugger input file commands can be split to multiple lines
     by adding '\' to end of line to continue it
-  - Increase max lenght of accepted debugger file commands to 4k
-  - Add "--memconv" option to enable locale conversion for non-ASCII
-    Atari chars in memory output from the debugger commands, and
-    for "--conout" output
+  - Increase max lenght of accepted debugger file commands to 4K
+  - Add frame pointer based "backtrace" (bt) command
+  - Add MMU translation support for the "memdump" command
+- Profiler:
   - Profiler skips "profile stats" output when entering debugger,
     if it showed (there was data for) a backtrace, and does not
     anymore print info on its internal workings
+  - Backtrace format is now more similar to Gdb
 - Symbols:
   - Always ignore unnamed symbols (= note instead of warnings)
   - Symbol autoloading loads all symbol types, not just TEXT symbols

@@ -228,7 +228,7 @@ DSP commands:
 </pre>
 
 
-<h4 id="Entering_arguments_to_debugger_commands">Entering arguments to debugger commands</h4>
+<h4 id="Entering_arguments">Entering arguments to debugger commands</h4>
 
 <p>
 After writing (with TAB completion) one of the above command names,
@@ -356,7 +356,7 @@ the saved output in more or less real-time.)</p>
 with "os_base" and "os_all" trace settings and "--conout 2" option.</p>
 
 
-<h3 id="Inspecting_emulation_state">Inspecting emulation state</h3>
+<h3>Inspecting emulation state</h3>
 
 <p>
 In the beginning, probably the most interesting commands are "m" and
@@ -366,7 +366,7 @@ the DSP, use "dm" and "dd" commands.
 <pre>
 &gt; help memdump
 'memdump' or 'm' - dump memory
-Usage:  m [s|u] [b|w|l] [start address-[end address| count]]
+Usage:  m [p|s|u] [b|w|l] [start address-[end address| count]]
 	dump memory at address or continue dump from previous address.
 	By default memory output is done as bytes, with 'w' or 'l'
 	option, it will be done as words/longs instead.  With 's' or
@@ -499,9 +499,7 @@ Symbolic names for program function and data addresses can be used in
 arithmetic expressions and conditional breakpoint expressions. They
 show up in the "disasm" command output, and one can trace calls to
 them with "trace cpu_symbols" (and DSP symbols with "trace
-dsp_symbols").  If profiling was enabled with symbols present,
-debugger shows also a backtrace (for the program code executed since
-debugger was last invoked) whenever debugger is invoked.
+dsp_symbols").
 </p>
 <p>
 To load debugging symbols in other situations, use the debugger
@@ -514,8 +512,12 @@ To load debugging symbols in other situations, use the debugger
 <p>C++ (and other similar languages) store symbols in binaries
 in a "mangled" format used by tools like linkers, and symbol names
 need to be "demangled" (expanded) to a more readable / user-friendly
-format.  This can be done using a tool coming with the C++ compiler
-(in "binutils-m68k-atari-mint" package).  ScummVM example:</p>
+format.  This can be done using a "c++filt" tool coming with the
+compiler "binutils" package (if host version does not produce corrent
+symbols, use "m68k-atari-mint-c++filt" from "binutils-m68k-atari-mint"
+package instead).</p>
+
+<p>ScummVM example:</p>
 <pre>
 $ gst2ascii scummvm.ttp | m68k-atari-mint-c++filt &gt; scummvm.sym
 </pre>
@@ -715,7 +717,40 @@ be added or filtered out (e.g. for profiling)</li>
 </ul>
 
 
-<h3 id="Breakpoints">Breakpoints</h3>
+<h3>Backtraces</h3>
+
+<p>If profiling was enabled after program symbols were loaded,
+debugger will show a program backtrace whenever debugger is invoked,
+<em>for the code executed since debugger was last invoked</em>.</p>
+
+<p>Loading of program symbols and enabling profiling <em>at program
+start</em> (so that backtrace covers whole program execution),
+can be automated like this:</p>
+<pre>
+$ echo "profile on" &gt; profile.ini
+$ hatari --symload exec --parse prg:profile.ini ... some.prg
+</pre>
+
+<p>Note: crashes are best debugged with EmuTOS, because it does not
+immediately terminate program on a crash (like Atari TOS does),
+but shows a panic message and waits for a key before termination.
+Invoking debugger at that point, can then show (profiler) backtrace
+for the program crash.</p>
+
+<p>(EmuTOS 1024k ROM releases include symbols file and Hatari loads
+that automatically if it is present beside the EmuTOS ROM. This
+provides EmuTOS backtrace when program symbols are missing.)</p>
+
+<p>If <em>program (and libraries it links) are compiled with
+frame-pointers</em> (GCC <code>-fno-omit-frame-pointer</code> option),
+'bt' command can be used to get frame-pointer based backtrace instead.
+However, while 'bt' command can provide backtrace also in cases where
+profiling was not enabled and/or symbols are loaded only when invoking
+the debugger, its frame-pointer based backtrace often is less accurate
+than the profiler provided backtraces.</p>
+
+
+<h3>Breakpoints</h3>
 
 <p>
 There are two ways to specify breakpoints for Hatari. First, there are
@@ -900,8 +935,8 @@ If the value is in parenthesis like in "($ff820)" or "(a0)", then the
 used value will be read from the memory address pointed by it.  Note
 that this conditional breakpoint expression value is checked at
 run-time whereas evaluated arithmetic expressions (mentioned in
-<a href="#Entering_arguments_to_debugger_commands">Entering arguments
-to debugger commands</a> above) are evaluated already when
+<a href="#Entering_arguments">Entering arguments to debugger commands</a>
+above) are evaluated already when
 adding a breakpoint.  For example, to break when a value in an address
 (later) pointed by A0 matches the value <em>currently</em> in D0, one
 would use:
@@ -1321,28 +1356,24 @@ Hatari "tests/natfeats" directory.</p>
 <h4>Collecting profile data in the debugger</h4>
 
 <p>
-Profiling is used by first enabling the profiler (use "dp" for DSP):
+Profiling will start (anew) each time emulation is continued ('c'),
+after it has been explicitly enabled (use "dp" for DSP):
 </p>
 <pre>
 &gt; profile on
 Profiling enabled.
-</pre>
-<p>
-And profiling will start once emulation is continued:
-</p>
-<pre>
 &gt; c
 Returning to emulation...
-Allocated CPU profile buffer (27 MB).
 </pre>
 
 <p>
-At debugger invocation, the collected profiling information is
-processed, a backtrace and a summary of in which parts of memory the
-execution happened, and how long it took, are shown:
+At next debugger invocation, the collected profiling information is
+processed. If program symbols were available for profiler, it will
+show a program backtrace covering the profiled part.
 </p>
+
+<p>If there are no symbols, profiling statistics will be shown instead:</p>
 <pre>
-Allocated CPU profile address buffer (57 KB).
 ROM TOS (0xE00000-0xE80000):
 - active address range:
   0xe00030-0xe611a4
@@ -1361,12 +1392,6 @@ Cartridge ROM (0xFA0000-0xFC0000):
 <p>
 (DSP RAM will be shown only as single area in profile information.)
 </p>
-
-<p>If program symbols were loaded, profiler will also show a program
-backtrace (covering the profiled part).  This is especially useful
-with EmuTOS, because EmuTOS does not immediately terminate programs on
-crashes, but first waits for a key. By invoking debugger at that
-point, one will see profiler backtrace for the crash.</p>
 
 
 <h4>Investigating the profile data</h4>
@@ -1502,8 +1527,7 @@ costs for those calls, both including costs for further subroutine
 calls and without them.
 </p>
 
-<p>When debugger is re-entered, current callstack is output before
-profiling information:</p>
+<p>When debugger is re-entered, current callstack is output:</p>
 <pre>
 &gt; a <em>_P_LineAttack</em>
 CPU condition breakpoint 1 with 1 condition(s) added:
@@ -1513,21 +1537,21 @@ $030f44 : 48e7 3820                            movem.l   d2-d4/a2,-(sp)
 ...
 CPU breakpoint condition(s) matched 1 times.
         pc = $30f44
-Finalizing costs for 12 non-returned functions:
-- 0x32a3c: _P_GunShot (return = 0x32b7e)
-- 0x32b18: _A_FireShotgun (return = 0x3229a)
-- 0x3223a: _P_SetPsprite (return = 0x32e86)
-- 0x32e4e: _P_MovePsprites (return = 0x38070)
-- 0x37f44: _P_PlayerThink (return = 0x36ea0)
-- 0x36e44: _P_Ticker (return = 0x260e0)
-- 0x25dcc: _G_Ticker (return = 0x1e4c6)
-- 0x1e29e: _TryRunTics (return = 0x239fa)
-- 0x238e8: _D_DoomLoop (return = 0x2556a)
-- 0x24d7a: _D_DoomMain (return = 0x44346)
+Profiler backtrace:
+#1  0x32a3c: _P_GunShot (return = 0x32b7e)
+#2  0x32b18: _A_FireShotgun (return = 0x3229a)
+#3  0x3223a: _P_SetPsprite (return = 0x32e86)
+#4  0x32e4e: _P_MovePsprites (return = 0x38070)
+#5  0x37f44: _P_PlayerThink (return = 0x36ea0)
+#6  0x36e44: _P_Ticker (return = 0x260e0)
+#7  0x25dcc: _G_Ticker (return = 0x1e4c6)
+#8  0x1e29e: _TryRunTics (return = 0x239fa)
+#9  0x238e8: _D_DoomLoop (return = 0x2556a)
+#10 0x24d7a: _D_DoomMain (return = 0x44346)
 ...
 </pre>
 
-<p>("profile stack" command can be used in breakpoints with :noinit
+<p>("profile stack" command can be used in breakpoints with ":noinit"
 option to show backtraces during caller profiling.)</p>
 
 <p>Note: rest of this subsection is about caller information format
@@ -1787,8 +1811,8 @@ a cost count.)</p>
 
 <p>If profile file contains caller information, "-p" option should
 be added to see it, as that will also help in detecting symbol
-issues (see <a href="#Interpreting_the_numbers">Interpreting
-the numbers</a>):</p>
+issues (see <a href="#Interpreting_the_results">Interpreting
+the results</a>):</p>
 <pre>
 $ hatari_profile.py -st <b>-p</b> -r program.sym program-profile.txt
 [...]
@@ -2025,6 +2049,11 @@ immediate callers &amp; callees, with the "--only" option:</p>
 <pre>
 $ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profile.txt
 </pre>
+
+<p>NOTE: post-processor options taking symbol names, understand
+"fnmatch" patterns.  They help when one would need to specify very
+long / complex C++ symbol names, or group(s) of symbols with similar
+names (e.g. "*_interrupt_handler").
 
 <p>Last option for reading the callgraph is using "-k" option to
 export the data for use in (Linux) Kcachegrind UI. Kcachegrind

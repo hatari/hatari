@@ -183,7 +183,7 @@ static int stacktrace_walk(uint32_t start_fp, uint32_t max_depth)
 }
 
 /**
- * Parse optional [fp] [max] arguments for bt command.
+ * Parse optional frame pointer address & max depth args for bt command.
  */
 static bool stacktrace_parse_args(int nArgc, char *psArgs[],
                                   uint32_t *start_fp, uint32_t *max_depth)
