@@ -1278,6 +1278,8 @@ Color games:
 - Bombaman
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS)
+- Cannon Fodder STe conversion:
+  https://www.atari-forum.com/viewtopic.php?p=497189#p497189
 - Catch Me If You Can*
 - Chroma Grid (including D-BUG intro+trainer)
 - ChuChu Rocket* (RG's full version)
@@ -1305,7 +1307,7 @@ Color games:
 - Pacman on E
 - Pacmania* STE/overscan rewrite:
   http://atari-forum.com/viewtopic.php?f=3&t=24635
-- Pole Position (arcade conversion)
+- Pole Position (arcade conversion):
   http://atari-forum.com/viewtopic.php?f=3&t=26068
 - Power Up
 - Puckman
@@ -1313,14 +1315,15 @@ Color games:
 - R0x Zero (line-A bitblit, overscan screen needs 50Hz version of Emutos)
 - Randomazer 1.x & SV2020 editions
 - Ready Steady Bang!
+- Robbo STe
 - Rodney vs. KFC
 - Roger (line-A bitblit)
 - Rogül (rogue-lite)
-- R-Type Deluxe (arcade conversion)
+- R-Type Deluxe (arcade conversion):
   http://atari-forum.com/viewtopic.php?f=28&t=29047
-- Sardonic
+- Sardonic:
   http://atari-forum.com/viewtopic.php?f=3&t=38121
-- ScummST (STE enhanced)
+- ScummST (STE enhanced):
   http://www.happydaze.se/scummvm-lite-atari/
 - Shotgun (STE enhanced)
 - Skulls (shareware "minesweeper")
