@@ -365,33 +365,34 @@ extern bool cpu_bus_rmw;			// WINUAE_FOR_HATARI
 
 extern void safe_interrupt_set(int, int, bool);
 
-#define SPCFLAG_CPUINRESET 2
-#define SPCFLAG_CPU_SLOW 4
-#define SPCFLAG_INT 8
-#define SPCFLAG_BRK 16
-#define SPCFLAG_UAEINT 32
-#define SPCFLAG_TRACE 64
-#define SPCFLAG_DOTRACE 128
-#define SPCFLAG_DOINT 256 /* arg, JIT fails without this.. */
-//#define SPCFLAG_BLTNASTY 512
-#define SPCFLAG_EXEC 1024
-//#define SPCFLAG_ACTION_REPLAY 2048
-//#define SPCFLAG_TRAP 4096 /* enforcer-hack */
-#define SPCFLAG_MODE_CHANGE 8192
+#define SPCFLAG_CPUINRESET	0x000002
+#define SPCFLAG_CPU_SLOW	0x000004
+#define SPCFLAG_INT		0x000008
+#define SPCFLAG_BRK		0x000010
+#define SPCFLAG_UAEINT		0x000020
+#define SPCFLAG_TRACE		0x000040
+#define SPCFLAG_DOTRACE		0x000080
+#define SPCFLAG_DOINT		0x000100 /* arg, JIT fails without this.. */
+#define SPCFLAG_BLTNASTY	0x000200
+#define SPCFLAG_EXEC		0x000400
+#define SPCFLAG_ACTION_REPLAY	0x000800
+#define SPCFLAG_TRAP		0x001000 /* enforcer-hack */
+#define SPCFLAG_MODE_CHANGE	0x002000
 #ifdef JIT
-#define SPCFLAG_END_COMPILE 16384
+#define SPCFLAG_END_COMPILE	0x004000
 #endif
-#define SPCFLAG_CHECK 32768
-#define SPCFLAG_MMURESTART 65536
+#define SPCFLAG_CHECK		0x008000
+#define SPCFLAG_MMURESTART	0x010000
+#define SPCFLAG_CALLBACK	0x020000
 
 #ifdef WINUAE_FOR_HATARI
 // Hatari's specific flags
-#define SPCFLAG_DEBUGGER 0x1000000
-#define SPCFLAG_STOP 0x2000000
-#define SPCFLAG_BUSERROR 0x4000000
-#define SPCFLAG_EXTRA_CYCLES 0x8000000
-#define SPCFLAG_MFP 0x10000000
-#define SPCFLAG_DSP 0x20000000			// TODO : remove with do_specialties_interrupt()
+#define SPCFLAG_DEBUGGER	0x1000000
+#define SPCFLAG_STOP		0x2000000
+#define SPCFLAG_BUSERROR	0x4000000
+#define SPCFLAG_EXTRA_CYCLES	0x8000000
+#define SPCFLAG_MFP		0x10000000
+#define SPCFLAG_DSP		0x20000000		// TODO : remove with do_specialties_interrupt()
 #endif
 
 #ifndef WINUAE_FOR_HATARI
