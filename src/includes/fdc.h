@@ -191,6 +191,7 @@ void	mfm_stream_next_index ( struct mfm_stream *s );
 int	mfm_stream_next_bit ( struct mfm_stream *s );
 int	mfm_stream_next_bits ( struct mfm_stream *s , unsigned int bits );
 int	mfm_stream_next_bytes ( struct mfm_stream *s , void *p , unsigned int bytes );
+int	mfm_stream_skip ( struct mfm_stream *s , uint32_t FdcCycles );
 
 extern	struct mfm_stream		MFM_STREAMS[ MAX_FLOPPYDRIVES ];
 

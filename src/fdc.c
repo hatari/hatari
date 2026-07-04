@@ -699,6 +699,7 @@ typedef struct {
 	uint8_t		NextSector_ID_Field_CRC2;		/* Lower 8 bits of the CRC */
 	uint8_t		NextSector_ID_Field_CRC_OK;		/* CRC OK or not in the next ID Field after a call to FDC_NextSectorID_FdcCycles_ST() */
 	uint8_t		InterruptCond;				/* For a type IV force interrupt, contains the condition on the lower 4 bits */
+	uint64_t	CommandComplete_ClockCounter;		/* Value of CyclesGlobalClockCounter when a command complete */
 
 	int		EmulationMode;				/* FDC_EMULATION_MODE_INTERNAL or FDC_EMULATION_MODE_IPF */
 } FDC_STRUCT;
@@ -798,6 +799,7 @@ static uint32_t	FDC_DelayToFdcCycles ( uint32_t Delay_micro );
 static uint32_t	FDC_FdcCyclesToCpuCycles ( uint32_t FdcCycles );
 static uint32_t	FDC_CpuCyclesToFdcCycles ( uint32_t CpuCycles );
 static uint32_t	FDC_NsToFdcCycles ( uint32_t Time_ns );
+static uint32_t	FDC_FdcCyclesToNs ( uint32_t FdcCycles );
 static void	FDC_StartTimer_FdcCycles ( int FdcCycles , int InternalCycleOffset );
 static int	FDC_TransferByte_FdcCycles ( int NbBytes );
 static void	FDC_CRC16 ( uint8_t *buf , int nb , uint16_t *pCRC );
@@ -869,6 +871,7 @@ static uint8_t	FDC_ReadAddress_ST ( uint8_t Drive , uint8_t Track , uint8_t Sect
 static uint8_t	FDC_ReadTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side );
 static uint8_t	FDC_WriteTrack_ST ( uint8_t Drive , uint8_t Track , uint8_t Side , int TrackSize );
 
+static bool	FDC_CheckCurrentTrackIsLoaded_MFM ( int Drive );
 static int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side );
 static void	FDC_AM_Detector_Reset ( void );
 static int	FDC_MFM_Process_Bit ( struct mfm_stream *s , bool Skip_Bit );
@@ -1067,6 +1070,18 @@ uint32_t	FDC_NsToFdcCycles ( uint32_t Time_ns )
 
 	Cycles = rint ( (uint64_t)Time_ns * MachineClocks.FDC_Freq / 1000000000 );
 	return Cycles;
+}
+
+
+/*
+ * Convert  a number of fdc cycles into a duration in nanosec
+ */
+uint32_t	FDC_FdcCyclesToNs ( uint32_t FdcCycles )
+{
+	uint32_t	Time_ns;
+
+	Time_ns = rint ( (uint64_t)FdcCycles * 1000000000 / MachineClocks.FDC_Freq );
+	return Time_ns;;
 }
 
 
@@ -2291,6 +2306,7 @@ void FDC_ClearHdcIRQ(void)
 	}
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * Handle the current FDC command.
@@ -2379,6 +2395,27 @@ void FDC_InterruptHandler_Update ( void )
  */
 static void FDC_SetCommand ( int Command , int CommandState )
 {
+	struct mfm_stream *s;
+	int64_t		CpuCyclesSinceComplete;
+
+//fprintf ( stderr , "set cmd dr=%d type=%d motor=%x %ld\n" , FDC.DriveSelSignal , EmulationDrives[ FDC.DriveSelSignal ].ImageType , FDC.STR & FDC_STR_BIT_MOTOR_ON , FDC.CommandComplete_ClockCounter );
+
+	if ( ( Command != FDCEMU_CMD_MOTOR_STOP )
+	  && ( FDC.DriveSelSignal >= 0 ) && Floppy_ImageIsMFM ( EmulationDrives[ FDC.DriveSelSignal ].ImageType )
+	  && ( FDC_CheckCurrentTrackIsLoaded_MFM ( FDC.DriveSelSignal ) ) )
+	{
+//fprintf ( stderr , "set cmd2 dr=%d motor=%x %ld\n" , FDC.DriveSelSignal , FDC.STR & FDC_STR_BIT_MOTOR_ON , FDC.CommandComplete_ClockCounter );
+		if ( ( ( FDC.STR & FDC_STR_BIT_MOTOR_ON ) != 0 )
+		&& ( FDC.CommandComplete_ClockCounter > 0 ) )
+		{
+			CpuCyclesSinceComplete = CyclesGlobalClockCounter - FDC.CommandComplete_ClockCounter;
+
+//fprintf ( stderr , "set cmd since=%ld\n" , CpuCyclesSinceComplete );
+
+			s = &(MFM_STREAMS[ FDC.DriveSelSignal ]);
+			mfm_stream_skip ( s , CpuCyclesSinceComplete );
+		}
+	}
 
 	FDC.Command = Command;
 	FDC.CommandState = CommandState;
@@ -2439,6 +2476,7 @@ static int FDC_CmdCompleteCommon ( bool DoInt )
 		FDC_SetIRQ ( FDC_IRQ_SOURCE_COMPLETE );
 
 	FDC_SetCommand( FDCEMU_CMD_MOTOR_STOP , FDCEMU_RUN_MOTOR_STOP );	/* Fake command to stop the motor */
+	FDC.CommandComplete_ClockCounter = CyclesGlobalClockCounter;
 	return FDC_DELAY_CYCLE_COMMAND_IMMEDIATE;
 }
 
@@ -5723,6 +5761,30 @@ int mfm_stream_next_bytes(struct mfm_stream *s, void *p, unsigned int bytes)
 
 
 
+int mfm_stream_skip ( struct mfm_stream *s , uint32_t FdcCycles )
+{
+	uint64_t	Time_ns;
+	uint64_t	Total_ns;
+	int		Flux_ns;
+
+	Time_ns = FDC_FdcCyclesToNs ( FdcCycles );
+//fprintf ( stderr , "mfm_stream_skip fdc_cycles=%d time_ns=%lu\n" , FdcCycles , Time_ns );
+
+	Total_ns = 0;
+	while ( Total_ns < Time_ns )
+	{
+		Flux_ns = s->type.next_flux(s);
+		s->flux = 0;
+		if ( Flux_ns < 0 )
+			return -1;
+//fprintf ( stderr , "mfm_stream_skip fdc_cycles=%d flux=%d time_ns=%lu\n" , FdcCycles , Flux_ns , Time_ns );
+		Total_ns += Flux_ns;
+	}
+
+	return 0;
+}
+
+
 /*
  * libdisk's PLL is similar to an analog PLL
  */
@@ -5789,7 +5851,7 @@ if ( FDC_DEBUG_MFM_BIT ) fprintf ( stdout , "flux next bit 2 : lat=%"PRIu64" flu
  *
  * NOTE : there's no full reverse engineering of the WD1772 at this time,
  * so the DPLL method used is not known. But some analyses are considering
- * that the DPLL in the WS1772 is based on this patent.
+ * that the DPLL in the WD1772 is based on this patent.
  *
  * The DPLL used in Hatari is a direct implementation of the patent US4808884,
  * including the window's length, phase and frequency correction, ...
@@ -6358,8 +6420,24 @@ static int mfm_flux_next_bit(struct mfm_stream *s)
 }
 
 
+/*
+ * In MFM mode, check if the track at the head position on the current side
+ * is already loaded or not
+ */
 
-int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
+static bool	FDC_CheckCurrentTrackIsLoaded_MFM ( int Drive )
+{
+	if ( ( FDC_DRIVES[ Drive ].Loaded_Track == FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack )
+	  && ( FDC_DRIVES[ Drive ].Loaded_Side == FDC.SideSignal ) )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+
+static int	FDC_LoadTrack_MFM ( int Drive , int Track , int Side )
 {
 	int		res;
 
