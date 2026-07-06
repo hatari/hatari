@@ -426,6 +426,8 @@
 /*			'Ika I Compofylla' by Newline when running in MegaST mode with 4MB RAM)	*/
 /* 2025/07/17	[NP]	Add support for STE 224 bytes overscan in med res (fix some parts of	*/
 /*			Double Rez Trouble by DHS)						*/
+/* 2026/07/06	[NP]	Add support for STE 232 bytes overscan in low res (new method by DHS)	*/
+/*			(fix He'e Nalu Uhane by DHS)						*/
 
 
 const char Video_fileid[] = "Hatari video.c";
@@ -485,7 +487,7 @@ const char Video_fileid[] = "Hatari video.c";
 #define BORDERMASK_OVERSCAN_MED_RES	0x40	/* some borders were removed and the line is in med res instead of low res */
 #define BORDERMASK_EMPTY_LINE		0x80	/* 60/50 Hz switch prevents the line to start, video counter is not incremented */
 #define BORDERMASK_LEFT_OFF_MED		0x100	/* removal of left border with hi/med res switch -> +26 bytes (for 4 pixels hardware scrolling) */
-#define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only)*/
+#define BORDERMASK_LEFT_OFF_2_STE	0x200	/* shorter removal of left border with hi/lo res switch -> +20 bytes (STE only) (no stabilizer needed) */
 #define BORDERMASK_BLANK_LINE		0x400	/* 60/50 Hz switch blanks the rest of the line, but video counter is still incremented */
 
 #define BORDERMASK_NO_DE		0x800
@@ -1511,6 +1513,8 @@ static uint32_t Video_CalculateAddress ( void )
 
 		if (LineBorderMask & BORDERMASK_LEFT_OFF)
 			CurSize += BORDERBYTES_LEFT;
+		else if ( (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE) && bSteBorderFlag )
+			CurSize += BORDERBYTES_LEFT_2_STE + 8;
 		else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE)
 			CurSize += BORDERBYTES_LEFT_2_STE;
 		else if (LineBorderMask & BORDERMASK_LEFT_OFF_2_STE_MED)
@@ -1679,6 +1683,19 @@ static void Video_WriteToGlueRes ( uint8_t Res )
 		/* elsewhere when rendering line on screen */
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -16;		/* screen is shifted 16 pixels to the left */
 		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 med ste\n" );
+	}
+
+	/* On STE, hi/lo switch at 504/4 or 508/4 combined with left border extended by 16 pixels (used in DHS demos) */
+	/* -> display 28 bytes in left border (instead of 20) and allow to reach 232 bytes per line and 416 pixels */
+	if ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_LEFT_OFF_2_STE )
+	        && ( Res == 0x00 )
+		&& bSteBorderFlag )
+	{
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = pVideoTiming->Preload_Start_Hi;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = -8;		/* screen is shifted 8 pixels to the left */
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left 2 ste + 16 px %d<->%d\n" ,
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle ,
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
 	/* If left border was opened with a hi/med res switch we need to check */
@@ -2310,7 +2327,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    if ( ( LineCycles <= pVideoTiming->HDE_On_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
 	      if ( FreqHz == VIDEO_50HZ )
-		DE_start = pVideoTiming->HDE_On_Low_50;	/* 56 */
+		DE_start = pVideoTiming->HDE_On_Low_50;		/* 56 */
 	      else
 	      {
 		DE_start = pVideoTiming->HDE_On_Low_60;		/* 52 */
@@ -2522,6 +2539,7 @@ static void Video_Update_Glue_State ( int FrameCycles , int HblCounterVideo , in
 	    }
 	    else if ( ( LineCycles == pVideoTiming->HDE_On_Hi ) && ( BorderMask & BORDERMASK_LEFT_OFF ) )
 	    {
+	      /* hi/lo switch at 504/4 or 508/4 used in DHS demos : display 20 bytes in left border */
 	      DE_start = pVideoTiming->Preload_Start_Hi + 16;
 	      BorderMask &= ~BORDERMASK_LEFT_OFF;
 	      BorderMask |= BORDERMASK_LEFT_OFF_2_STE;
@@ -3996,6 +4014,14 @@ static void Video_CopyScreenLineColor(void)
 		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MED ) )	/* bigger line by 26 bytes on the left */
 		{
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
+			video_memcpy ( pSTScreen, pVideoRaster, SCREENBYTES_LEFT );
+			pVideoRaster += SCREENBYTES_LEFT;
+		}
+		else if ( ( LineBorderMask & BORDERMASK_LEFT_OFF_2_STE )	/* bigger line by 20+8 bytes on the left (STE specific) */
+			&& bSteBorderFlag )
+		{
+			/* display 8 extra bytes, all pixels are shown */
+			pVideoRaster += BORDERBYTES_LEFT_2_STE+8 -SCREENBYTES_LEFT+VideoOffset;
 			video_memcpy ( pSTScreen, pVideoRaster, SCREENBYTES_LEFT );
 			pVideoRaster += SCREENBYTES_LEFT;
 		}
