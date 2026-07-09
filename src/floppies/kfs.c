@@ -41,7 +41,7 @@ static KFS_STRUCT		KFS_State;
 static bool	KFS_Insert_Internal ( int Drive , bool KeepState );
 static char	*KFS_FilenameFindTrackSide (char *FileName);
 
-static unsigned int *kfs_decode_index(unsigned char *dat, unsigned int datsz);
+static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, unsigned int *p_index_count);
 
 static int	kfs_select_track(struct mfm_stream *s, unsigned int tracknr);
 static void	kfs_reset(struct mfm_stream *s);
@@ -346,7 +346,7 @@ static bool	KFS_Insert_Internal ( int Drive , bool KeepState )
 
 	KFS_State.KFS_Stream[ Drive ].Drive = Drive;
 	KFS_State.KFS_Stream[ Drive ].dat = NULL;		/* no track loaded with kfs_select_track */
-	KFS_State.KFS_Stream[ Drive ].idxs = NULL;		/* no indexes loaded with kfs_select_track */
+	KFS_State.KFS_Stream[ Drive ].indexes_array = NULL;	/* no indexes loaded with kfs_select_track */
 //TODO		KFS_State.KFS_Stream[ Drive ].revs = KFS_State.ImageStruct[ Drive ]->RevolutionsNbr;
 
 	return true;
@@ -378,10 +378,10 @@ bool	KFS_Eject ( int Drive )
 		}
 
 	/* Free the track's indexes if needed */
-	if ( KFS_State.KFS_Stream[ Drive ].idxs )
+	if ( KFS_State.KFS_Stream[ Drive ].indexes_array )
 	{
-		free ( KFS_State.KFS_Stream[ Drive ].idxs );
-		KFS_State.KFS_Stream[ Drive ].idxs = NULL;
+		free ( KFS_State.KFS_Stream[ Drive ].indexes_array );
+		KFS_State.KFS_Stream[ Drive ].indexes_array = NULL;
 	}
 
 	return true;
@@ -404,53 +404,100 @@ bool	KFS_Eject ( int Drive )
 #define SCK_PS_PER_TICK (1000000000/(SCK_FREQ/1000))
 
 
-static unsigned int *kfs_decode_index(unsigned char *dat, unsigned int datsz)
+/*
+ * Scan the track data to build an array of all the indexes
+ * We need 2 passes :
+ *  - 1st pass search for OOB data starting with 0x0d02 and get the stream pos of each index
+ *  - 2nd pass stores the "file pos" for each index found at "stream pos"
+ * Having both positions allows to "seek" to any index in the track
+ *
+ * We need to have at least 2 indexes in the track data (to mark start and end of the dump
+ * for 1 revolution)
+ *
+ * Allocate an array of indexes and return the number of indexes found
+ * NOTE :
+ *  - there's a random number of flux before the 1st index that we must ignore, this is because
+ *    the KryoFlux board starts to dump as soon as it's ready, not necessarily on an index signal
+ *  - the last index will be nearly at the end of the track file, there will be no more data after that
+ *    (only a few flux transitions). This index marks the end of the previous revolution, we should
+ *    not go beyond as there will be no whole track.
+ */
+
+static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, unsigned int *p_index_count)
 {
-	unsigned int i, idx_i = 0;
-	unsigned int *idxs = malloc((MAX_INDEX+1) * sizeof(*idxs));
+	unsigned int i, idx_i , stream_pos;
+	kfs_index *indexes_array = malloc((MAX_INDEX+1) * sizeof(kfs_index));
+	int pass;
+	unsigned int index_count;
 
-fprintf ( stderr , "kfs_decode_index\n" );
+//fprintf ( stderr , "kfs_decode_index\n" );
 
-	for (i = 0; i < datsz; ) {
-		switch (dat[i]) {
-		case 0xd: /* oob */ {
-			uint32_t pos;
-//			uint16_t sz = le16toh(*(uint16_t *)&dat[i+2]);
-			uint16_t sz = le_swap16(*(uint16_t *)&dat[i+2]);
-
-			i += 4;
-//			pos = le32toh(*(uint32_t *)&dat[i+0]);
-			pos = le_swap32(*(uint32_t *)&dat[i+0]);
-			if (dat[i-3] == 2) { /* index */
-				if (idx_i == MAX_INDEX)
-				goto fail;
-				idxs[idx_i++] = pos;
+	index_count = 0;
+	for ( pass = 1 ; pass <= 2 ; pass++ )
+	{
+		idx_i = 0;
+		stream_pos = 0;
+		for (i = 0; i < datsz; )
+		{
+			if ( ( pass == 2 ) && ( idx_i < index_count )
+			  && ( stream_pos >= indexes_array[ idx_i ].stream_pos ) )
+			{
+//fprintf ( stderr , "kfs_decode_index pass 2 idx_i=%d file_pos=%d 0x%x stream_pos %d 0x%x\n" , idx_i , i , i , indexes_array[ idx_i ].stream_pos , indexes_array[ idx_i ].stream_pos );
+				indexes_array[ idx_i ].file_pos = i;	/* store 'i' as current pos in file */
+				idx_i++;
 			}
-			i += sz;
-			break;
+
+			switch (dat[i]) {
+			case 0xd: /* oob */ {
+				uint32_t pos;
+				uint16_t sz = le_swap16(*(uint16_t *)&dat[i+2]);
+
+				i += 4;
+				pos = le_swap32(*(uint32_t *)&dat[i+0]);
+				if ( (dat[i-3] == 2) && ( pass == 1 ) )	/* index : store pos as stream_pos */
+				{
+					if (idx_i == MAX_INDEX)
+						goto fail;
+//fprintf ( stderr , "kfs_decode_index pass 1 idx_i=%d  i=%d 0x%x pos=%d 0x%x\n" , idx_i , i , i , pos, pos );
+					indexes_array[idx_i].stream_pos = pos;
+					idx_i++;
+				}
+				i += sz;
+				break;
+			}
+			case 0xa: /* nop3 */
+			case 0xc: /* value16 */
+				i +=3; stream_pos +=3;
+				break;
+			case 0x00: case 0x01: case 0x02: case 0x03:
+			case 0x04: case 0x05: case 0x06: case 0x07:
+			case 0x9: /* nop2 */
+				i +=2; stream_pos +=2;
+				break;
+			case 0x8: /* nop1 */
+			case 0xb: /* overflow16 */
+			default: /* 1-byte sample */
+				i++; stream_pos++;
+				break;
+			}
 		}
-		case 0xa: /* nop3 */
-		case 0xc: /* value16 */
-			i++;
-			/* fall through */
-		case 0x00: case 0x01: case 0x02: case 0x03:
-		case 0x04: case 0x05: case 0x06: case 0x07:
-		case 0x9: /* nop2 */
-			i++;
-			/* fall through */
-		case 0x8: /* nop1 */
-		case 0xb: /* overflow16 */
-		default: /* 1-byte sample */
-			i++;
-			break;
+
+		if ( pass == 1 )
+		{
+			if ( idx_i <= 1 )			/* no index or only one : abort */
+				goto fail;
+			else
+				index_count = idx_i;
 		}
 	}
 
-	idxs[idx_i] = ~0u;
-	return idxs;
+//fprintf ( stderr , "kfs_decode_index index_count=%d\n" , index_count );
+	*p_index_count = index_count;
+	return indexes_array;
 
 fail:
-	free(idxs);
+	free(indexes_array);
+	*p_index_count = 0;
 	return NULL;
 }
 
@@ -466,9 +513,9 @@ fprintf ( stderr , "kfs_select_track 1 tr=%d\n" , tracknr );
 
 fprintf ( stderr , "kfs_select_track 2\n" );
 
-	if ( kfss->idxs )
-		free(kfss->idxs);
-	kfss->idxs = NULL;
+	if ( kfss->indexes_array )
+		free(kfss->indexes_array);
+	kfss->indexes_array = NULL;
 
 
 	kfss->dat = KFS_State.TracksImage[ kfss->Drive ][ tracknr >> 1 ][ tracknr & 1 ].TrackData;
@@ -479,8 +526,8 @@ fprintf ( stderr , "kfs_select_track 2\n" );
 
 	kfss->track = tracknr;
 
-	kfss->idxs = kfs_decode_index(kfss->dat, kfss->datsz);
-	if (kfss->idxs == NULL) {
+	kfss->indexes_array = kfs_decode_index ( kfss->dat, kfss->datsz, &(kfss->index_count) );
+	if (kfss->indexes_array == NULL) {
 		kfss->dat = NULL;
 		return -1;
 	}
@@ -496,8 +543,14 @@ static void kfs_reset(struct mfm_stream *s)
 {
 	struct kfs_stream *kfss = s->type.flux_struct_param;
 
-	kfss->dat_idx = kfss->stream_idx = 0;
 	kfss->idx_i = 0;
+	kfss->dat_idx = 0;
+	kfss->stream_idx = 0;
+	if ( kfss->indexes_array )			/* indexes already decoded ? */
+	{
+		kfss->dat_idx = kfss->indexes_array [ kfss->idx_i ].file_pos;
+		kfss->stream_idx = kfss->indexes_array [ kfss->idx_i ].stream_pos;
+	}
 }
 
 static int kfs_next_flux(struct mfm_stream *s)
@@ -508,9 +561,16 @@ static int kfs_next_flux(struct mfm_stream *s)
 	uint32_t val = 0;
 	bool done = 0;
 
-	if (kfss->stream_idx >= kfss->idxs[kfss->idx_i]) {
-		kfss->idx_i++;
+
+	if (kfss->stream_idx >= kfss->indexes_array[kfss->idx_i+1].stream_pos) {
 		s->ns_to_index = s->flux;
+		kfss->idx_i++;
+		if ( kfss->idx_i >= kfss->index_count-1 )	/* last index ? */
+		{
+			kfss->idx_i = 0;			/* continue at 1st index */
+			i = kfss->dat_idx = kfss->indexes_array [ kfss->idx_i ].file_pos;
+			kfss->stream_idx = kfss->indexes_array [ kfss->idx_i ].stream_pos;
+		}
 	}
 
 	while (!done && (i < kfss->datsz)) {
@@ -540,10 +600,8 @@ static int kfs_next_flux(struct mfm_stream *s)
 			goto two_byte_sample;
 		case 0xd: /* oob */ {
 			uint32_t pos;
-//			uint16_t sz = le16toh(*(uint16_t *)&dat[i+2]);
 			uint16_t sz = le_swap16(*(uint16_t *)&dat[i+2]);
 			i += 4;
-//			pos = le32toh(*(uint32_t *)&dat[i+0]);
 			pos = le_swap32(*(uint32_t *)&dat[i+0]);
 			switch (dat[i-3]) {
 			case 0x1: /* stream read */

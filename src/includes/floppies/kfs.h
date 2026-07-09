@@ -30,6 +30,13 @@ extern uint32_t	FDC_GetCyclesPerRev_FdcCycles_KFS ( uint8_t Drive , uint8_t Trac
  * based on code by Keir Fraser https://github.com/keirf/Disk-Utilities
  */
 
+typedef struct
+{
+	unsigned int file_pos;
+	unsigned int stream_pos;
+} kfs_index;
+
+
 struct kfs_stream {
 	int Drive;		/* Drive number 0 or 1 used for this stream */
 
@@ -41,7 +48,9 @@ struct kfs_stream {
 	unsigned int datsz;
 
 	/* Index positions in the raw stream. */
-	unsigned int *idxs;
+	kfs_index *indexes_array;
+	unsigned int index_count;
+
 	unsigned int idx_i;
 
 	unsigned int dat_idx;    /* current index into dat[] */
