@@ -533,8 +533,7 @@ fprintf ( stderr , "kfs_select_track 2\n" );
 	}
 
 	s->max_revolutions = ~0u;
-	//    s->RevolutionsNbr = SCP_State.ImageStruct[ scss->Drive ]->RevolutionsNbr;	// TODO
-	s->RevolutionsNbr = ~0u;
+	s->RevolutionsNbr = kfss->index_count-1;
 	return 0;
 }
 
