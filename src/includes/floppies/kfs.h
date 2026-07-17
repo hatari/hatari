@@ -38,7 +38,7 @@ typedef struct
 
 
 struct kfs_stream {
-	int Drive;		/* Drive number 0 or 1 used for this stream */
+	int Drive;			/* Drive number 0 or 1 used for this stream */
 
 	/* Current track number. */
 	unsigned int track;
@@ -49,12 +49,13 @@ struct kfs_stream {
 
 	/* Index positions in the raw stream. */
 	kfs_index *indexes_array;
-	unsigned int index_count;
+	int index_count;
 
-	unsigned int idx_i;
+	int idx_i;
 
-	unsigned int dat_idx;    /* current index into dat[] */
-	unsigned int stream_idx; /* current index into non-OOB data in dat[] */
+	unsigned int dat_idx;   	/* current index into dat[] */
+	unsigned int stream_idx;	/* current index into non-OOB data in dat[] */
+	unsigned int stream_next_index;	/* next index position */
 };
 
 /*

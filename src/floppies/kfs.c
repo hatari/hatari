@@ -41,7 +41,7 @@ static KFS_STRUCT		KFS_State;
 static bool	KFS_Insert_Internal ( int Drive , bool KeepState );
 static char	*KFS_FilenameFindTrackSide (char *FileName);
 
-static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, unsigned int *p_index_count);
+static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, int *p_index_count);
 
 static int	kfs_select_track(struct mfm_stream *s, unsigned int tracknr);
 static void	kfs_reset(struct mfm_stream *s);
@@ -423,7 +423,7 @@ bool	KFS_Eject ( int Drive )
  *    not go beyond as there will be no whole track.
  */
 
-static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, unsigned int *p_index_count)
+static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, int *p_index_count)
 {
 	unsigned int i, idx_i , stream_pos;
 	kfs_index *indexes_array = malloc((MAX_INDEX+1) * sizeof(kfs_index));
@@ -542,15 +542,21 @@ static void kfs_reset(struct mfm_stream *s)
 {
 	struct kfs_stream *kfss = s->type.flux_struct_param;
 
-	kfss->idx_i = 0;
+	/* special case for the 1st call of kfs_next_flux : we set idx_i=-1/
+	 * and stream_next_index = stream_pos to trigger an index signal
+	 * at the start of the 1st revolution
+	 */
+	kfss->idx_i = -1;
 	kfss->dat_idx = 0;
 	kfss->stream_idx = 0;
 	if ( kfss->indexes_array )			/* indexes already decoded ? */
 	{
-		kfss->dat_idx = kfss->indexes_array [ kfss->idx_i ].file_pos;
-		kfss->stream_idx = kfss->indexes_array [ kfss->idx_i ].stream_pos;
+		kfss->dat_idx = kfss->indexes_array [ 0 ].file_pos;
+		kfss->stream_idx = kfss->indexes_array [ 0 ].stream_pos;
+		kfss->stream_next_index = kfss->indexes_array [ 0 ].stream_pos;
 	}
 }
+
 
 static int kfs_next_flux(struct mfm_stream *s)
 {
@@ -561,18 +567,23 @@ static int kfs_next_flux(struct mfm_stream *s)
 	bool done = 0;
 
 
-	if (kfss->stream_idx >= kfss->indexes_array[kfss->idx_i+1].stream_pos) {
-		s->ns_to_index = s->flux;
-		kfss->idx_i++;
-		if ( kfss->idx_i >= kfss->index_count-1 )	/* last index ? */
+	while (!done && (i < kfss->datsz))
+	{
+		/* did we reach an index ? */
+		if ( kfss->stream_idx >= kfss->stream_next_index )
 		{
-			kfss->idx_i = 0;			/* continue at 1st index */
-			i = kfss->dat_idx = kfss->indexes_array [ kfss->idx_i ].file_pos;
-			kfss->stream_idx = kfss->indexes_array [ kfss->idx_i ].stream_pos;
-		}
-	}
+			s->ns_to_index = s->flux;
+			kfss->idx_i++;
+			if ( kfss->idx_i >= kfss->index_count-1 )	/* last index ? */
+			{
+				kfss->idx_i = 0;			/* continue at 1st index */
+				i = kfss->indexes_array [ 0 ].file_pos;
+				kfss->stream_idx = kfss->indexes_array [ 0 ].stream_pos;
+			}
 
-	while (!done && (i < kfss->datsz)) {
+			kfss->stream_next_index = kfss->indexes_array [ kfss->idx_i+1 ].stream_pos;
+		}
+
 		switch (dat[i]) {
 		case 0x00: case 0x01: case 0x02: case 0x03:
 		case 0x04: case 0x05: case 0x06: case 0x07:
