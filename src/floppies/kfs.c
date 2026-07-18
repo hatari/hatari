@@ -423,6 +423,9 @@ bool	KFS_Eject ( int Drive )
  *  - the last index will be nearly at the end of the track file, there will be no more data after that
  *    (only a few flux transitions). This index marks the end of the previous revolution, we should
  *    not go beyond as there will be no whole track.
+ *
+ * TODO : we don't correctly compute the index position in case it happens during a long
+ * region without flux transition at the end of a revolution
  */
 
 static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, int *p_index_count)
@@ -444,7 +447,7 @@ static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, int *
 			if ( ( pass == 2 ) && ( idx_i < index_count )
 			  && ( stream_pos >= indexes_array[ idx_i ].stream_pos ) )
 			{
-//fprintf ( stderr , "kfs_decode_index pass 2 idx_i=%d file_pos=%d 0x%x stream_pos %d 0x%x\n" , idx_i , i , i , indexes_array[ idx_i ].stream_pos , indexes_array[ idx_i ].stream_pos );
+//fprintf ( stderr , "kfs_decode_index pass 2 idx_i=%d file_pos=%d 0x%x stream_pos %d 0x%x sample_cnt=0x%x index_cnt=0x%x\n" , idx_i , i , i , indexes_array[ idx_i ].stream_pos , indexes_array[ idx_i ].stream_pos , indexes_array[ idx_i ].sample_counter , indexes_array[ idx_i ].index_counter );
 				indexes_array[ idx_i ].file_pos = i;	/* store 'i' as current pos in file */
 				idx_i++;
 			}
@@ -462,6 +465,8 @@ static kfs_index *kfs_decode_index(unsigned char *dat, unsigned int datsz, int *
 						goto fail;
 //fprintf ( stderr , "kfs_decode_index pass 1 idx_i=%d  i=%d 0x%x pos=%d 0x%x\n" , idx_i , i , i , pos, pos );
 					indexes_array[idx_i].stream_pos = pos;
+					indexes_array[idx_i].sample_counter = le_swap32(*(uint32_t *)&dat[i+4]);
+					indexes_array[idx_i].index_counter = le_swap32(*(uint32_t *)&dat[i+8]);
 					idx_i++;
 				}
 				i += sz;

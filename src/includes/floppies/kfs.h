@@ -34,6 +34,8 @@ typedef struct
 {
 	unsigned int file_pos;
 	unsigned int stream_pos;
+	unsigned int sample_counter;
+	unsigned int index_counter;
 } kfs_index;
 
 
