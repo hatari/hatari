@@ -398,10 +398,12 @@ bool	KFS_Eject ( int Drive )
 
 #define MAX_INDEX 128
 
-#define MCK_FREQ (((18432000 * 73) / 14) / 2)
-#define SCK_FREQ (MCK_FREQ / 2)
-#define ICK_FREQ (MCK_FREQ / 16)
-#define SCK_PS_PER_TICK (1000000000/(SCK_FREQ/1000))
+
+/* Clock values used by the KryoFlux board */
+#define MCK_FREQ (((18432000 * 73) / 14) / 2)			// 48054857.14285
+#define SCK_FREQ (MCK_FREQ / 2)					// 24027428.5714
+#define ICK_FREQ (MCK_FREQ / 16)				// 3003428.5714
+#define SCK_PS_PER_TICK (1000000000/(SCK_FREQ/1000))		// 41619
 
 
 /*
@@ -642,7 +644,7 @@ static int kfs_next_flux(struct mfm_stream *s)
 	if (!done)
 		return -1;
 
-	val = (val * (uint32_t)SCK_PS_PER_TICK) / 1000u;
+	val = (val * (uint64_t)SCK_PS_PER_TICK) / 1000u;
 //    val = (val * s->drive_rpm) / s->data_rpm;
 	s->flux += val;
 	return val;
