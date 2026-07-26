@@ -513,12 +513,12 @@ static int kfs_select_track(struct mfm_stream *s, unsigned int tracknr)
 {
 	struct kfs_stream *kfss = s->type.flux_struct_param;
 
-fprintf ( stderr , "kfs_select_track 1 tr=%d\n" , tracknr );
+//fprintf ( stderr , "kfs_select_track 1 tr=%d\n" , tracknr );
 
 	if (kfss->dat && (kfss->track == tracknr))
 		return 0;
 
-fprintf ( stderr , "kfs_select_track 2\n" );
+//fprintf ( stderr , "kfs_select_track 2\n" );
 
 	if ( kfss->indexes_array )
 		free(kfss->indexes_array);
@@ -573,6 +573,7 @@ static int kfs_next_flux(struct mfm_stream *s)
 	uint32_t val = 0;
 	bool done = 0;
 
+//fprintf ( stderr , "kfs_next_flux i=%d stream_idx=%d stream_next_index=%d idx_i=%d\n", i, kfss->stream_idx, kfss->stream_next_index, kfss->idx_i);
 
 	while (!done && (i < kfss->datsz))
 	{
@@ -589,6 +590,7 @@ static int kfs_next_flux(struct mfm_stream *s)
 			}
 
 			kfss->stream_next_index = kfss->indexes_array [ kfss->idx_i+1 ].stream_pos;
+//fprintf ( stderr , "kfs_next_flux new index i=%d stream_idx=%d idx_i=%d\n", i, kfss->stream_idx, kfss->idx_i);
 		}
 
 		switch (dat[i]) {
@@ -649,9 +651,11 @@ static int kfs_next_flux(struct mfm_stream *s)
 	if (!done)
 		return -1;
 
+//fprintf ( stderr , "kfs_next_flux i=%d val=%d %d\n" , i , val , SCK_PS_PER_TICK );
 	val = (val * (uint64_t)SCK_PS_PER_TICK) / 1000u;
 //    val = (val * s->drive_rpm) / s->data_rpm;
 	s->flux += val;
+//fprintf ( stderr , "kfs_next_flux i=%d flux=%d val=%d\n" , i , s->flux , val );
 	return val;
 }
 
