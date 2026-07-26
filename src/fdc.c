@@ -6904,7 +6904,7 @@ static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track 
 		StatusMask = FDC_AM_DET_STATUS_DR_READY;
 		Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &FdcCycles , true );
 
-		if ( Res != FDCEMU_RETURN_OK )
+		if ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA )
 			return FDC_STR_BIT_RNF;
 
 		/* If an Index pulse is received then we exit */
