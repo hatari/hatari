@@ -878,6 +878,7 @@ static int	FDC_MFM_Process_Bit ( struct mfm_stream *s , bool Skip_Bit );
 static int	FDC_MFM_Process_MultiBits ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns );
 static int	FDC_MFM_Process_MultiBits_Index ( struct mfm_stream *s , uint16_t AM_Detector_Status_Mask , uint64_t *pTime_ns ,  int *pFdcCycles , bool ReturnOnIndex );
 static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track , uint8_t Side , int *pFdcCycles );
+static int	FDC_Skip_FdcCycles_MFM ( struct mfm_stream *s , uint32_t FdcCycles );
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles );
 static uint8_t	FDC_NextSectorID_TR_MFM ( void );
 static uint8_t	FDC_NextSectorID_SR_MFM ( void );
@@ -2413,7 +2414,8 @@ static void FDC_SetCommand ( int Command , int CommandState )
 //fprintf ( stderr , "set cmd since=%ld\n" , CpuCyclesSinceComplete );
 
 			s = &(MFM_STREAMS[ FDC.DriveSelSignal ]);
-			mfm_stream_skip ( s , CpuCyclesSinceComplete );
+			FDC_Skip_FdcCycles_MFM ( s , CpuCyclesSinceComplete );
+//fprintf ( stderr , "set cmd since=%ld done\n" , CpuCyclesSinceComplete );
 		}
 	}
 
@@ -2583,7 +2585,7 @@ static int FDC_UpdateMotorStop ( void )
 	 case FDCEMU_RUN_MOTOR_STOP_WAIT:
 		if ( FDC.IndexPulse_Counter < FDC_DELAY_IP_MOTOR_OFF )
 		{
-//fprintf( stderr , "motor stop %d\n" , FDC.IndexPulse_Counter );
+//fprintf( stderr , "motor stop %d %lu\n" , FDC.IndexPulse_Counter , CyclesGlobalClockCounter );
 			FdcCycles = FDC_DELAY_CYCLE_REFRESH_INDEX_PULSE;	/* Wait for the correct number of IP */
 			break;
 		}
@@ -5761,6 +5763,13 @@ int mfm_stream_next_bytes(struct mfm_stream *s, void *p, unsigned int bytes)
 
 
 
+/*
+ * Skip as many flux as needed to reach a total of FdcCycles
+ * NOTE : this doesn't update the index counter which can gives problem
+ * later when calling FDC_MFM_Process_MultiBits.
+ * For now, use FDC_Skip_FdcCycles_MFM() instead
+ */
+
 int mfm_stream_skip ( struct mfm_stream *s , uint32_t FdcCycles )
 {
 	uint64_t	Time_ns;
@@ -6482,7 +6491,6 @@ static void	FDC_AM_Detector_Reset ( void )
 
 
 
-
 #define	FDC_AM_DET_STATUS_SYNC_A1	(1<<0)
 #define	FDC_AM_DET_STATUS_SYNC_C2	(1<<1)
 #define	FDC_AM_DET_STATUS_SYNC_A1_X3	(1<<2)
@@ -6492,7 +6500,6 @@ static void	FDC_AM_Detector_Reset ( void )
 #define	FDC_AM_DET_MODE_OFF		0		/* AM Det is OFF */
 #define	FDC_AM_DET_MODE_ALWAYS_ON	1		/* AM Det is always ON (eg "read track") */
 #define	FDC_AM_DET_MODE_AUTO_OFF	2		/* AM Det is ON and goes OFF when AM is found */
-
 
 
 /*
@@ -6916,6 +6923,37 @@ static uint8_t	FDC_NextIndexPulse_FdcCycles_MFM ( uint8_t Drive , uint8_t Track 
 	return 0;
 }
 
+
+
+static int	FDC_Skip_FdcCycles_MFM ( struct mfm_stream *s , uint32_t FdcCycles )
+{
+	uint64_t	Time_ns;
+	uint16_t	StatusMask;
+	int		Res;
+	int		cycles;
+
+//fprintf (stderr , "fdc skip mfm %d\n" , FdcCycles);
+
+	FDC.AM_Detector_Mode = FDC_AM_DET_MODE_ALWAYS_ON;
+
+	Time_ns = 0;
+
+	while ( FdcCycles < FDC_NsToFdcCycles ( Time_ns ) )
+	{
+		StatusMask = FDC_AM_DET_STATUS_DR_READY;
+		Res = FDC_MFM_Process_MultiBits_Index ( s , StatusMask , &Time_ns , &cycles , true );
+
+		if ( Res == FDCEMU_RETURN_NO_MORE_MFM_DATA )
+			return FDC_STR_BIT_RNF;
+
+		/* If an Index pulse is received then we exit */
+		if ( FDC.AM_Detector_Status & FDC_AM_DET_STATUS_INDEX_PULSE )
+			break;
+	}
+
+//fprintf (stderr , "fdc skip mfm done %d\n" , FdcCycles);
+	return 0;
+}
 
 
 static int	FDC_NextSectorID_FdcCycles_MFM ( uint8_t Drive , uint8_t NumberOfHeads , uint8_t Track , uint8_t Side , int *pFdcCycles )
