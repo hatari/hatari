@@ -243,6 +243,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 	uint8_t	*p;
 	long	Size;
 	bool	KeepState;
+	bool	Error;
 
 
 	/* Ensure the previous tracks are removed from memory */
@@ -276,10 +277,29 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 
 			if ( p )
 			{
-				/* Basic check : raw track has "KryoFlux" string in the 1st 200 bytes in OOB "info" */
+				Error = false;
+				if ( ( p[0] != 0x0d ) || ( p[1] != 0x04 ) )	/* KFInfo OOB 0x0d04*/
+				{
+					Log_Printf ( LOG_ERROR , "KFS : no KFInfo OOB at start of raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+					Error = true;
+				}
+
+				/* Basic check : raw track has "ick=" and "sck=" string in the 1st 200 bytes in OOB "KFInfo" */
+				if ( ( Str_FindInMem ( "ick=" , p , 200 ) == NULL )
+				  || ( Str_FindInMem ( "sck=" , p , 200 ) == NULL ) )
+				{
+					Log_Printf ( LOG_ERROR , "KFS : no Kryoflux ick/sck infos in raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+					Error = true;
+				}
+
+				/* Basic check : raw track has "KryoFlux" string in the 1st 200 bytes in OOB "KFInfo" */
 				if ( Str_FindInMem ( "KryoFlux" , p , 200 ) == NULL )
 				{
-					Log_Printf ( LOG_ERROR , "KFS : no Kryoflux signature in raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+				Log_Printf ( LOG_WARN , "KFS : no Kryoflux signature in raw stream, different board/software was used ? drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+				}
+
+				if ( Error )
+				{
 					free(p);
 					continue;			/* ignore this raw file */
 				}
