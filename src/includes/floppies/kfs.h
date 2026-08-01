@@ -15,7 +15,7 @@ extern bool	KFS_FileNameIsKFS ( const char *pszFileName, bool bAllowGZ );
 extern uint8_t	*KFS_ReadDisk ( int Drive, const char *pszFileName, long *pImageSize, int *pImageType );
 extern bool	KFS_WriteDisk ( int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize );
 
-extern bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , long ImageSize );
+extern bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchive , uint8_t *pImageBuffer , long ImageSize );
 extern bool	KFS_Eject ( int Drive );
 
 extern int	FDC_GetBytesPerTrack_KFS ( uint8_t Drive , uint8_t Track , uint8_t Side );

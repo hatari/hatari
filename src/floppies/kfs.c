@@ -26,6 +26,7 @@ const char floppy_kfs_fileid[] = "Hatari floppy_kfs.c";
 #include "cycles.h"
 #include "utils.h"
 #include "str.h"
+#include "file_archive.h"
 
 
 
@@ -233,7 +234,7 @@ static char *KFS_FilenameFindTrackSide (char *FileName)
  * We use the filename of the raw file in drive 'Drive' as a template
  * where we replace track and side with all the possible values.
  */
-bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , long ImageSize )
+bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchive , uint8_t *pImageBuffer , long ImageSize )
 {
 	int	Track , Side;
 	char	TrackFileName[ FILENAME_MAX ];
@@ -243,16 +244,22 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 	uint8_t	*p;
 	long	Size;
 	bool	KeepState;
-	bool	Error;
+	int	ImageType_temp;
 
+	Log_Printf(LOG_INFO, "KFS_Insert filename=<%s> path_in_archive=<%s>\n" , FilenameKFS , PathInArchive );
 
 	/* Ensure the previous tracks are removed from memory */
 	KFS_Eject ( Drive );
 
-
 	/* Get the path+filename of the raw file that was inserted in 'Drive' */
 	/* then parse it to find the part with track/side */
-	strcpy ( TrackFileName , ConfigureParams.DiskImage.szDiskFileName[Drive] );
+	/* The raw file can be loaded directly using 'FilenameKFS' or loaded through */
+	/* the archive file 'FilenameKFS' using 'PathInArchive' */
+	if ( PathInArchive == NULL )
+		Str_Copy ( TrackFileName , FilenameKFS , FILENAME_MAX );
+	else
+		Str_Copy ( TrackFileName , PathInArchive , FILENAME_MAX );
+
 
 	TrackSide_pointer = KFS_FilenameFindTrackSide ( TrackFileName );
 	if ( TrackSide_pointer == NULL )
@@ -273,15 +280,19 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 			memcpy ( TrackSide_pointer , TrackSide_buf , 4 );
 			Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
 
-			p = File_Read ( TrackFileName , &Size , NULL);
+			/* Load track directly or using an archive ? */
+			if ( PathInArchive == NULL )
+				p = File_Read ( TrackFileName , &Size , NULL );
+			else
+				p = Archive_ReadDisk ( Drive , FilenameKFS , TrackFileName , &Size , &ImageType_temp );
 
 			if ( p )
 			{
-				Error = false;
 				if ( ( p[0] != 0x0d ) || ( p[1] != 0x04 ) )	/* KFInfo OOB 0x0d04*/
 				{
 					Log_Printf ( LOG_ERROR , "KFS : no KFInfo OOB at start of raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-					Error = true;
+					free(p);
+					continue;			/* ignore this raw file */
 				}
 
 				/* Basic check : raw track has "ick=" and "sck=" string in the 1st 200 bytes in OOB "KFInfo" */
@@ -289,19 +300,14 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , uint8_t *pImageBuffer , 
 				  || ( Str_FindInMem ( "sck=" , p , 200 ) == NULL ) )
 				{
 					Log_Printf ( LOG_ERROR , "KFS : no Kryoflux ick/sck infos in raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-					Error = true;
+					free(p);
+					continue;			/* ignore this raw file */
 				}
 
 				/* Basic check : raw track has "KryoFlux" string in the 1st 200 bytes in OOB "KFInfo" */
 				if ( Str_FindInMem ( "KryoFlux" , p , 200 ) == NULL )
 				{
-				Log_Printf ( LOG_WARN , "KFS : no Kryoflux signature in raw stream, different board/software was used ? drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-				}
-
-				if ( Error )
-				{
-					free(p);
-					continue;			/* ignore this raw file */
+					Log_Printf ( LOG_WARN , "KFS : no Kryoflux signature in raw stream, different board/software was used ? drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
 				}
 
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackData = p;
