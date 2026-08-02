@@ -39,6 +39,7 @@ static KFS_STRUCT		KFS_State;
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
+static bool	KFS_CheckTrack ( const char *FileName , uint8_t *p , long Size );
 static bool	KFS_Insert_Internal ( int Drive , bool KeepState );
 static char	*KFS_FilenameFindTrackSide (char *FileName);
 
@@ -154,6 +155,62 @@ bool KFS_FileNameIsKFS ( const char *pszFileName, bool bAllowGZ )
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if a .raw track file is a valid KFS track
+ * There's no specific header in the file to check this, so we use some simple
+ * heuristics to check for some OOB elements in the file :
+ *  - 0D 01 08 at the start (stream info)
+ *  - 0D 03 08 near the end (stream end)
+ *  - 0D 0D at the end (EOF block)
+ */
+
+static bool KFS_CheckTrack ( const char *FileName , uint8_t *p , long Size )
+{
+	bool	found;
+	int	i;
+
+	if ( Size < 1000 )
+	{
+		Log_Printf ( LOG_ERROR , "KFS : %s, file is too short\n" , FileName );
+		return false;
+	}
+
+	/* Check 0D 01 08 in the 300 first bytes (stream info) */
+	found = false;
+	for ( i=0 ; i<300 ; i++ )
+		if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x01 ) && ( p[i+2] == 0x08 ) )
+			found = true;
+	if ( !found )
+	{
+		Log_Printf ( LOG_ERROR , "KFS : %s, no stream info OD O1 O8 at start\n" , FileName );
+		return false;
+	}
+
+	/* Check 0D 03 08 in the 50 last bytes (stream end) */
+	found = false;
+	for ( i=Size-50 ; i<Size-3 ; i++ )
+		if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x03 ) && ( p[i+2] == 0x08 ) )
+			found = true;
+	if ( !found )
+	{
+		Log_Printf ( LOG_ERROR , "KFS : %s, no stream end OD O3 O8\n" , FileName );
+		return false;
+	}
+
+	/* Check 0D 0D at the end (EOF block) */
+	if ( ( p[Size-2] != 0x0d ) || ( p[Size-1] != 0x0d ) )
+	{
+		Log_Printf ( LOG_ERROR , "KFS : %s, no EOF block at the end\n" , FileName );
+		return false;
+	}
+
+	return true;
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Load KFS .RAW file into memory, set number of bytes loaded and return a pointer
@@ -242,6 +299,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchiv
 	char	TrackSide_buf[ 4 + 1 ];			/* "tt.s" + \0 */
 	int	TrackCount_0 , TrackCount_1;
 	uint8_t	*p;
+	uint8_t	*p2;
 	long	Size;
 	bool	KeepState;
 	int	ImageType_temp;
@@ -278,7 +336,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchiv
 		{
 			sprintf ( TrackSide_buf , "%02d.%d" , Track , Side );
 			memcpy ( TrackSide_pointer , TrackSide_buf , 4 );
-			Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
+			Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d track=%d side=%d trackfile=%s\n" , Drive , Track , Side , TrackFileName );
 
 			/* Load track directly or using an archive ? */
 			if ( PathInArchive == NULL )
@@ -288,27 +346,20 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchiv
 
 			if ( p )
 			{
-				if ( ( p[0] != 0x0d ) || ( p[1] != 0x04 ) )	/* KFInfo OOB 0x0d04*/
+				/* Is this a valid KFS track dump ? */
+				if ( ! KFS_CheckTrack ( TrackFileName , p , Size ) )
 				{
-					Log_Printf ( LOG_ERROR , "KFS : no KFInfo OOB at start of raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
 					free(p);
 					continue;			/* ignore this raw file */
 				}
 
-				/* Basic check : raw track has "ick=" and "sck=" string in the 1st 200 bytes in OOB "KFInfo" */
-				if ( ( Str_FindInMem ( "ick=" , p , 200 ) == NULL )
-				  || ( Str_FindInMem ( "sck=" , p , 200 ) == NULL ) )
-				{
-					Log_Printf ( LOG_ERROR , "KFS : no Kryoflux ick/sck infos in raw stream drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-					free(p);
-					continue;			/* ignore this raw file */
-				}
+				/* Print the "name=" part if it was not made with KryoFlux */
+				p2 = Str_FindInMem ( "name=" , p , 200 );
+				if ( p2 == NULL )
+					Log_Printf ( LOG_WARN , "KFS : no software name in raw stream header, old KryopFlux format ? drive=%d track=%d side=%d trackfile=%s\n" , Drive , Track , Side , TrackFileName );
 
-				/* Basic check : raw track has "KryoFlux" string in the 1st 200 bytes in OOB "KFInfo" */
-				if ( Str_FindInMem ( "KryoFlux" , p , 200 ) == NULL )
-				{
-					Log_Printf ( LOG_WARN , "KFS : no Kryoflux signature in raw stream, different board/software was used ? drive=%d track=%d side=%d %s\n" , Drive , Track , Side , TrackFileName );
-				}
+				else if ( strncasecmp ( "KryoFlux" , (char *) p2+strlen("name=") , strlen("KryoFlux") ) != 0 )
+					Log_Printf ( LOG_WARN , "KFS : no Kryoflux signature in raw stream, found <%s> drive=%d track=%d side=%d trackfile=%s\n" , p2 , Drive , Track , Side , TrackFileName );
 
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackData = p;
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackSize = Size;
@@ -317,7 +368,7 @@ bool	KFS_Insert ( int Drive , const char *FilenameKFS , const char *PathInArchiv
 			}
 			else
 			{
-				Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d track=%d side=%d %s -> not found\n" , Drive , Track , Side , TrackFileName );
+				Log_Printf ( LOG_INFO , "KFS : insert raw stream drive=%d track=%d side=%d trackfile=%s -> not found\n" , Drive , Track , Side , TrackFileName );
 				/* File not loaded : either this track really doesn't exist or there was a system error */
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackData = NULL;
 				KFS_State.TracksImage[ Drive ][ Track ][Side].TrackSize = 0;
