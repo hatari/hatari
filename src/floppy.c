@@ -1052,3 +1052,20 @@ bool	Floppy_ImageIsSTX ( int ImageType )
 
 	return false;
 }
+
+
+/*
+ * Same for formats where only sectors' content is stored (ST, MSA, DIM)
+ */
+bool	Floppy_ImageIsST_MSA ( int ImageType )
+{
+	if ( ( ImageType == FLOPPY_IMAGE_TYPE_ST )
+	  || ( ImageType == FLOPPY_IMAGE_TYPE_MSA )
+	  || ( ImageType == FLOPPY_IMAGE_TYPE_DIM ) )
+		return true;
+
+	return false;
+}
+
+
+
