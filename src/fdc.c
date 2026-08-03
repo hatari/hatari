@@ -2541,7 +2541,9 @@ static bool FDC_VerifyTrack ( void )
 	}
 
 	/* If disk image has only one side or drive is single sided and we're trying to verify on 2nd side, then return false */
+	/* (only for ST/MSA, other image types handle this themselves) */
 	if ( ( FDC.SideSignal == 1  )
+	  && Floppy_ImageIsST_MSA ( EmulationDrives[ FDC.DriveSelSignal ].ImageType )
 	  && ( ( FDC_GetSidesPerDisk ( FDC.DriveSelSignal , FDC_DRIVES[ FDC.DriveSelSignal ].HeadTrack ) != 2 )
 	    || ( FDC_DRIVES[ FDC.DriveSelSignal ].NumberOfHeads == 1 ) ) )
 	{
