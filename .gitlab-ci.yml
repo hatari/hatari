@@ -102,8 +102,8 @@ build-mingw-32:
                      mingw32-libarchive
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
+    - cd libs
 # TODO
-##    - cd libs
 ##    # Prepare CAPS library
 ##    - MINGW_PREFIX=/usr/x86_64-w64-mingw32/sys-root/mingw
 ##    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh; fi
