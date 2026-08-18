@@ -142,7 +142,7 @@ build-mingw-32:
     - rm -r de fr doxygen
     - cd ../..
     - DLLS=(SDL2.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
-            libstdc++-6.dll 
+            libstdc++-6.dll libgcc_s_dw2-1.dll
             libarchive-13.dll libbz2-1.dll iconv.dll liblzma-5.dll libxml2-2.dll libnettle-8.dll)
     - cp ${DLLS[@]/#/\/usr\/i686-w64-mingw32\/sys-root\/mingw\/bin\//}
          hatari-$VERSION/
