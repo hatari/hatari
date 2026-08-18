@@ -88,6 +88,71 @@ build-mingw:
     paths:
       - ./*.zip
 
+build-mingw-32:
+  image: fedora:41
+  variables:
+    GIT_DEPTH: 1000
+  cache:
+    paths:
+      - libs
+  before_script:
+    - dnf update -y
+    - dnf install -y autoconf cmake git make gawk gcc mingw32-gcc mingw32-gcc-c++
+                     mingw32-libstdc++ mingw32-SDL2 mingw32-zlib mingw32-libpng
+                     mingw32-libarchive
+  script:
+    - if [ ! -d libs ]; then mkdir libs ; fi
+# TODO
+##    - cd libs
+##    # Prepare CAPS library
+##    - MINGW_PREFIX=/usr/x86_64-w64-mingw32/sys-root/mingw
+##    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh; fi
+##    - cp capsimg/CAPSImg/capsimg.dll $MINGW_PREFIX/bin/
+##    - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
+##    - mkdir -p $MINGW_PREFIX/include/caps
+##    - cp capsimg/LibIPF/* capsimg/Core/CommonTypes.h $MINGW_PREFIX/include/caps
+##    # Prepare PortMidi library
+##    - if [ ! -d portmidi ]; then
+##        git clone https://github.com/PortMidi/portmidi.git
+##            --shallow-since=2025-01-01 -c advice.detachedHead=false &&
+##        cd portmidi &&
+##        git checkout 806aa16c7d3c &&
+##        cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/Toolchain-mingw32-win64_64.cmake . &&
+##        make -j$(nproc) &&
+##        cd .. ;
+##      fi
+##    - cp portmidi/libportmidi.dll $MINGW_PREFIX/bin/
+##    - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
+##    - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
+# TODO
+    # Now build Hatari
+    - mkdir ../build
+    - cd ../build
+    - VERSION=$(git describe)
+    - cmake -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake
+            -DENABLE_WERROR:BOOL=1 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo ..
+    - make -j$(nproc)
+    - cd ..
+    # And finally create the package
+    - mkdir hatari-$VERSION
+    - mv build/src/hatari.exe gpl.txt readme.txt hatari-$VERSION/
+    - cp -r doc hatari-$VERSION/
+    - cd hatari-$VERSION/doc
+    - rm CMakeLists.txt hatari.1 hatari-ui.html release-checklist.txt
+    - rm -r de fr doxygen
+    - cd ../..
+    - DLLS=(SDL2.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
+            libstdc++-6.dll 
+            libarchive-13.dll libbz2-1.dll iconv.dll liblzma-5.dll libxml2-2.dll libnettle-8.dll)
+    - cp ${DLLS[@]/#/\/usr\/i686-w64-mingw32\/sys-root\/mingw\/bin\//}
+         hatari-$VERSION/
+#    - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
+#    - cp libs/portmidi/license.txt hatari-$VERSION/portmidi-license.txt
+    - zip -r hatari-$VERSION-win32.zip hatari-$VERSION/
+  artifacts:
+    paths:
+      - ./*.zip
+
 build-fedora:
   image: fedora:41
   variables:
