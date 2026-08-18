@@ -111,20 +111,20 @@ build-mingw-32:
 ##    - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
 ##    - mkdir -p $MINGW_PREFIX/include/caps
 ##    - cp capsimg/LibIPF/* capsimg/Core/CommonTypes.h $MINGW_PREFIX/include/caps
-##    # Prepare PortMidi library
-##    - if [ ! -d portmidi ]; then
-##        git clone https://github.com/PortMidi/portmidi.git
-##            --shallow-since=2025-01-01 -c advice.detachedHead=false &&
-##        cd portmidi &&
-##        git checkout 806aa16c7d3c &&
-##        cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/Toolchain-mingw32-win64_64.cmake . &&
-##        make -j$(nproc) &&
-##        cd .. ;
-##      fi
-##    - cp portmidi/libportmidi.dll $MINGW_PREFIX/bin/
-##    - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
-##    - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
 # TODO
+    # Prepare PortMidi library
+    - if [ ! -d portmidi ]; then
+        git clone https://github.com/PortMidi/portmidi.git
+            --shallow-since=2025-01-01 -c advice.detachedHead=false &&
+        cd portmidi &&
+        git checkout 806aa16c7d3c &&
+        cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/Toolchain-mingw32-win64_32.cmake . &&
+        make -j$(nproc) &&
+        cd .. ;
+      fi
+    - cp portmidi/libportmidi.dll $MINGW_PREFIX/bin/
+    - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
+    - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
     # Now build Hatari
     - mkdir ../build
     - cd ../build
