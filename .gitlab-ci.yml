@@ -103,9 +103,9 @@ build-mingw-32:
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
     - cd libs
+    - MINGW_PREFIX=/usr/x86_64-w64-mingw32/sys-root/mingw
 # TODO
 ##    # Prepare CAPS library
-##    - MINGW_PREFIX=/usr/x86_64-w64-mingw32/sys-root/mingw
 ##    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh; fi
 ##    - cp capsimg/CAPSImg/capsimg.dll $MINGW_PREFIX/bin/
 ##    - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
