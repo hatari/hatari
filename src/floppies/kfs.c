@@ -161,14 +161,19 @@ bool KFS_FileNameIsKFS ( const char *pszFileName, bool bAllowGZ )
  * Check if a .raw track file is a valid KFS track
  * There's no specific header in the file to check this, so we use some simple
  * heuristics to check for some OOB elements in the file :
+ *  - 0D 04 at the start (kfinfo)
  *  - 0D 01 08 at the start (stream info)
+ *  - 0D 02 0C at the start (index info)
  *  - 0D 03 08 near the end (stream end)
  *  - 0D 0D at the end (EOF block)
  */
 
 static bool KFS_CheckTrack ( const char *FileName , uint8_t *p , long Size )
 {
-	bool	found;
+	bool	found_0D04;
+	bool	found_0D0108;
+	bool	found_0D020C;
+	bool	found_0D0308;
 	int	i;
 
 	if ( Size < 1000 )
@@ -177,23 +182,35 @@ static bool KFS_CheckTrack ( const char *FileName , uint8_t *p , long Size )
 		return false;
 	}
 
+	/* Check 0D 04 at the start (kfinfo) */
+	found_0D04 = false;
+	if ( ( p[0] == 0x0D ) && ( p[1] == 0x04 ) )
+		found_0D04 = true;
+
 	/* Check 0D 01 08 in the 300 first bytes (stream info) */
-	found = false;
+	/* or check 0D 02 0C in the 300 first bytes (index info) */
+	found_0D0108 = false;
+	found_0D020C = false;
 	for ( i=0 ; i<300 ; i++ )
-		if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x01 ) && ( p[i+2] == 0x08 ) )
-			found = true;
-	if ( !found )
 	{
-		Log_Printf ( LOG_ERROR , "KFS : %s, no stream info OD O1 O8 at start\n" , FileName );
+		if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x01 ) && ( p[i+2] == 0x08 ) )
+			found_0D0108 = true;
+		else if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x02 ) && ( p[i+2] == 0x0C ) )
+			found_0D020C = true;
+	}
+
+	if ( !found_0D04 && !found_0D0108 && !found_0D020C )
+	{
+		Log_Printf ( LOG_ERROR , "KFS : %s, no info block 0D 04 or 0D 01 08 or 0D 02 0C at start\n" , FileName );
 		return false;
 	}
 
 	/* Check 0D 03 08 in the 50 last bytes (stream end) */
-	found = false;
+	found_0D0308 = false;
 	for ( i=Size-50 ; i<Size-3 ; i++ )
 		if ( ( p[i] == 0x0D ) && ( p[i+1] == 0x03 ) && ( p[i+2] == 0x08 ) )
-			found = true;
-	if ( !found )
+			found_0D0308 = true;
+	if ( !found_0D0308 )
 	{
 		Log_Printf ( LOG_ERROR , "KFS : %s, no stream end OD O3 O8\n" , FileName );
 		return false;
