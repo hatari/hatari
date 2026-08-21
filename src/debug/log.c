@@ -180,7 +180,7 @@ FILE *TraceFile = NULL;
 
 /*
  * GCC-15 / Clang-18, see:
- * https://people.kernel.org/gustavoars/how-to-use-the-new-counted_by-attribute-in-c-and-linux
+ * https://clang.llvm.org/docs/AttributeReference.html#field-attributes
  */
 #if __has_attribute(__counted_by__)
 # define __counted_by(member)  __attribute__((__counted_by__(member)))
@@ -195,11 +195,11 @@ FILE *TraceFile = NULL;
 static struct {
 	/* prev msg fp, in case same msg goes to multiple FILE*s */
 	FILE *fp;
-	__counted_by(buf_size) char *prev;
-	__counted_by(buf_size) char *current;
-	int buf_size;
 	int limit;
 	int count;
+	int buf_size;
+	__counted_by(buf_size) char *current; // buffer: message formatting
+	__counted_by(buf_size) char *prev;    // buffer: previous message
 } MsgState;
 
 static FILE *hLogFile = NULL;
