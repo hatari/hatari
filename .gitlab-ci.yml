@@ -149,13 +149,13 @@ build-mingw-32:
     - rm CMakeLists.txt hatari.1 hatari-ui.html release-checklist.txt
     - rm -r de fr doxygen
     - cd ../..
-    - DLLS=(SDL2.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
+    - DLLS=(SDL2.dll capsimg.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
             libstdc++-6.dll libgcc_s_dw2-1.dll
             libarchive-13.dll libbz2-1.dll iconv.dll liblzma-5.dll libxml2-2.dll libnettle-8.dll)
     - cp ${DLLS[@]/#/\/usr\/$MINGW_TARGET\/sys-root\/mingw\/bin\//}
          hatari-$VERSION/
-#    - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
-#    - cp libs/portmidi/license.txt hatari-$VERSION/portmidi-license.txt
+    - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
+    - cp libs/portmidi/license.txt hatari-$VERSION/portmidi-license.txt
     - zip -r hatari-$VERSION-win32.zip hatari-$VERSION/
   artifacts:
     paths:
