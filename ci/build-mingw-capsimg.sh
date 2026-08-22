@@ -1,8 +1,10 @@
 #!/bin/bash
 
+# $1 = TARGET can be x86_64-w64-mingw32 or i686-w64-mingw32
+
 set -e
 
-TARGET=x86_64-w64-mingw32
+TARGET=$1
 
 git clone https://github.com/FrodeSolheim/capsimg.git --depth=1 -b v5.1.2 \
     -c advice.detachedHead=false

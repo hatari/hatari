@@ -40,13 +40,16 @@ build-mingw:
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
     - cd libs
+    - MINGW_TARGET=x86_64-w64-mingw32
+    - MINGW_PREFIX=/usr/$MINGW_TARGET/sys-root/mingw
+
     # Prepare CAPS library
-    - MINGW_PREFIX=/usr/x86_64-w64-mingw32/sys-root/mingw
-    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh; fi
+    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh $MINGW_TARGET; fi
     - cp capsimg/CAPSImg/capsimg.dll $MINGW_PREFIX/bin/
     - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
     - mkdir -p $MINGW_PREFIX/include/caps
     - cp capsimg/LibIPF/* capsimg/Core/CommonTypes.h $MINGW_PREFIX/include/caps
+
     # Prepare PortMidi library
     - if [ ! -d portmidi ]; then
         git clone https://github.com/PortMidi/portmidi.git
@@ -60,6 +63,7 @@ build-mingw:
     - cp portmidi/libportmidi.dll $MINGW_PREFIX/bin/
     - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
     - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
+
     # Now build Hatari
     - mkdir ../build
     - cd ../build
@@ -68,6 +72,7 @@ build-mingw:
             -DENABLE_WERROR:BOOL=1 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo ..
     - make -j$(nproc)
     - cd ..
+
     # And finally create the package
     - mkdir hatari-$VERSION
     - mv build/src/hatari.exe gpl.txt readme.txt hatari-$VERSION/
@@ -79,7 +84,7 @@ build-mingw:
     - DLLS=(SDL2.dll capsimg.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
             libportmidi.dll libstdc++-6.dll libgcc_s_seh-1.dll
             libarchive-13.dll libbz2-1.dll iconv.dll liblzma-5.dll libxml2-2.dll libnettle-8.dll)
-    - cp ${DLLS[@]/#/\/usr\/x86_64-w64-mingw32\/sys-root\/mingw\/bin\//}
+    - cp ${DLLS[@]/#/\/usr\/$MINGW_TARGET\/sys-root\/mingw\/bin\//}
          hatari-$VERSION/
     - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
     - cp libs/portmidi/license.txt hatari-$VERSION/portmidi-license.txt
@@ -103,15 +108,16 @@ build-mingw-32:
   script:
     - if [ ! -d libs ]; then mkdir libs ; fi
     - cd libs
-    - MINGW_PREFIX=/usr/i686-w64-mingw32/sys-root/mingw
-# TODO
-##    # Prepare CAPS library
-##    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh; fi
-##    - cp capsimg/CAPSImg/capsimg.dll $MINGW_PREFIX/bin/
-##    - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
-##    - mkdir -p $MINGW_PREFIX/include/caps
-##    - cp capsimg/LibIPF/* capsimg/Core/CommonTypes.h $MINGW_PREFIX/include/caps
-# TODO
+    - MINGW_TARGET=i686-w64-mingw32
+    - MINGW_PREFIX=/usr/$MINGW_TARGET/sys-root/mingw
+
+    # Prepare CAPS library
+    - if [ ! -d capsimg ]; then ../ci/build-mingw-capsimg.sh $MINGW_TARGET; fi
+    - cp capsimg/CAPSImg/capsimg.dll $MINGW_PREFIX/bin/
+    - cp capsimg/CAPSImg/capsimg.dll.a $MINGW_PREFIX/lib/
+    - mkdir -p $MINGW_PREFIX/include/caps
+    - cp capsimg/LibIPF/* capsimg/Core/CommonTypes.h $MINGW_PREFIX/include/caps
+
     # Prepare PortMidi library
     - if [ ! -d portmidi ]; then
         git clone https://github.com/PortMidi/portmidi.git
@@ -125,6 +131,7 @@ build-mingw-32:
     - cp portmidi/libportmidi.dll $MINGW_PREFIX/bin/
     - cp portmidi/libportmidi.dll.a $MINGW_PREFIX/lib/
     - cp -v portmidi/pm_common/*.h $MINGW_PREFIX/include/
+
     # Now build Hatari
     - mkdir ../build
     - cd ../build
@@ -133,6 +140,7 @@ build-mingw-32:
             -DENABLE_WERROR:BOOL=1 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo ..
     - make -j$(nproc)
     - cd ..
+
     # And finally create the package
     - mkdir hatari-$VERSION
     - mv build/src/hatari.exe gpl.txt readme.txt hatari-$VERSION/
@@ -144,7 +152,7 @@ build-mingw-32:
     - DLLS=(SDL2.dll zlib1.dll libpng16-16.dll libwinpthread-1.dll
             libstdc++-6.dll libgcc_s_dw2-1.dll
             libarchive-13.dll libbz2-1.dll iconv.dll liblzma-5.dll libxml2-2.dll libnettle-8.dll)
-    - cp ${DLLS[@]/#/\/usr\/i686-w64-mingw32\/sys-root\/mingw\/bin\//}
+    - cp ${DLLS[@]/#/\/usr\/$MINGW_TARGET\/sys-root\/mingw\/bin\//}
          hatari-$VERSION/
 #    - cp libs/capsimg/LICENCE.txt hatari-$VERSION/capsimg-license.txt
 #    - cp libs/portmidi/license.txt hatari-$VERSION/portmidi-license.txt
