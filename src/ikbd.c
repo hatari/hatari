@@ -73,6 +73,7 @@ const char IKBD_fileid[] = "Hatari ikbd.c";
 /*			we lost the F12 key for example)  (fix endless RESET when doing a warm reset	*/
 /*			(alt+r) during the 'Vodka Demo' by 'Equinox', only solution was to kill Hatari)	*/
 /* 2017/10/27	[TS]	Add Audio Sculpture 6301 program checksum and emulation				*/
+/* 2026/08/22	[NP]	Don't update date/time in Clock[] if Clock[1]==0 (ie month==0)			*/
 
 
 #include <inttypes.h>
@@ -1114,6 +1115,9 @@ static uint8_t	IKBD_BCD_Adjust ( uint8_t val )
  *    next year will be 00 (due to the BCD overflow)
  *    (used in the game 'Captain Blood' which sets clock to "99 12 31 00 00 00"
  *    and ends the game when clock reaches "00 01 01 00 00 00")
+ *  - If month value at $83 is set to 0, then the ikbd doesn't increase the clock
+ *    (it's only after TOS set a default start value for date/time that clock
+ *    will start to increase) (FDB6 : ldaa X0083   FDB8 : bne LFDBD)
  */
 void	IKBD_UpdateClockOnVBL ( void )
 {
@@ -1142,6 +1146,9 @@ void	IKBD_UpdateClockOnVBL ( void )
 // 	LOG_TRACE(TRACE_IKBD_CMDS,
 // 		  "IKBD_UpdateClock: %02x %02x %02x %02x %02x %02x -> ", pIKBD->Clock[ 0 ] ,pIKBD->Clock[ 1 ] , pIKBD->Clock[ 2 ] ,
 // 		  pIKBD->Clock[ 3 ] , pIKBD->Clock[ 4 ] , pIKBD->Clock[ 5 ] );
+
+	if ( pIKBD->Clock[1] == 0 )				/* Month=0 ? */
+		return;						/* Clock is not updated until month is != 0 */
 
 	for ( i=5 ; i>=0 ; i-- )
 	{
