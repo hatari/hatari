@@ -30,6 +30,7 @@ build-mingw:
   variables:
     GIT_DEPTH: 1000
   cache:
+    keys: "cache-$CI_JOB_NAME"
     paths:
       - libs
   before_script:
@@ -98,6 +99,7 @@ build-mingw-32:
   variables:
     GIT_DEPTH: 1000
   cache:
+    keys: "cache-$CI_JOB_NAME"
     paths:
       - libs
   before_script:
