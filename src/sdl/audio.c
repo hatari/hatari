@@ -36,6 +36,10 @@ int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled
 
 #if ENABLE_SDL3
 static SDL_AudioStream *audio_stream;
+static const int audio_silence = 0;
+#else
+static SDL_AudioDeviceID audio_device;
+static int audio_silence;
 #endif
 
 
@@ -104,7 +108,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		}
 		/* Clear rest of the buffer to ensure we don't play random bytes instead */
 		/* of missing samples */
-		memset(pBuffer, 0, (len - nGeneratedSamples) * 4);
+		memset(pBuffer, audio_silence, (len - nGeneratedSamples) * 4);
 
 		AudioMixBuffer_pos_read += nGeneratedSamples;
 		nGeneratedSamples = 0;
@@ -184,18 +188,22 @@ void Audio_Init(void)
 		return;
 	}
 
-#if ENABLE_SDL3
-
 	/* Init the SDL's audio subsystem: */
 	if (SDL_WasInit(SDL_INIT_AUDIO) == 0)
 	{
+#if ENABLE_SDL3
 		if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
+#else
+		if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
+#endif
 		{
 			Log_Printf(LOG_WARN, "Could not init audio: %s\n", SDL_GetError() );
 			bSoundWorking = false;
 			return;
 		}
 	}
+
+#if ENABLE_SDL3
 
 	char samples_str[11];
 	SoundBufferSize = Audio_GetBufferSize(nAudioFrequency);
@@ -219,23 +227,14 @@ void Audio_Init(void)
 
 #else
 
-	/* Init the SDL's audio subsystem: */
-	if (SDL_WasInit(SDL_INIT_AUDIO) == 0)
-	{
-		if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
-		{
-			Log_Printf(LOG_WARN, "Could not init audio: %s\n", SDL_GetError() );
-			bSoundWorking = false;
-			return;
-		}
-	}
-
 	/* Set up SDL audio: */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
 	desiredAudioSpec.samples = Audio_GetBufferSize(desiredAudioSpec.freq);
 
-	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
+	audio_device = SDL_OpenAudioDevice(NULL, 0, &desiredAudioSpec, NULL, 0);
+	if (!audio_device)
+
 	{
 		Log_Printf(LOG_WARN, "Can't use audio: %s\n", SDL_GetError());
 		bSoundWorking = false;
@@ -244,6 +243,7 @@ void Audio_Init(void)
 		return;
 	}
 
+	audio_silence = desiredAudioSpec.silence;
 	SoundBufferSize = desiredAudioSpec.samples;
 	if (SoundBufferSize > AUDIOMIXBUFFER_SIZE/2)
 	{
@@ -273,7 +273,7 @@ void Audio_UnInit(void)
 		SDL_DestroyAudioStream(audio_stream);
 		audio_stream = NULL;
 #else
-		SDL_CloseAudio();
+		SDL_CloseAudioDevice(audio_device);
 #endif
 		bSoundWorking = false;
 	}
@@ -289,7 +289,7 @@ void Audio_Lock(void)
 #if ENABLE_SDL3
 	SDL_LockAudioStream(audio_stream);
 #else
-	SDL_LockAudio();
+	SDL_LockAudioDevice(audio_device);
 #endif
 }
 
@@ -303,7 +303,7 @@ void Audio_Unlock(void)
 #if ENABLE_SDL3
 	SDL_UnlockAudioStream(audio_stream);
 #else
-	SDL_UnlockAudio();
+	SDL_UnlockAudioDevice(audio_device);
 #endif
 }
 
@@ -319,7 +319,7 @@ void Audio_EnableAudio(bool bEnable)
 #if ENABLE_SDL3
 		SDL_ResumeAudioStreamDevice(audio_stream);
 #else
-		SDL_PauseAudio(false);
+		SDL_PauseAudioDevice(audio_device, false);
 #endif
 		bPlayingBuffer = true;
 	}
@@ -329,7 +329,7 @@ void Audio_EnableAudio(bool bEnable)
 #if ENABLE_SDL3
 		SDL_PauseAudioStreamDevice(audio_stream);
 #else
-		SDL_PauseAudio(true);
+		SDL_PauseAudioDevice(audio_device, true);
 #endif
 		bPlayingBuffer = false;
 	}
