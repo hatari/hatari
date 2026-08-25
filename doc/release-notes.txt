@@ -56,6 +56,7 @@ Emulator improvements:
   - Hatari exits with return value 1 on option errors
   - Stricter validation of integer option values
 - SDL GUI:
+  - Fix: host mouse sync when window is left with mouse button pressed
   - Fix: allow exit from text edit mode when using just joystick
   - Fix: do not show recording in progress, if starting it failed
   - Audio + video recording functionality moved to its own dialog

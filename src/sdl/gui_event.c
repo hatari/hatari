@@ -123,6 +123,7 @@ void GuiEvent_EventHandler(void)
 	SDL_Event event;
 	int events;
 	int remotepause;
+	int win_width, win_height;
 	static int mleave_x = -1, mleave_y = -1;
 
 	do
@@ -283,6 +284,22 @@ void GuiEvent_EventHandler(void)
 				break;
 			case SDL_WINDOWEVENT_LEAVE:
 				Screen_GetMouseState(&mleave_x, &mleave_y);
+				SDL_GetWindowSize(sdlWindow, &win_width, &win_height);
+
+				/* If user moves mouse outside the window while mouse button is
+				 * pressed, SDL leave event comes only after mouse is released,
+				 * and mouse coords can be wildly outside the window area
+				 * => constraint leave coords to the Hatari window size.
+				 */
+				if (mleave_x < 0)
+					mleave_x = 0;
+				if (mleave_y < 0)
+					mleave_y = 0;
+				if (mleave_x > win_width)
+					mleave_x = win_width;
+				if (mleave_y > win_height)
+					mleave_y = win_height;
+
 				/* fall through */
 			case SDL_WINDOWEVENT_FOCUS_LOST:
 				bAllowMouseWarp = false;
