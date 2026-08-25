@@ -421,8 +421,11 @@ class Tokens:
     ]
     event_tokens = [
     "doubleclick",
+    "leftdown",
+    "leftup",
     "rightdown",
     "rightup",
+    "mousemove",
     "keypress",
     "keydown",
     "keyup",
