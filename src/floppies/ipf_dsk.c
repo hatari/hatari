@@ -26,6 +26,13 @@
 #define IPF_DEFAULT_TCOUNT	(IPF_MAX_CYLINDER * IPF_MAX_HEAD + 1)
 
 
+typedef struct {
+	uint32_t	*flux;		/* Intervals between flux transitions (ns) */
+	uint32_t	flux_count;
+	uint32_t	track_len_ns;	/* Duration of one revolution (ns) */
+	bool		valid;
+} IPF_TRACK_FLUX;
+
 typedef struct track_info {
 	uint32_t cylinder, head, type;
 	uint32_t sigtype, process, reserved[3];
@@ -43,6 +50,7 @@ typedef struct track_info {
 } track_info;
 
 typedef struct ipf_decode {
+	IPF_TRACK_FLUX tracks[IPF_MAX_CYLINDER][IPF_MAX_HEAD];
 	track_info *tinfos;
 	uint32_t tcount;
 
@@ -60,6 +68,8 @@ static bool ipf_generate_block(const track_info *t, uint32_t idx, uint32_t ipos,
 		uint32_t *track, uint32_t *pos, uint32_t *dpos, uint32_t *gpos,
 		uint32_t *spos, bool *context);
 static uint32_t block_compute_real_size(const track_info *t);
+static bool ipf_cells_to_flux(ipf_decode *dec, const uint32_t *cells,
+				uint32_t cell_count, IPF_TRACK_FLUX *out);
 
 
 static int ipf_identify(const uint8_t *h, size_t size)
@@ -253,14 +263,14 @@ static bool ipf_scan_all_tags(ipf_decode *dec, uint8_t *data, size_t size)
 	return true;
 }
 
-static bool ipf_generate_tracks(ipf_decode *dec /*, floppy_image &image */)
+static bool ipf_generate_tracks(ipf_decode *dec)
 {
 	for (uint32_t i = 0; i != dec->tcount; i++)
 	{
 		track_info *t = &dec->tinfos[i];
 		if (t->info_set && t->data)
 		{
-			if (!ipf_generate_track(dec, t/*, image*/))
+			if (!ipf_generate_track(dec, t))
 				return false;
 
 		}
@@ -390,7 +400,7 @@ static bool generate_timings(const track_info *t, uint32_t *track,
 	return true;
 }
 
-static bool ipf_generate_track(ipf_decode *dec, track_info *t /*, floppy_image &image*/)
+static bool ipf_generate_track(ipf_decode *dec, track_info *t)
 {
 	uint32_t *track = NULL;
 	uint32_t *data_pos = NULL;
@@ -399,9 +409,18 @@ static bool ipf_generate_track(ipf_decode *dec, track_info *t /*, floppy_image &
 	bool context = false;
 	uint32_t pos = 0;
 	bool ok = false;
+	IPF_TRACK_FLUX flux;
 
 	if (!t->size_cells)
 		return true;
+
+	if (t->cylinder >= IPF_MAX_CYLINDER || t->head >= IPF_MAX_HEAD)
+	{
+		Log_Printf(LOG_ERROR,
+		           "IPF: Failed to generate track (cyl=%d, side=%i)\n",
+		           t->cylinder, t->head);
+		return false;
+	}
 
 	if (t->data_size < 32 * t->block_count)
 		return false;
@@ -443,13 +462,12 @@ static bool ipf_generate_track(ipf_decode *dec, track_info *t /*, floppy_image &
 	if (t->index_cells)
 		ipf_rotate(track, t->size_cells - t->index_cells, t->size_cells);
 
-#if 0
-	generate_track_from_levels(t->cylinder, t->head, track,
-	                           splice_pos[t->block_count-1] + t->index_cells,
-	                           image);
-#else
-	fprintf(stderr,"FIXME: Add generate_track_from_levels()!!!\n");
-#endif
+	memset(&flux, 0, sizeof(flux));
+	if (!ipf_cells_to_flux(dec, track, t->size_cells, &flux))
+		goto done;
+
+	free(dec->tracks[t->cylinder][t->head].flux);
+	dec->tracks[t->cylinder][t->head] = flux;
 
 	ok = true;
 done:
@@ -769,4 +787,455 @@ static uint32_t block_compute_real_size(const track_info *t)
 		thead += 32;
 	}
 	return size;
+}
+
+/* ------------------ Hatari-specific code: ----------------- */
+
+/**
+ * Convert magnetic cell levels to a list of flux intervals (nanoseconds).
+ * MG_1 cells produce a flux at mid-cell (see generate_track_from_levels in
+ * MAME). MG_N (weak) cells randomly produce a flux.
+ */
+static bool ipf_cells_to_flux(ipf_decode *dec, const uint32_t *cells,
+				uint32_t cell_count, IPF_TRACK_FLUX *out)
+{
+	uint32_t *flux;
+	uint32_t flux_count = 0;
+	uint32_t flux_alloc;
+	uint32_t total_time = 0;
+	uint32_t last_flux = 0;
+	uint32_t i;
+	bool first = true;
+
+	flux_alloc = cell_count / 2 + 16;
+	flux = malloc(flux_alloc * sizeof(uint32_t));
+	if (!flux)
+		return false;
+
+	for (i = 0; i < cell_count; i++)
+	{
+		uint32_t bit = cells[i] & MG_MASK;
+		uint32_t time = cells[i] & TIME_MASK;
+		bool emit = false;
+
+		if (bit == MG_1)
+			emit = true;
+		else if (bit == MG_N)
+			emit = (Hatari_rand() & 0x4000) != 0;
+
+		if (emit)
+		{
+			uint32_t flux_pos = total_time + (time >> 1);
+			uint32_t interval;
+
+			if (first)
+			{
+				/* First flux: interval from index (0) to this flux */
+				interval = flux_pos;
+				first = false;
+			}
+			else
+				interval = flux_pos - last_flux;
+
+			if (interval == 0)
+				interval = 1;
+
+			if (flux_count >= flux_alloc)
+			{
+				uint32_t *nf;
+				flux_alloc *= 2;
+				nf = realloc(flux, flux_alloc * sizeof(uint32_t));
+				if (!nf)
+				{
+					free(flux);
+					return false;
+				}
+				flux = nf;
+			}
+			flux[flux_count++] = interval;
+			last_flux = flux_pos;
+		}
+		total_time += time;
+	}
+
+	if (flux_count == 0)
+	{
+		/* Unformatted / empty: one long gap for a full revolution */
+		flux[0] = total_time ? total_time : 200000000u;
+		flux_count = 1;
+		last_flux = total_time ? total_time : 200000000u;
+	}
+	else if (last_flux < total_time)
+	{
+		/* Trailing gap from last flux back to index so intervals sum to track length */
+		if (flux_count >= flux_alloc)
+		{
+			uint32_t *nf = realloc(flux, (flux_count + 1) * sizeof(uint32_t));
+			if (!nf)
+			{
+				free(flux);
+				return false;
+			}
+			flux = nf;
+		}
+		flux[flux_count++] = total_time - last_flux;
+	}
+
+	out->flux = flux;
+	out->flux_count = flux_count;
+	out->track_len_ns = total_time ? total_time : 200000000u;
+	out->valid = true;
+	return true;
+}
+
+struct ipf_stream {
+	int		Drive;
+	unsigned int	track;			/* tracknr = cyl*2+side */
+	uint32_t	*flux;
+	unsigned int	flux_count;
+	unsigned int	flux_idx;
+	uint32_t	track_len_ns;
+	uint32_t	acc_ns;
+	int		jitter;
+};
+
+typedef struct {
+	ipf_decode	*decoder;
+	struct ipf_stream stream;
+} IPF_STRUCT;
+
+static IPF_STRUCT IPF_State[MAX_FLOPPYDRIVES];
+
+
+/*-----------------------------------------------------------------------*/
+/* Flux stream callbacks                                                 */
+/*-----------------------------------------------------------------------*/
+
+static int ipf_select_track (struct mfm_stream *s, unsigned int tracknr)
+{
+	struct ipf_stream *ips = s->type.flux_struct_param;
+	ipf_decode *dec;
+	unsigned int cyl = tracknr >> 1;
+	unsigned int head = tracknr & 1;
+
+	if (ips->flux && ips->track == tracknr)
+		return 0;
+
+	dec = IPF_State[ips->Drive].decoder;
+	if (!dec || cyl >= IPF_MAX_CYLINDER || head >= IPF_MAX_HEAD)
+		return -1;
+
+	if (!dec->tracks[cyl][head].valid || !dec->tracks[cyl][head].flux)
+		return -1;
+
+	ips->flux = dec->tracks[cyl][head].flux;
+	ips->flux_count = dec->tracks[cyl][head].flux_count;
+	ips->track_len_ns = dec->tracks[cyl][head].track_len_ns;
+	ips->track = tracknr;
+	ips->flux_idx = 0;
+	ips->acc_ns = 0;
+	ips->jitter = 0;
+
+	s->max_revolutions = ~0u;
+	s->RevolutionsNbr = 1;
+	return 0;
+}
+
+
+static void ipf_reset (struct mfm_stream *s)
+{
+	struct ipf_stream *ips = s->type.flux_struct_param;
+
+	ips->jitter = 0;
+	ips->flux_idx = 0;
+	ips->acc_ns = 0;
+}
+
+
+static int ipf_next_flux (struct mfm_stream *s)
+{
+	struct ipf_stream *ips = s->type.flux_struct_param;
+	uint32_t val;
+	int32_t jitter;
+
+	if (!ips->flux || ips->flux_count == 0)
+		return -1;
+
+	if (ips->flux_idx >= ips->flux_count)
+	{
+		s->ns_to_index = s->flux;
+		ips->flux_idx = 0;
+		ips->acc_ns = 0;
+	}
+
+	val = ips->flux[ips->flux_idx++];
+	ips->acc_ns += val;
+
+	/* Small jitter helps weak-bit style protections when replaying one rev */
+	jitter = mfm_stream_rnd16(&s->prng_seed) & 3;
+	if (ips->jitter >= 4 || ips->jitter <= -4 )
+		jitter = ips->jitter / 2;
+	else if (jitter & 1)
+		jitter >>= 1;
+	else
+	{
+		jitter >>= 1;
+		jitter = -jitter;
+	}
+	ips->jitter -= jitter;
+	val += jitter;
+
+	s->flux += val;
+	return (int)val;
+}
+
+/**
+ * Does filename end with a .IPF extension ? If so, return true.
+ */
+bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
+{
+	return File_DoesFileExtensionMatch(pszFileName,".ipf") ||
+	       (bAllowGZ && File_DoesFileExtensionMatch(pszFileName, ".ipf.gz"));
+}
+
+bool IPF_Init(void)
+{
+	memset(&IPF_State, 0, sizeof(IPF_State));
+	for (int i = 0; i < MAX_FLOPPYDRIVES; i++)
+	{
+		IPF_State[i].decoder = NULL;
+		IPF_State[i].stream.track = (unsigned int)-1;
+	}
+	return true;
+}
+
+
+void IPF_Exit(void)
+{
+	for (int i = 0; i < MAX_FLOPPYDRIVES; i++)
+		IPF_Eject(i);
+}
+
+static void IPF_FreeImage(ipf_decode *dec)
+{
+	int cyl, head;
+
+	if (!dec)
+		return;
+
+	for (cyl = 0; cyl < IPF_MAX_CYLINDER; cyl++ )
+	{
+		for (head = 0; head < IPF_MAX_HEAD; head++)
+		{
+			free(dec->tracks[cyl][head].flux);
+			dec->tracks[cyl][head].flux = NULL;
+		}
+	}
+	free(dec);
+}
+
+bool IPF_Eject(int Drive)
+{
+	Log_Printf(LOG_DEBUG, "IPF: IPF_Eject drive=%d\n", Drive);
+
+	if (IPF_State[Drive].decoder)
+	{
+		IPF_FreeImage(IPF_State[Drive].decoder);
+		IPF_State[Drive].decoder = NULL;
+	}
+
+	IPF_State[Drive].stream.flux = NULL;
+	IPF_State[Drive].stream.flux_count = 0;
+	IPF_State[Drive].stream.track = (unsigned int)-1;
+
+	return true;
+}
+
+static ipf_decode *IPF_DecodeImage(uint8_t *data, size_t size)
+{
+	ipf_decode *dec;
+	uint8_t *buf = NULL;
+	bool ok = false;
+
+	if (!ipf_identify(data, size))
+	{
+		Log_Printf(LOG_ERROR, "IPF: invalid CAPS header\n");
+		return NULL;
+	}
+
+	/* CRC check zeroes CRC fields in-place; work on a copy */
+	buf = malloc(size);
+	if (!buf)
+		return NULL;
+	memcpy(buf, data, size);
+
+	dec = malloc(sizeof(ipf_decode));
+	if (!dec)
+		goto fail;
+
+	memset (dec, 0, sizeof(ipf_decode));
+
+	dec->tcount = IPF_DEFAULT_TCOUNT;
+	dec->tinfos = calloc(dec->tcount, sizeof(track_info));
+	if (!dec->tinfos)
+		goto fail;
+
+	if (!ipf_scan_all_tags(dec, buf, size))
+	{
+		Log_Printf(LOG_ERROR, "IPF: failed to scan tags\n");
+		goto fail;
+	}
+
+	if (!ipf_generate_tracks(dec))
+	{
+		Log_Printf(LOG_ERROR, "IPF: failed to generate tracks\n");
+		goto fail;
+	}
+
+	ok = true;
+
+fail:
+	if (dec)
+	{
+		free(dec->tinfos);
+		dec->tinfos = NULL;
+	}
+	free(buf);
+	if (!ok)
+	{
+		IPF_FreeImage(dec);
+		return NULL;
+	}
+	return dec;
+}
+
+static bool IPF_Insert_internal(int Drive, uint8_t *pImageBuffer, long ImageSize, bool KeepState)
+{
+	static bool warned = false;
+
+	if (!warned) {
+		Log_Printf(LOG_WARN,
+		           "Using IPF images via the built-in IPF code is highly experimental, "
+		           "if it does not work, use the external capsimage library instead!\n");
+		warned = true;
+	}
+
+	IPF_State[Drive].decoder = IPF_DecodeImage(pImageBuffer, ImageSize);
+	if (!IPF_State[Drive].decoder)
+	{
+		Log_Printf(LOG_ERROR, "IPF: failed to decode image in drive %d\n", Drive);
+		return false;
+	}
+
+	Log_Printf(LOG_INFO,
+		"IPF: drive=%d size=%ld release=%u revision=%u cyl=%u..%u head=%u..%u\n",
+		Drive, ImageSize,
+		IPF_State[Drive].decoder->release,
+		IPF_State[Drive].decoder->revision,
+		IPF_State[Drive].decoder->min_cylinder,
+		IPF_State[Drive].decoder->max_cylinder,
+		IPF_State[Drive].decoder->min_head,
+		IPF_State[Drive].decoder->max_head);
+
+	if (!KeepState)
+		mfm_stream_setup(&(MFM_STREAMS[Drive]), 300, 300);
+
+	MFM_STREAMS[Drive].type.select_track = ipf_select_track;
+	MFM_STREAMS[Drive].type.reset = ipf_reset;
+	MFM_STREAMS[Drive].type.next_flux = ipf_next_flux;
+	MFM_STREAMS[Drive].type.flux_struct_param = &(IPF_State[Drive].stream);
+
+	if (!KeepState)
+		mfm_stream_reset(&(MFM_STREAMS[Drive]));
+
+	IPF_State[Drive].stream.Drive = Drive;
+	IPF_State[Drive].stream.flux = NULL;
+	IPF_State[Drive].stream.flux_count = 0;
+	IPF_State[Drive].stream.track = (unsigned int)-1;
+
+	return true;
+}
+
+bool IPF_Insert(int Drive, uint8_t *pImageBuffer, long ImageSize)
+{
+	return IPF_Insert_internal(Drive, pImageBuffer, ImageSize, false);
+}
+
+/**
+ * Load .IPF file into memory, set number of bytes loaded and return a pointer
+ * to the buffer.
+ */
+uint8_t *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
+{
+	uint8_t *pIPFFile;
+
+	*pImageSize = 0;
+
+	pIPFFile = File_Read(pszFileName, pImageSize, NULL);
+	if (!pIPFFile)
+	{
+		*pImageSize = 0;
+		return NULL;
+	}
+
+	*pImageType = FLOPPY_IMAGE_TYPE_IPF;
+	return pIPFFile;
+}
+
+/**
+ * Save .IPF file from memory buffer. Returns true is all OK.
+ */
+bool IPF_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
+{
+	return false;	/* saving is not supported for IPF files */
+}
+
+
+/**
+ * Save/Restore snapshot of local variables
+ */
+void IPF_MemorySnapShot_Capture(bool bSave)
+{
+	fprintf(stderr, "TODO: IPF_MemorySnapShot_Capture\n");
+}
+
+/*
+ * Dummy wrappers, just needed for linking, they should never be called
+ * for the internal IPF hanlding:
+ */
+
+void IPF_Reset(bool bCold)
+{
+}
+
+void IPF_FDC_StatusBar(uint8_t *pCommand, uint8_t *pHead, uint8_t *pTrack,
+                       uint8_t *pSector, uint8_t *pSide)
+{
+	fprintf(stderr,"Error: internal IPF_FDC_StatusBar should never be called\n");
+	abort();
+}
+
+void IPF_Drive_Set_Enable(int Drive, bool value)
+{
+}
+
+void IPF_Drive_Set_DoubleSided(int Drive, bool value)
+{
+}
+
+void IPF_SetDriveSide(uint8_t io_porta_old, uint8_t io_porta_new)
+{
+}
+
+void IPF_FDC_WriteReg(uint8_t Reg, uint8_t Byte)
+{
+}
+
+uint8_t IPF_FDC_ReadReg(uint8_t Reg)
+{
+	return 0xff;
+}
+
+void IPF_Emulate(void)
+{
 }
