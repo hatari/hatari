@@ -23,4 +23,5 @@ extern void	IPF_FDC_WriteReg ( uint8_t Reg , uint8_t Byte );
 extern uint8_t	IPF_FDC_ReadReg ( uint8_t Reg );
 extern void	IPF_FDC_StatusBar ( uint8_t *pCommand , uint8_t *pHead , uint8_t *pTrack , uint8_t *pSector , uint8_t *pSide );
 extern void	IPF_Emulate ( void );
-
+extern int	FDC_GetBytesPerTrack_IPF ( uint8_t Drive , uint8_t Track , uint8_t Side );
+extern uint32_t FDC_GetCyclesPerRev_FdcCycles_IPF ( uint8_t Drive , uint8_t Track , uint8_t Side );

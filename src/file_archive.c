@@ -632,14 +632,9 @@ DEBUGPRINT (( stderr , "Archive_ReadDisk news path=%s filename=%s\n" , ArchivePa
 
 	switch ( *pImageType ) {
 	case FLOPPY_IMAGE_TYPE_IPF:
-#ifndef HAVE_CAPSIMAGE
-		Log_AlertDlg ( LOG_ERROR, "This version of Hatari was not built with IPF support, this disk image can't be handled." );
-		return NULL;
-#else
 		/* return buffer */
 		pDiskBuffer = buf;
 		break;
-#endif
 	case FLOPPY_IMAGE_TYPE_STX:
 		/* return buffer */
 		pDiskBuffer = buf;

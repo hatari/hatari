@@ -1199,6 +1199,18 @@ void IPF_MemorySnapShot_Capture(bool bSave)
 	fprintf(stderr, "TODO: IPF_MemorySnapShot_Capture\n");
 }
 
+int FDC_GetBytesPerTrack_IPF(uint8_t Drive, uint8_t Track, uint8_t Side)
+{
+	return 6268;	/* FDC_TRACK_BYTES_STANDARD */
+}
+
+uint32_t FDC_GetCyclesPerRev_FdcCycles_IPF(uint8_t Drive, uint8_t Track, uint8_t Side)
+{
+	int TrackSize = FDC_GetBytesPerTrack_IPF(Drive, Track, Side);
+
+	return TrackSize * 256 / FDC_GetFloppyDensity(Drive);
+}
+
 /*
  * Dummy wrappers, just needed for linking, they should never be called
  * for the internal IPF hanlding:

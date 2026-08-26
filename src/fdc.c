@@ -1542,6 +1542,7 @@ static int FDC_GetEmulationMode ( void )
 {
 	int	Mode;
 
+#ifdef HAVE_CAPSIMAGE
 	Mode = FDC.EmulationMode;				/* Default to previous mode if no drive is selected */
 
 	/* Check drive 1 first */
@@ -1567,6 +1568,9 @@ static int FDC_GetEmulationMode ( void )
 		else
 			Mode = FDC_EMULATION_MODE_INTERNAL;
 	}
+#else
+	Mode = FDC_EMULATION_MODE_INTERNAL;
+#endif
 
 	FDC.EmulationMode = Mode;
 //fprintf ( stderr , "emul mode %x %d\n" , PSGRegisters[PSG_REG_IO_PORTA] & 0x06 , Mode );
@@ -1867,6 +1871,10 @@ int	FDC_GetBytesPerTrack ( uint8_t Drive , uint8_t Track , uint8_t Side )
 			return FDC_GetBytesPerTrack_SCP ( Drive , Track , Side );
 		else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
 			return FDC_GetBytesPerTrack_KFS ( Drive , Track , Side );
+#ifndef HAVE_CAPSIMAGE
+		else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+			return FDC_GetBytesPerTrack_IPF ( Drive , Track , Side );
+#endif
 
 		SectorsPerTrack = FDC_GetSectorsPerTrack ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 		if ( SectorsPerTrack >= 36 )
@@ -2000,6 +2008,10 @@ static uint32_t	FDC_GetCyclesPerRev_FdcCycles ( int Drive )
 		return FDC_GetCyclesPerRev_FdcCycles_SCP ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_KFS )
 		return FDC_GetCyclesPerRev_FdcCycles_KFS ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
+#ifndef HAVE_CAPSIMAGE
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		return FDC_GetCyclesPerRev_FdcCycles_IPF ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
+#endif
 
 	/* Assume a standard length for all tracks for ST/MSA images */
 	FdcCyclesPerRev = (uint64_t)(MachineClocks.FDC_Freq * 1000.L) / ( FDC_DRIVES[ Drive ].RPM / 60 );

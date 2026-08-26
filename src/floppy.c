@@ -1038,6 +1038,11 @@ bool	Floppy_ImageIsMFM ( int ImageType )
 	  || ( ImageType == FLOPPY_IMAGE_TYPE_KFS ) )
 		return true;
 
+#ifndef HAVE_CAPSIMAGE
+	if (ImageType == FLOPPY_IMAGE_TYPE_IPF)
+		return true;
+#endif
+
 	return false;
 }
 
