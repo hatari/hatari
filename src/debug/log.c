@@ -178,16 +178,6 @@ FILE *TraceFile = NULL;
 #define MAX_DIAG_MSG_LEN 256
 #define REPEAT_LIMIT_INIT 8
 
-/*
- * GCC-15 / Clang-18, see:
- * https://clang.llvm.org/docs/AttributeReference.html#field-attributes
- */
-#if __has_attribute(__counted_by__)
-# define __counted_by(member)  __attribute__((__counted_by__(member)))
-#else
-# define __counted_by(member)
-#endif
-
 /* FILE* for output stream, buffers for message formatting + previous
  * message content, message line repeat suppression limit and current
  * repeat count
@@ -198,8 +188,8 @@ static struct {
 	int limit;
 	int count;
 	int buf_size;
-	__counted_by(buf_size) char *current; // buffer: message formatting
-	__counted_by(buf_size) char *prev;    // buffer: previous message
+	char *current; // buffer: message formatting
+	char *prev;    // buffer: previous message
 } MsgState;
 
 static FILE *hLogFile = NULL;
