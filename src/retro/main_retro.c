@@ -19,6 +19,7 @@
 #include "version.h"
 
 static bool has_cpu_config_changed = true;
+const char *retro_system_directory;
 
 retro_environment_t environment_cb;
 retro_video_refresh_t video_refresh_cb;
@@ -63,8 +64,30 @@ RETRO_API unsigned retro_api_version(void)
 RETRO_API void retro_init(void)
 {
 	char name[] = "hatari";
-	char *argv[1] = { name };
+	char tos_arg[] = "--tos";
+	char tos_path[FILENAME_MAX];
+	char *argv[4];
+	const char *system_dir = NULL;
 
+	argv[0] = name;
+
+	if (environment_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_dir) && system_dir)
+	{
+		retro_system_directory = system_dir;
+
+		snprintf(tos_path, sizeof(tos_path), "%s%c%s",
+		         system_dir, PATHSEP, "tos.img");
+
+		argv[1] = tos_arg;
+		argv[2] = tos_path;
+		argv[3] = NULL;
+
+		Main_Init(3, argv);
+
+		return;
+	}
+
+	argv[1] = NULL;
 	Main_Init(1, (char **)argv);
 }
 
