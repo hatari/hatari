@@ -143,13 +143,12 @@ RETRO_API void retro_run(void)
 		quit_program = 0;
 		m68k_run();
 	}
-/*
+
 	int width, height, pitch;
 	uint32_t *pixels;
 
 	Screen_GetDimension(&pixels, &width, &height, &pitch);
 	video_refresh_cb(pixels, width, height, pitch);
-*/
 }
 
 RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
