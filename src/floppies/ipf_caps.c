@@ -1,17 +1,18 @@
 /*
-  Hatari - floppy_ipf.c
+  Hatari - ipf_caps.c
 
   This file is distributed under the GNU General Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
   IPF disk image support.
 
-  IPF files are handled using the capsimage library, which emulates the FDC
-  at low level and allows to read complex protections.
+  If the library has been found during configuration, IPF files are handled
+  here using the capsimage library, which emulates the FDC at low level and
+  allows to read complex protections.
 
   CT RAW dumped with an Amiga are also handled by the capsimage library.
 */
-const char floppy_ipf_fileid[] = "Hatari floppy_ipf.c";
+const char floppy_ipf_fileid[] = "Hatari ipf_caps.c";
 
 #include "main.h"
 #include "file.h"

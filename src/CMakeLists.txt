@@ -68,7 +68,7 @@ set(SOURCES
 	ymFormat.c)
 
 if(CapsImage_FOUND)
-	set(SOURCES ${SOURCES} floppies/ipf.c)
+	set(SOURCES ${SOURCES} floppies/ipf_caps.c)
 else()
 	set(SOURCES ${SOURCES} floppies/ipf_dsk.c)
 endif()
