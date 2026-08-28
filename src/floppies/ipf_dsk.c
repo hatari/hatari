@@ -2,6 +2,7 @@
 // copyright-holders:Olivier Galibert
 
 #include <string.h>
+#include <errno.h>
 
 #include "main.h"
 #include "file.h"
@@ -1191,12 +1192,82 @@ bool IPF_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int Ima
 }
 
 
+static int ipf_memsnapshot_state(bool bSave, IPF_STRUCT *state)
+{
+	int track, side;
+
+	MemorySnapShot_Store(state, sizeof(*state));
+
+	if (!state->decoder)
+		return 0;
+
+	if (!bSave)
+	{
+		state->decoder = malloc(sizeof(ipf_decode));
+		if (!state->decoder)
+			return errno;
+	}
+	MemorySnapShot_Store(state->decoder, sizeof(ipf_decode));
+
+	for (track = 0; track < IPF_MAX_CYLINDER; track++)
+	{
+		for (side = 0; side < 2; side++)
+		{
+			MemorySnapShot_Store(&state->decoder->tracks[track][side],
+			                     sizeof(IPF_TRACK_FLUX));
+
+			if (state->decoder->tracks[track][side].flux)
+			{
+				int flux_size = state->decoder->tracks[track][side].flux_count
+				                * sizeof(uint32_t);
+				if (!bSave)
+				{
+					state->decoder->tracks[track][side].flux = malloc(flux_size);
+					if (!flux_size)
+						return errno;
+				}
+				MemorySnapShot_Store(state->decoder->tracks[track][side].flux,
+				                     flux_size);
+			}
+		}
+	}
+
+	return 0;
+}
+
 /**
  * Save/Restore snapshot of local variables
  */
 void IPF_MemorySnapShot_Capture(bool bSave)
 {
-	fprintf(stderr, "TODO: IPF_MemorySnapShot_Capture\n");
+	for (int drive = 0; drive < MAX_FLOPPYDRIVES; drive++)
+	{
+		IPF_Eject(drive);
+
+		if (ipf_memsnapshot_state(bSave, &IPF_State[drive]))
+		{
+			perror("IPF_MemorySnapShot_Capture");
+			return;
+		}
+
+		if (EmulationDrives[drive].ImageType == FLOPPY_IMAGE_TYPE_IPF)
+		{
+			if (!IPF_Insert_internal(drive, EmulationDrives[drive].pBuffer,
+						 EmulationDrives[drive].nImageBytes, true))
+			{
+				Log_AlertDlg(LOG_ERROR, "Error restoring IPF image %s in drive %d" ,
+				             EmulationDrives[drive].sFileName, drive);
+				return;
+			}
+
+			if (IPF_State[drive].stream.track != (unsigned int)-1)
+			{
+				int track = IPF_State[drive].stream.track;
+				IPF_State[drive].stream.track = (unsigned int)-1;
+				ipf_select_track(&MFM_STREAMS[drive], track);
+			}
+		}
+	}
 }
 
 int FDC_GetBytesPerTrack_IPF(uint8_t Drive, uint8_t Track, uint8_t Side)
