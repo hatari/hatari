@@ -241,3 +241,6 @@ projects which we would like to acknowledge here:
 - The MMU emulation for the 68030 has been taken from the NeXT emulator
   Previous (thanks to Andreas Grabher!). Since Hatari 1.9, this is now
   taken from WinUAE which uses the same code base.
+
+- The internal IPF disk support uses code from the IPF decoder from MAME,
+  originally written by Olivier Galibert.

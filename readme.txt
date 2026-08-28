@@ -86,7 +86,8 @@ Optional:
 - The PortMidi library required for MIDI device support on macOS and Windows
   (http://portmedia.sourceforge.net/)
 - The udev library for NatFeats SCSI driver media change detection
-- The IPF support library (http://www.softpres.org/download)
+- The IPF support library
+  (http://www.softpres.org/download & https://www.kryoflux.com/?page=download)
 - The Capstone library (version >= 4.0) for traditional disassembly output
   in the debugger (https://www.capstone-engine.org/)
 
@@ -158,6 +159,8 @@ webserver for testing it locally.
 
  3.3) IPF support using capsimage library
 
+While Hatari has built-in support for IPF images, the related code is
+still experimental and cannot load all types of IPF images. Thus
 Hatari can use the optional capsimage library to access IPF and CTR
 files. Those files are created using the Kryoflux board and allow to
 record MFM exact copies of original games, including the protection.
@@ -165,8 +168,9 @@ record MFM exact copies of original games, including the protection.
 Hatari supports version 5.1 of the library (previous support for older
 version 4.2 was removed as it is not used anymore)
 
-Refer to http://softpres.org/download and get the corresponding file
-from the "User Distribution" section that matches your OS.
+Refer to the "User Distribution" section on http://softpres.org/download or
+the "SPS Decoder Library" section on https://www.kryoflux.com/?page=download
+and get the corresponding file that matches your OS.
 
 For version 5.1, you should have the following files in your include path :
 /usr/local/include/caps/

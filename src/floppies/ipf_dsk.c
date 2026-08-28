@@ -1,5 +1,13 @@
-// license:BSD-3-Clause
-// copyright-holders:Olivier Galibert
+/*
+ * IPF (Interchangeable Preservation Format) disk image support.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ * Original copyright by: Olivier Galibert (from MAME project)
+ *
+ * IPF files are decoded natively into per-track flux transition lists, then
+ * processed by Hatari's WD1772 FDC through the shared mfm_stream flux path
+ * (same approach as SCP / Kryoflux streams).
+ */
 
 #include <string.h>
 #include <errno.h>

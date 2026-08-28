@@ -41,6 +41,11 @@ Build / dependency changes:
 - More fine-grained build debug options
 
 Emulation improvements:
+- Floppy disks:
+  - Built-in support for IPF images (based on the decoder code from MAME).
+    There is no support for CTR images, and the code might have problems
+    with certain disk images, i.e. it is recommended to still use the
+    original capslib in case of problems.
 
 Emulator improvements:
 - CLI options:
