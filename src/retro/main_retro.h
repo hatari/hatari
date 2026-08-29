@@ -5,6 +5,8 @@
   or at your option any later version. Read the file gpl.txt for details.
 */
 
+extern bool has_cpu_config_changed;
+
 extern retro_environment_t environment_cb;
 extern retro_video_refresh_t video_refresh_cb;
 extern retro_input_state_t input_state_cb;
