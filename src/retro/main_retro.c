@@ -9,6 +9,7 @@
 #include "main_retro.h"
 #include "hatari-glue.h"
 #include "dialog.h"
+#include "disk_control.h"
 #include "floppy.h"
 #include "m68000.h"
 #include "options.h"
@@ -73,6 +74,9 @@ RETRO_API void retro_init(void)
 	char tos_path[FILENAME_MAX];
 	char *argv[4];
 	const char *system_dir = NULL;
+
+	/* Register disk control  */
+	DiskControl_Init();
 
 	argv[0] = name;
 
@@ -205,6 +209,12 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game)
 
 	Floppy_InsertDiskIntoDrive(0);
 
+	// insert disk B also
+	if (ConfigureParams.DiskImage.szDiskFileName[1][0])
+		Floppy_InsertDiskIntoDrive(1);
+
+	DiskControl_NewGame(game ? game->path : NULL);
+
 	return true;
 }
 
@@ -216,6 +226,8 @@ RETRO_API bool retro_load_game_special(unsigned game_type, const struct retro_ga
 RETRO_API void retro_unload_game(void)
 {
 	Floppy_EjectDiskFromDrive(0);
+
+	DiskControl_UnInit();
 }
 
 RETRO_API unsigned retro_get_region(void)
