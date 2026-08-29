@@ -9,6 +9,7 @@
 
 void DiskControl_Init(void);
 void DiskControl_NewGame(const char *path);
+void DiskControl_NewGameM3U(const char *m3u_path);
 void DiskControl_UnInit(void);
 
 #endif /* HATARI_RETRO_DISK_CONTROL_H */

@@ -73,6 +73,115 @@ static void DiskControl_UpdateLabel(unsigned int idx)
 }
 
 /**
+ * Return true if 'p' looks like an absolute path.
+ */
+static bool DiskControl_PathIsAbsolute(const char *p)
+{
+	if (!p || !p[0])
+		return false;
+	if (p[0] == '/' || p[0] == '\\')
+		return true;
+#if defined(_WIN32) || defined(WIN32)
+	if (p[1] == ':')
+		return true;
+#endif
+	return false;
+}
+
+/**
+ * Parse a .m3u file
+ */
+static unsigned int DiskControl_ParseM3U(const char *m3u_path)
+{
+	uint8_t *raw;
+	long size = 0;
+	char *text, *p;
+	char dir[FILENAME_MAX], name[FILENAME_MAX], ext[FILENAME_MAX];
+
+	DiskImagesCount = 0;
+
+	raw = File_ReadAsIs(m3u_path, &size);
+	if (!raw || size <= 0)
+	{
+		Log_Printf(LOG_ERROR, "DiskControl: could not read m3u file '%s'\n", m3u_path);
+		free(raw);
+		return 0;
+	}
+
+	text = malloc((size_t)size + 1);
+	if (!text)
+	{
+		free(raw);
+		return 0;
+	}
+	memcpy(text, raw, (size_t)size);
+	text[size] = '\0';
+	free(raw);
+
+	File_SplitPath(m3u_path, dir, name, ext);
+
+	p = text;
+	while (*p)
+	{
+		char *line, *eol;
+		char full[FILENAME_MAX];
+
+		while (*p == '\r' || *p == '\n')
+			p++;
+		if (!*p)
+			break;
+
+		line = p;
+		eol = strpbrk(p, "\r\n");
+		if (eol)
+		{
+			*eol = '\0';
+			p = eol + 1;
+		}
+		else
+		{
+			p += strlen(p);
+		}
+
+		while (*line == ' ' || *line == '\t')
+			line++;
+		if (!*line || *line == '#')
+			continue;
+
+		if (DiskControl_PathIsAbsolute(line))
+		{
+			strncpy(full, line, sizeof(full) - 1);
+			full[sizeof(full) - 1] = '\0';
+		}
+		else
+		{
+			char *built = File_MakePath(dir, line, NULL);
+			if (!built)
+				continue;
+			strncpy(full, built, sizeof(full) - 1);
+			full[sizeof(full) - 1] = '\0';
+			free(built);
+		}
+
+		if (!DiskControl_EnsureCapacity(DiskImagesCount + 1))
+			break;
+
+		strncpy(DiskImages[DiskImagesCount].path, full,
+		        sizeof(DiskImages[DiskImagesCount].path) - 1);
+		DiskImages[DiskImagesCount].path[sizeof(DiskImages[DiskImagesCount].path) - 1] = '\0';
+		DiskControl_UpdateLabel(DiskImagesCount);
+		DiskImagesCount++;
+	}
+
+	free(text);
+
+	Log_Printf(LOG_INFO, "DiskControl: m3u '%s' parsed, %u file(s) found.\n",
+	           m3u_path, DiskImagesCount);
+
+	return DiskImagesCount;
+}
+
+/**
  * (Re-)insert the image at CurrentImageIndex into floppy drive A
  */
 static void DiskControl_ApplyCurrentImage(void)
@@ -251,6 +360,26 @@ void DiskControl_NewGame(const char *path)
 		DiskControl_UpdateLabel(0);
 		DiskImagesCount = 1;
 	}
+}
+
+void DiskControl_NewGameM3U(const char *m3u_path)
+{
+	unsigned int n;
+
+	bTrayEjected = false;
+
+	n = DiskControl_ParseM3U(m3u_path);
+	if (n == 0)
+	{
+		DiskImagesCount = 0;
+		CurrentImageIndex = 0;
+		Floppy_SetDiskFileNameNone(0);
+		Floppy_EjectDiskFromDrive(0);
+		return;
+	}
+
+	CurrentImageIndex = 0;
+	DiskControl_ApplyCurrentImage();
 }
 
 void DiskControl_UnInit(void)

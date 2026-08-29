@@ -1,4 +1,5 @@
 
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +13,7 @@
 #include "disk_control.h"
 #include "file.h"
 #include "floppy.h"
+#include "harddisk.h"
 #include "memorySnapShot.h"
 #include "m68000.h"
 #include "options.h"
@@ -153,7 +155,7 @@ RETRO_API void retro_get_system_info(struct retro_system_info *info)
 	info->library_name = "hatari";
 	info->library_version = HATARI_VERSION;
 	info->need_fullpath = true;
-	info->valid_extensions = "st|msa|dim|stx";
+	info->valid_extensions = "st|msa|dim|stx|ipf|m3u|ide|vhd|gem";
 }
 
 RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -294,18 +296,56 @@ RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code)
 
 RETRO_API bool retro_load_game(const struct retro_game_info *game)
 {
-	if (game)
-		Floppy_SetDiskFileName(0, game->path, NULL);
+	if (game && game->path)
+	{
+		const char *path = game->path;
+
+		if (File_DoesFileExtensionMatch(path, ".m3u"))
+		{
+			DiskControl_NewGameM3U(path);
+		}
+		else if (File_DoesFileExtensionMatch(path, ".ide"))
+		{
+			Floppy_SetDiskFileNameNone(0);
+			DiskControl_NewGame(NULL);
+			HardDisk_InsertIde(path);
+		}
+		else if (File_DoesFileExtensionMatch(path, ".vhd"))
+		{
+			Floppy_SetDiskFileNameNone(0);
+			DiskControl_NewGame(NULL);
+			HardDisk_InsertAcsi(path);
+		}
+		else if (File_DoesFileExtensionMatch(path, ".gem"))
+		{
+			DiskControl_NewGame(NULL);
+			HardDisk_SetGemdosDrive(path);
+		}
+		else
+		{
+#ifndef HAVE_CAPSIMAGE
+			if (File_DoesFileExtensionMatch(path, ".ipf"))
+			{
+				Log_Printf(LOG_WARN, "IPF image '%s' requested, but this build "
+				           "was compiled without CAPSImage support.\n",
+				           path);
+			}
+#endif
+			Floppy_SetDiskFileName(0, path, NULL);
+			Floppy_InsertDiskIntoDrive(0);
+
+			/* insert disk B also */
+			if (ConfigureParams.DiskImage.szDiskFileName[1][0])
+				Floppy_InsertDiskIntoDrive(1);
+
+			DiskControl_NewGame(path);
+		}
+	}
 	else
+	{
 		Floppy_SetDiskFileNameNone(0);
-
-	Floppy_InsertDiskIntoDrive(0);
-
-	// insert disk B also
-	if (ConfigureParams.DiskImage.szDiskFileName[1][0])
-		Floppy_InsertDiskIntoDrive(1);
-
-	DiskControl_NewGame(game ? game->path : NULL);
+		DiskControl_NewGame(NULL);
+	}
 
 	Retro_SetInputDescriptors();
 
