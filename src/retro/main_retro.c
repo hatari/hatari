@@ -10,7 +10,9 @@
 #include "hatari-glue.h"
 #include "dialog.h"
 #include "disk_control.h"
+#include "file.h"
 #include "floppy.h"
+#include "memorySnapShot.h"
 #include "m68000.h"
 #include "options.h"
 #include "reset.h"
@@ -21,6 +23,7 @@
 #include "version.h"
 
 bool has_cpu_config_changed = true;
+const char *retro_save_directory;
 const char *retro_system_directory;
 
 retro_environment_t environment_cb;
@@ -28,6 +31,8 @@ retro_video_refresh_t video_refresh_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
 
+#define SAVESTATE_TMP_NAME "hatari_savestate.tmp"
+static char scratch_path[FILENAME_MAX];
 
 RETRO_API void retro_set_environment(retro_environment_t cb)
 {
@@ -73,10 +78,14 @@ RETRO_API void retro_init(void)
 	char tos_arg[] = "--tos";
 	char tos_path[FILENAME_MAX];
 	char *argv[4];
+	const char *save_dir = NULL;
 	const char *system_dir = NULL;
 
 	/* Register disk control  */
 	DiskControl_Init();
+
+	if (environment_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &save_dir) && save_dir)
+		retro_save_directory = save_dir;
 
 	argv[0] = name;
 
@@ -106,6 +115,7 @@ RETRO_API void retro_init(void)
 
 RETRO_API void retro_deinit(void)
 {
+	scratch_path[0] = '\0';
 	Main_UnInit();
 }
 
@@ -177,19 +187,73 @@ RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
 {
 }
 
+static const char *Serialize_ScratchPath(void)
+{
+	if (!scratch_path[0])
+	{
+		if (retro_system_directory && retro_system_directory[0])
+			snprintf(scratch_path, sizeof(scratch_path), "%s%c%s",
+			         retro_system_directory, PATHSEP, SAVESTATE_TMP_NAME);
+		else
+			snprintf(scratch_path, sizeof(scratch_path), "%s", SAVESTATE_TMP_NAME);
+	}
+	return scratch_path;
+}
+
 RETRO_API size_t retro_serialize_size(void)
 {
-	return 0;
+	const char *path = Serialize_ScratchPath();
+	off_t size;
+
+	MemorySnapShot_Capture_Immediate(path, false);
+
+	size = File_Length(path);
+	return (size > 0) ? (size_t)size : 0;
 }
+
 
 RETRO_API bool retro_serialize(void *data, size_t size)
 {
-	return false;
+	const char *path = Serialize_ScratchPath();
+	uint8_t *buffer;
+	long file_size = 0;
+
+	MemorySnapShot_Capture_Immediate(path, false);
+
+	buffer = File_ReadAsIs(path, &file_size);
+	if (!buffer)
+	{
+		Log_Printf(LOG_WARN, "libretro: failed to capture save state.\n");
+		return false;
+	}
+
+	if ((size_t)file_size > size)
+	{
+		/* Frontend's buffer is smaller than the current state - it
+		 * needs to call retro_serialize_size() again and resize. */
+		free(buffer);
+		return false;
+	}
+
+	memcpy(data, buffer, file_size);
+	free(buffer);
+	return true;
 }
 
 RETRO_API bool retro_unserialize(const void *data, size_t size)
 {
-	return false;
+	const char *path = Serialize_ScratchPath();
+
+	if (!File_Save(path, (const uint8_t *)data, size, false))
+	{
+		Log_Printf(LOG_WARN, "libretro: failed to write scratch save state file.\n");
+		return false;
+	}
+
+	MemorySnapShot_Restore(path, false);
+	has_cpu_config_changed = true;
+
+	return true;
 }
 
 RETRO_API void retro_cheat_reset(void)
