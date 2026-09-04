@@ -58,6 +58,7 @@
 extern bool bQuitProgram;
 extern bool bEmulationActive;
 
+void Main_ApplyStartupOptions(void);
 bool Main_PauseEmulation(bool visualize);
 bool Main_UnPauseEmulation(void);
 void Main_RequestQuit(int exitval);

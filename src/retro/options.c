@@ -12,6 +12,7 @@
 #include "main_retro.h"
 #include "options.h"
 #include "reset.h"
+#include "screen.h"
 #include "video.h"
 
 /* ------------------------------------------------------------------- */
@@ -785,11 +786,6 @@ void Core_ApplyBootOptions(void)
 	/* --- Memory --- */
 	ConfigureParams.Memory.STRamSize_KB = Core_VarInt("hatari_memory_size", 1024);
 	ConfigureParams.Memory.TTRamSize_KB = Core_VarInt("hatari_ttram_size", 0) * 1024;
- 
-	/* Reconfigure and reboot so machine/CPU/memory/ROM changes take effect */
-	Configuration_Apply(true);
-	Reset_Cold();
-	has_cpu_config_changed = true;
 }
  
 /**
@@ -859,6 +855,9 @@ void Core_ApplyRuntimeOptions(void)
 	 * without forcing a full CPU/memory reset */
 	Configuration_Apply(true);
  
+	/* Reflect changed border/monitor/aspect settings */
+	Screen_ModeChanged(false);
+
 	/* --- Devices --- */
 	{
 		static const struct { const char *name; JOYSTICKMODE mode; } joymodes[] = {

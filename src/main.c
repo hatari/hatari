@@ -321,6 +321,8 @@ void Main_Init(int argc, char *argv[])
 		Main_ErrorExit(NULL, NULL, exitval);
 	}
 
+	Main_ApplyStartupOptions();
+
 	/* monitor type option might require "reset" -> true */
 	Configuration_Apply(true);
 

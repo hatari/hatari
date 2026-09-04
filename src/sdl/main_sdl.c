@@ -109,6 +109,12 @@ void Main_ErrorExit(const char *msg1, const char *msg2, int errval)
 }
 
 
+/* This is only used on libretro so far, so the SDL part is just a dummy */
+void Main_ApplyStartupOptions(void)
+{
+}
+
+
 /**
  * Main function
  * 

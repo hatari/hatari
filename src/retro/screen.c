@@ -162,9 +162,8 @@ void Screen_Init(void)
 {
 	/* Zooming will be done by libretro - so disable it here for now */
 	ConfigureParams.Screen.nZoomFactor = 1.0;
-	ConfigureParams.Screen.nMaxWidth = 320;
-	ConfigureParams.Screen.nMaxHeight = 200;
-	ConfigureParams.Screen.bAllowOverscan = false;
+	ConfigureParams.Screen.nMaxWidth = NUM_VISIBLE_LINE_PIXELS;
+	ConfigureParams.Screen.nMaxHeight = NUM_VISIBLE_LINES;
 
 	/* We want to render each frame with libretro, so disable frameskip */
 	ConfigureParams.Screen.nFrameSkips = 0;

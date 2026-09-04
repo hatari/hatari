@@ -132,15 +132,14 @@ RETRO_API void retro_init(void)
 		argv[3] = NULL;
 
 		Main_Init(3, argv);
-
-		return;
+	}
+	else
+	{
+		argv[1] = NULL;
+		Main_Init(1, (char **)argv);
 	}
 
-	argv[1] = NULL;
-	Main_Init(1, (char **)argv);
-
-	/* Apply core options on top of defaults/loaded config */
-	Core_ApplyBootOptions();
+	/* Apply run time options on top of defaults/loaded config */
 	Core_ApplyRuntimeOptions();
 }
 
@@ -398,6 +397,11 @@ RETRO_API size_t retro_get_memory_size(unsigned id)
 	return 0;
 }
 
+
+void Main_ApplyStartupOptions(void)
+{
+	Core_ApplyBootOptions();
+}
 
 void Main_RequestQuit(int exitval)
 {
