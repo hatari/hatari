@@ -1591,6 +1591,8 @@ static void Crossbar_setDmaPlay_Settings(void)
 	dmaPlay.frameLen = dmaPlay.frameEndAddr - dmaPlay.frameStartAddr;  /* TODO: Remove later */
 //	dmaPlay.frameCounter = crossbar.dmaPlay_CurrentFrameCount - crossbar.dmaPlay_CurrentFrameStart;
 	dmaPlay.frameCounter = 0;
+	dmaPlay.currentFrame = 0;						/* 1st frame is left if in stereo */
+//fprintf (stderr , "Crossbar_setDmaPlay_Settings cur_frame %d\n" , dmaPlay.currentFrame );
 
 	if (dmaPlay.frameEndAddr <= dmaPlay.frameStartAddr)
 	{
