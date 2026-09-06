@@ -73,9 +73,9 @@ typedef struct ipf_decode {
 
 #define get_u32be(x) Mem_ReadU32_BE((const uint8_t *)(x))
 static bool ipf_generate_track(ipf_decode *dec, track_info *t);
-static bool ipf_generate_block(const track_info *t, uint32_t idx, uint32_t ipos,
-		uint32_t *track, uint32_t *pos, uint32_t *dpos, uint32_t *gpos,
-		uint32_t *spos, bool *context);
+static bool ipf_generate_block(ipf_decode *dec, const track_info *t, uint32_t idx,
+		uint32_t ipos, uint32_t *track, uint32_t *pos, uint32_t *dpos,
+		uint32_t *gpos, uint32_t *spos, bool *context);
 static uint32_t block_compute_real_size(const track_info *t);
 static bool ipf_cells_to_flux(ipf_decode *dec, const uint32_t *cells,
 				uint32_t cell_count, IPF_TRACK_FLUX *out);
@@ -123,7 +123,11 @@ static bool ipf_parse_info(ipf_decode *dec, const uint8_t *info)
 	if (dec->type != 1)
 		return false;
 	dec->encoder_type = get_u32be(info+16); // 1 for CAPS, 2 for SPS
-	dec->encoder_revision = get_u32be(info+20); // 1 always
+	if (dec->encoder_type != 1 && dec->encoder_type != 2)
+		return false;
+	dec->encoder_revision = get_u32be(info+20);
+	if (dec->encoder_revision != 1)
+		return false; // Only SPS_ENCODER revision 1 is defined/supported
 	dec->release = get_u32be(info+24);
 	dec->revision = get_u32be(info+28);
 	dec->origin = get_u32be(info+32); // Original source reference
@@ -177,6 +181,8 @@ static bool ipf_parse_imge(ipf_decode *dec, const uint8_t *imge)
 
 	t->type = get_u32be(imge+20);
 	t->sigtype = get_u32be(imge+24); // 1 for 2us cells, no other value valid
+	if(t->sigtype != 1)
+		return false;
 	t->size_bytes = get_u32be(imge+28);
 	t->index_bytes = get_u32be(imge+32);
 	t->index_cells = get_u32be(imge+36);
@@ -185,6 +191,8 @@ static bool ipf_parse_imge(ipf_decode *dec, const uint8_t *imge)
 	t->size_cells = get_u32be(imge+48);
 	t->block_count = get_u32be(imge+52);
 	t->process = get_u32be(imge+56); // encoder process, always 0
+	if(t->process != 0)
+		return false;
 	t->weak_bits = get_u32be(imge+60);
 	t->reserved[0] = get_u32be(imge+68);
 	t->reserved[1] = get_u32be(imge+72);
@@ -218,6 +226,8 @@ static bool ipf_scan_one_tag(uint8_t *data, size_t size, uint32_t *pos,
 		return false;
 	*tag = &data[*pos];
 	*tsize = get_u32be(*tag + 4);
+	if (*tsize < 12) // Every tag has at least a 12-byte header; a smaller
+		return false; // size would stall scan_all_tags' loop forever
 	if (size - *pos < *tsize)
 		return false;
 	uint32_t crc = get_u32be(*tag+8);
@@ -266,7 +276,9 @@ static bool ipf_scan_all_tags(ipf_decode *dec, uint8_t *data, size_t size)
 			break;
 
 		default:
-			return false;
+			// Unknown tags (e.g. TRCK, CTEX, CTEI) carry no data needed
+			// for decoding and are safe to skip.
+			break;
 		}
 	}
 	return true;
@@ -336,33 +348,34 @@ static bool generate_timings(const track_info *t, uint32_t *track,
 	timing_set(track, 0, t->size_cells, 2000);
 
 	switch(t->type) {
-	case 2: break;
+	case 2: break; // type 1 (noise) never reaches here, see generate_track
 
 	case 3:
-		if (t->block_count >= 4)
-			timing_set(track, gap_pos[3], data_pos[4], 1890);
 		if (t->block_count >= 5) {
+			timing_set(track, gap_pos[3], data_pos[4], 1890);
 			timing_set(track, data_pos[4], gap_pos[4], 1890);
-			timing_set(track, gap_pos[4], data_pos[5], 1990);
 		}
 		if (t->block_count >= 6) {
+			timing_set(track, gap_pos[4], data_pos[5], 1990);
 			timing_set(track, data_pos[5], gap_pos[5], 1990);
-			timing_set(track, gap_pos[5], data_pos[6], 2090);
 		}
-		if (t->block_count >= 7)
+		if (t->block_count >= 7) {
+			timing_set(track, gap_pos[5], data_pos[6], 2090);
 			timing_set(track, data_pos[6], gap_pos[6], 2090);
+		}
 		break;
 
 	case 4:
-		timing_set(track, gap_pos[t->block_count-1], data_pos[0], 1890);
+		timing_set(track, gap_pos[t->block_count-1], t->size_cells, 1890);
 		timing_set(track, data_pos[0], gap_pos[0], 1890);
-		timing_set(track, gap_pos[0], data_pos[1], 1990);
 		if (t->block_count >= 2) {
+			timing_set(track, gap_pos[0], data_pos[1], 1990);
 			timing_set(track, data_pos[1], gap_pos[1], 1990);
-			timing_set(track, gap_pos[1], data_pos[2], 2090);
 		}
-		if (t->block_count >= 3)
+		if (t->block_count >= 3) {
+			timing_set(track, gap_pos[1], data_pos[2], 2090);
 			timing_set(track, data_pos[2], gap_pos[2], 2090);
+		}
 		break;
 
 	case 5:
@@ -396,7 +409,8 @@ static bool generate_timings(const track_info *t, uint32_t *track,
 		break;
 
 	case 9: {
-		uint32_t mask = get_u32be(t->data + 32 * t->block_count + 12);
+		// Speed key, reused from block 0's gap pattern/value field
+		uint32_t mask = get_u32be(t->data + 24);
 		for (uint32_t i = 1; i < t->block_count; i++)
 			timing_set(track, data_pos[i], gap_pos[i], mask & (1 << (i-1)) ? 1900 : 2100);
 		break;
@@ -431,6 +445,21 @@ static bool ipf_generate_track(ipf_decode *dec, track_info *t)
 		return false;
 	}
 
+	track = calloc(t->size_cells, sizeof(uint32_t));
+	if (!track)
+	{
+		perror("calloc track");
+		return false;
+	}
+
+	if (t->type == 1) {
+		// Noise/unformatted track
+		for (uint32_t i = 0; i < t->size_cells; i++)
+			track[i] = MG_N;
+		timing_set(track, 0, t->size_cells, 2000);
+		goto cells_to_flux;
+	}
+
 	if (t->data_size < 32 * t->block_count)
 		return false;
 
@@ -442,15 +471,14 @@ static bool ipf_generate_track(ipf_decode *dec, track_info *t)
 	if (t->index_cells >= t->size_cells)
 		return false;
 
-	track = calloc(t->size_cells, sizeof(uint32_t));
 	data_pos = calloc(t->block_count + 1, sizeof(uint32_t));
 	gap_pos = calloc(t->block_count, sizeof(uint32_t));
 	splice_pos = calloc(t->block_count, sizeof(uint32_t));
-	if (!track || !data_pos || !gap_pos || !splice_pos)
+	if (!data_pos || !gap_pos || !splice_pos)
 		goto done;
 
 	for (uint32_t i = 0; i != t->block_count; i++) {
-		if (!ipf_generate_block(t, i,
+		if (!ipf_generate_block(dec, t, i,
 				i == t->block_count-1 ? t->size_cells - t->index_cells : 0xffffffff,
 				track, &pos, &data_pos[i], &gap_pos[i], &splice_pos[i], &context))
 		{
@@ -471,6 +499,7 @@ static bool ipf_generate_track(ipf_decode *dec, track_info *t)
 	if (t->index_cells)
 		ipf_rotate(track, t->size_cells - t->index_cells, t->size_cells);
 
+cells_to_flux:
 	memset(&flux, 0, sizeof(flux));
 	if (!ipf_cells_to_flux(dec, track, t->size_cells, &flux))
 		goto done;
@@ -519,7 +548,8 @@ static void ipf_track_write_weak(uint32_t **tpos, uint32_t cells)
 }
 
 static bool ipf_generate_block_data(const uint8_t *data, const uint8_t *dlimit,
-                                    uint32_t *tpos, uint32_t *tlimit, bool *context)
+                                    uint32_t *tpos, uint32_t *tlimit, bool dmb,
+                                    bool *context)
 {
 	for(;;) {
 		if(data >= dlimit)
@@ -528,31 +558,33 @@ static bool ipf_generate_block_data(const uint8_t *data, const uint8_t *dlimit,
 		if((val >> 5) > dlimit-data)
 			return false;
 		uint32_t param = ipf_rb(&data, val >> 5);
-		uint32_t tleft = tlimit - tpos;
+		uint64_t tleft = tlimit - tpos;
+		uint64_t bitcount = dmb ? (uint64_t)param : (uint64_t)param * 8;
+		uint64_t bytecount = (bitcount+7)/8;
 		switch(val & 0x1f) {
 		case 0: // End of description
 			return !tleft;
 
 		case 1: // Raw bytes
-			if(8*param > tleft)
+			if (bitcount > tleft || bytecount > (uint64_t)(dlimit - data))
 				return false;
-			ipf_track_write_raw(&tpos, data, 8 * param, context);
-			data += param;
+			ipf_track_write_raw(&tpos, data, (uint32_t)bitcount, context);
+			data += bytecount;
 			break;
 
 		case 2: // MFM-decoded data bytes
 		case 3: // MFM-decoded gap bytes
-			if(16*param > tleft)
+			if (2 * bitcount > tleft || bytecount > (uint64_t)(dlimit-data))
 				return false;
-			ipf_track_write_mfm(&tpos, data, 0, 8 * param, 16*param,
-			                    context);
-			data += param;
+			ipf_track_write_mfm(&tpos, data, 0, (uint32_t)bitcount,
+			                    (uint32_t)bitcount * 2, context);
+			data += bytecount;
 			break;
 
 		case 5: // Weak bytes
-			if(16*param > tleft)
+			if(2*bitcount > tleft)
 				return false;
-			ipf_track_write_weak(&tpos, 16 * param);
+			ipf_track_write_weak(&tpos, (uint32_t)bitcount * 2);
 			*context = 0;
 			break;
 
@@ -744,9 +776,9 @@ static bool ipf_generate_block_gap(uint32_t gap_type, uint32_t gap_cells, uint8_
 	}
 }
 
-static bool ipf_generate_block(const track_info *t, uint32_t idx, uint32_t ipos,
-		uint32_t *track, uint32_t *pos, uint32_t *dpos, uint32_t *gpos,
-		uint32_t *spos, bool *context)
+static bool ipf_generate_block(ipf_decode *dec, const track_info *t, uint32_t idx,
+		uint32_t ipos, uint32_t *track, uint32_t *pos, uint32_t *dpos,
+		uint32_t *gpos, uint32_t *spos, bool *context)
 {
 	const uint8_t *data = t->data;
 	const uint8_t *data_end = t->data + t->data_size;
@@ -758,11 +790,17 @@ static bool ipf_generate_block(const track_info *t, uint32_t idx, uint32_t ipos,
 		gap_cells = 0;
 
 	// +8  = gap description offset / datasize in bytes (when gap type = 0)
+	//       -- old CAPS_ENCODER (v1): "blocksize", unused, rounded duplicate of data_cells
 	// +12 =                      1 / gap size in bytes (when gap type = 0)
+	//       -- old CAPS_ENCODER (v1): "gapsize", unused, rounded duplicate of gap_cells
 	// +16 = 1
-	// +20 = gap type
+	// +20 = flags: bits 0-1 = gap type, bit 2 = data size mode (DMB, bits vs bytes)
 	// +24 = type 0 gap pattern (8 bits) / speed mask for sector 0 track type 9
 	// +28 = data description offset
+
+	uint32_t flags = dec->encoder_type == 1 ? 0 : get_u32be(thead+20);
+	uint32_t gap_type = flags & 3;
+	bool dmb = (flags & 4) != 0;
 
 	*dpos = *pos;
 	*gpos = *dpos + data_cells;
@@ -770,9 +808,9 @@ static bool ipf_generate_block(const track_info *t, uint32_t idx, uint32_t ipos,
 	if (*pos > t->size_cells)
 		return false;
 	if (!ipf_generate_block_data(data + get_u32be(thead+28), data_end,
-	                             track + *dpos, track + *gpos, context))
+	                             track + *dpos, track + *gpos, dmb, context))
 		return false;
-	if (!ipf_generate_block_gap(get_u32be(thead+20), gap_cells, get_u32be(thead+24),
+	if (!ipf_generate_block_gap(gap_type, gap_cells, get_u32be(thead+24),
 	                            spos, ipos > *gpos ? ipos - *gpos : 0,
 	                            data + get_u32be(thead+8), data_end,
 	                            track + *gpos, context))
