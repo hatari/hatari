@@ -56,7 +56,7 @@ build-mingw:
         git clone https://github.com/PortMidi/portmidi.git
             --shallow-since=2025-01-01 -c advice.detachedHead=false &&
         cd portmidi &&
-        git checkout 806aa16c7d3c &&
+        git checkout v2.0.8 &&
         cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/Toolchain-mingw32-win64_64.cmake . &&
         make -j$(nproc) &&
         cd .. ;
@@ -125,7 +125,7 @@ build-mingw-32:
         git clone https://github.com/PortMidi/portmidi.git
             --shallow-since=2025-01-01 -c advice.detachedHead=false &&
         cd portmidi &&
-        git checkout 806aa16c7d3c &&
+        git checkout v2.0.8 &&
         cmake -DCMAKE_TOOLCHAIN_FILE=../../cmake/Toolchain-mingw32-win64_32.cmake . &&
         make -j$(nproc) &&
         cd .. ;
