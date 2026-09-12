@@ -56,6 +56,8 @@ if [ ! -e dl_cache/portmidi.framework ]; then
   cmake -DCMAKE_FRAMEWORK=ON \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
         -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .
+  cat CMakeList.txt
+
   cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu)
 
   # debug
