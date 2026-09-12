@@ -500,6 +500,9 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		else if ((SDL_GetWindowFlags(sdlWindow) & SDL_WINDOW_MAXIMIZED) == 0)
 		{
 			SDL_SetWindowSize(sdlWindow, win_width, win_height);
+#if ENABLE_SDL3
+			SDL_SyncWindow(sdlWindow);
+#endif
 		}
 	}
 	else
