@@ -19,7 +19,7 @@ fi
 hdiutil attach dl_cache/SDL3-$SDLVERSION.dmg
 sudo cp -a /Volumes/SDL3/SDL3.xcframework /Volumes/SDL3/share /Library/Frameworks/
 
-# Download, compile and install libpng Framework
+# Download, compile and install libpng Framework as universal binary for x86_64 and arm64
 if [ ! -e dl_cache/png.framework ]; then
   wget -O dl_cache/libpng-$PNGVERSION.tar.xz \
     "http://prdownloads.sourceforge.net/libpng/libpng-$PNGVERSION.tar.xz?download" ;
@@ -37,16 +37,33 @@ if [ ! -e dl_cache/png.framework ]; then
 fi
 sudo cp -a dl_cache/png.framework /Library/Frameworks/
 
-# Download and install precompiled portmidi Framework
+## Download and install precompiled portmidi Framework
+#if [ ! -e dl_cache/portmidi.framework ]; then
+#  cd dl_cache
+#  wget "https://hatari.frama.io/ci-files/macos/portmidi.framework.zip"
+#  unzip portmidi.framework.zip
+#  mv license.txt portmidi-license.txt
+#  cd ..
+#  echo "portmidi" >> libs-changed.txt
+#fi
+#sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
+
+# Download, compile and install portmidi Framework as universal binary for x86_64 and arm64
+rm -rf dl_cache/portmidi.framework
 if [ ! -e dl_cache/portmidi.framework ]; then
-  cd dl_cache
-  wget "https://hatari.frama.io/ci-files/macos/portmidi.framework.zip"
-  unzip portmidi.framework.zip
-  mv license.txt portmidi-license.txt
-  cd ..
-  echo "portmidi" >> libs-changed.txt
+  git clone --branch v2.0.8 --depth 1 https://github.com/PortMidi/portmidi.git
+  cd portmidi
+  cmake -DPNG_FRAMEWORK=ON -DPNG_HARDWARE_OPTIMIZATIONS=OFF \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
+        -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .
+  cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu)
+  codesign --force -s - portmidi.framework
+
+  # debug
+  ls -lR
 fi
-sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
+#sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
+
 
 # Download and install precompiled capsimage Framework
 if [ ! -e dl_cache/capsimage_5.1_macos-x86_64-arm64 ]; then
