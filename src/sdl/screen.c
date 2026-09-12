@@ -578,14 +578,16 @@ bool Screen_SetVideoSize(int width, int height, bool bForceChange)
 		Main_ErrorExit("Could not set video mode:", SDL_GetError(), -2);
 	}
 
-	DEBUGPRINT(("SDL screen granted: %dx%d @ %d, pitch=%d, locking required=%s\n",
-	            sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel,
-	            sdlscrn->pitch, SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
+	DEBUGPRINT(("SDL screen granted: %dx%d, pitch=%d, locking required=%s\n",
+	            sdlscrn->w, sdlscrn->h, sdlscrn->pitch,
+	            SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
+#if !ENABLE_SDL3
 	DEBUGPRINT(("Pixel format: masks r=%04x g=%04x b=%04x, "
 	            "shifts r=%d g=%d b=%d, losses r=%d g=%d b=%d\n",
 	            sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask,
 	            sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
 	            sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
+#endif
 
 	if (!bInFullScreen)
 	{
@@ -698,7 +700,6 @@ void Screen_Init(void)
 		ConfigureParams.Screen.nMaxWidth = desktop_width;
 		ConfigureParams.Screen.nMaxHeight = desktop_height;
 	}
-	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
 	Log_Printf(LOG_DEBUG, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d(+%d)\n",
 		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
 		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES, STATUSBAR_MAX_HEIGHT);
