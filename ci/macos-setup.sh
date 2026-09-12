@@ -53,14 +53,15 @@ rm -rf dl_cache/portmidi.framework
 if [ ! -e dl_cache/portmidi.framework ]; then
   git clone --branch v2.0.8 --depth 1 https://github.com/PortMidi/portmidi.git
   cd portmidi
-  cmake -DPNG_FRAMEWORK=ON -DPNG_HARDWARE_OPTIMIZATIONS=OFF \
+  cmake -DCMAKE_FRAMEWORK=ON \
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
         -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .
   cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu)
-  codesign --force -s - portmidi.framework
 
   # debug
   ls -lR
+
+  codesign --force -s - portmidi.framework
 fi
 #sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
 
