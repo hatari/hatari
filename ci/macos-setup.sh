@@ -51,12 +51,13 @@ sudo cp -a dl_cache/png.framework /Library/Frameworks/
 # Download, compile and install portmidi Framework as universal binary for x86_64 and arm64
 rm -rf dl_cache/portmidi.framework
 if [ ! -e dl_cache/portmidi.framework ]; then
-  git clone --branch v2.0.8 --depth 1 https://github.com/PortMidi/portmidi.git
-  cd portmidi
-  cmake -DCMAKE_FRAMEWORK=ON \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING="10.13" \
-        -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" .
-  cat CMakeList.txt
+  wget "https://hatari.frama.io/ci-files/macos/portmidi-2.0.8_src_with_framework.tar.bz2"
+  tar jxf portmidi-2.0.8_src_with_framework.tar.bz2
+
+  cd portmidi-2.0.8_framework/
+
+  cmake -DPM_BUILD_FRAMEWORK=ON \
+      -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" .
 
   cmake --build . --verbose --config Release -j$(sysctl -n hw.ncpu)
 
@@ -64,8 +65,11 @@ if [ ! -e dl_cache/portmidi.framework ]; then
   ls -lR
 
   codesign --force -s - portmidi.framework
+  mv portmidi.framework dl_cache/
+  cd ..
+  echo "portmidi" >> libs-changed.txt
 fi
-#sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
+sudo cp -a dl_cache/portmidi.framework /Library/Frameworks/
 
 
 # Download and install precompiled capsimage Framework
