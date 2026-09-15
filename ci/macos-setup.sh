@@ -65,7 +65,7 @@ if [ ! -e dl_cache/portmidi.framework ]; then
   ls -lR
 
   codesign --force -s - portmidi.framework
-  mv portmidi.framework dl_cache/
+  mv portmidi.framework ../dl_cache/
   cd ..
   echo "portmidi" >> libs-changed.txt
 fi
