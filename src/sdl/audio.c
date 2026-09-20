@@ -223,8 +223,6 @@ void Audio_Init(void)
 		return;
 	}
 
-	SoundBufferSize =  AUDIOMIXBUFFER_SIZE / 2;
-
 #else
 
 	/* Set up SDL audio: */
