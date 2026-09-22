@@ -10306,6 +10306,12 @@ static void generate_cpu (int id, int mode)
 			opcode_next_clev[rp] = cpu_level;
 	} else if (id == 35) { // 35 = 68030 MMU + caches + CE
 		mmu_postfix = "030c";
+		/* MOVES must go through the _state accessors like every other
+		 * access in this table: they are what record the data output
+		 * buffer that a bus-fault frame (format $A) carries and the RTE
+		 * continuation writes back. Without it a MOVES that page-faults
+		 * completes with the PREVIOUS instruction's write data. */
+		xfc_postfix = "_state";
 		cpu_level = 3;
 		using_ce020 = 2;
 		using_prefetch_020 = 2;
