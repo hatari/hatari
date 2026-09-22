@@ -70,6 +70,7 @@ const char CycInt_fileid[] = "Hatari cycInt.c";
 #include "acia.h"
 #include "scc.h"
 #include "clocks_timings.h"
+#include "nvram.h"
 
 
 //#define	CYCINT_DEBUG
@@ -111,7 +112,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	SCC_InterruptHandler_BRG_B,
 	SCC_InterruptHandler_TX_RX_B,
 	SCC_InterruptHandler_RX_B,
-	HDC_ACSI_InterruptHandler_Update
+	HDC_ACSI_InterruptHandler_Update,
+	NvRam_InterruptHandler_Periodic
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need
