@@ -1865,6 +1865,10 @@ void mmu030_page_fault(uaecptr addr, bool read, int flags, uae_u32 fc)
 	// temporary store in 68040+ variables because stack frame creation may modify them.
 	regs.wb3_data = mmu030_data_buffer_out;
 	regs.wb2_address = mmu030_state[1];
+#ifdef WINUAE_FOR_HATARI
+	LOG_TRACE(TRACE_CPU_EXCEPTION, "mmu030 page fault addr %08x %s fc %d pc %08x ssw %04x\n",
+		addr, read ? "read" : "write", fc, regs.instruction_pc, regs.mmu_ssw);
+#endif
     bBusErrorReadWrite = read; 
 	mm030_stageb_address = addr;
 

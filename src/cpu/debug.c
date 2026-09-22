@@ -365,6 +365,26 @@ static int debug_out (const TCHAR *format, ...)
 
 #endif	/* ! WINUAE_FOR_HATARI */
 
+#ifdef WINUAE_FOR_HATARI
+/* Read one byte through the MMU with the given function code
+ * (1 = user data, 5 = supervisor data), for Hatari's debugger. */
+uae_u32 debug_get_byte_mmu(uaecptr addr, int mode)
+{
+	int old = debug_mmu_mode;
+	uae_u32 v;
+
+	/* Without the 68030 MMU translating - another CPU, or before the
+	 * OS has enabled it, e.g. from a --parse file at startup - logical
+	 * addresses are physical ones, and the MMU code must not be run */
+	if (currprefs.mmu_model != 68030 || !(tc_030 & 0x80000000))
+		return STMemory_ReadByte(addr);
+	debug_mmu_mode = mode;
+	v = get_byte_debug(addr);
+	debug_mmu_mode = old;
+	return v;
+}
+#endif
+
 uae_u32 get_byte_debug (uaecptr addr)
 {
 	uae_u32 v = 0xff;
