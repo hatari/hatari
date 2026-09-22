@@ -365,6 +365,47 @@ static int debug_out (const TCHAR *format, ...)
 
 #endif	/* ! WINUAE_FOR_HATARI */
 
+#ifdef WINUAE_FOR_HATARI
+/* Whether an emulated MMU is translating addresses at the moment
+ * (not before the OS enables it, e.g. from a --parse file at startup) */
+bool debug_mmu_translating(void)
+{
+	if (currprefs.mmu_model == 68030)
+		return (tc_030 & 0x80000000) != 0;	/* TC enable */
+	if (currprefs.mmu_model >= 68040)
+		return regs.mmu_enabled;
+	return false;
+}
+
+/* Translate a logical data address for Hatari's debugger, as supervisor
+ * or user data, into *phys. Returns false when the MMU can't map it.
+ * The debug variants of the translation set mmu_debugger, so a fault
+ * neither undoes the address register updates of the last instruction
+ * nor changes the descriptors' used/modified bits. */
+bool debug_mmu_translate_data(uaecptr addr, bool super, uaecptr *phys)
+{
+	struct mmu_debug_data *mdd;
+	flagtype olds = regs.s;
+	bool ok = true;
+
+	regs.s = super;
+	TRY(p) {
+		if (currprefs.mmu_model == 68030)
+			*phys = debug_mmu030_translate(addr, super ? 5 : 1, false, &mdd);
+		else
+			*phys = debug_mmu_translate(addr, 0, super, true, false, sz_byte, &mdd);
+	} CATCH(p) {
+		ok = false;
+	} ENDTRY
+	if (currprefs.mmu_model == 68030)
+		debug_mmu030_translate_end();
+	else
+		debug_mmu_translate_end();
+	regs.s = olds;
+	return ok;
+}
+#endif
+
 uae_u32 get_byte_debug (uaecptr addr)
 {
 	uae_u32 v = 0xff;
