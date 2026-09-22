@@ -47,6 +47,7 @@ extern void NvRam_Select_ReadByte(void);
 extern void NvRam_Select_WriteByte(void);
 extern void NvRam_Data_ReadByte(void);
 extern void NvRam_Data_WriteByte(void);
+extern void NvRam_InterruptHandler_Periodic(void);
 extern void NvRam_Info(FILE *fp, uint32_t dummy);
 extern int NvRam_GetKbdLayoutCode(void);
 
