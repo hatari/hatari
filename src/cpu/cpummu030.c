@@ -3349,6 +3349,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 
 	int idxsize = -1, idxsize_done = -1;
 	bool doprefetch = true;
+	bool sw_fixed = false;		/* handler completed the access itself (DF cleared) */
 
 	// Fetch last word, real CPU does it to allow OS bus handler to map
 	// the page if frame crosses pages and following page is not resident.
@@ -3446,6 +3447,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 		// did we have data fault but DF bit cleared?
 		if (ssw & (MMU030_SSW_DF << 1) && !(ssw & MMU030_SSW_DF)) {
 			// DF not set: mark access as done
+			sw_fixed = true;
 			mmu030_data_buffer_out_v = mmu030_data_buffer_in_v;
 			if (ssw & MMU030_SSW_RM) {
 				// Read-Modify-Write: whole instruction is considered done
@@ -3507,7 +3509,7 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 		mmu030_state[1] = mmu030_state_1;
 		mmu030_state[2] = mmu030_state_2;
 		mmu030_disp_store[0] = mmu030_disp_store_0;
-		mmu030_disp_store[1] = mmu030_disp_store_1;
+			mmu030_disp_store[1] = mmu030_disp_store_1;
 		mmu030_fmovem_store[0] = mmu030_fmovem_store_0;
 		mmu030_fmovem_store[1] = mmu030_fmovem_store_1;
 		mmu030_data_buffer_out = mmu030_data_buffer_out_v;
@@ -3630,10 +3632,31 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 	 * [NP] NOTE : there's a bug when restoring cpu state after a "frame B" bus error,
 	 * the prefetch values in regs.prefetch020[] are not correct (they match PC+2 or PC+4, not PC)
 	 * As a temporary fix we force a full reload of prefetch registers for the current PC
+	 *
+	 * The refill resets the access replay state (mmu030_idx_done / mmu030_ad[]).
+	 * That is harmless when the faulted access is simply retried, but when the
+	 * bus error handler completed the access itself - cleared DF and supplied
+	 * the data in the frame's data input buffer, as Unix kernels do to make a
+	 * read of address 0 return 0 - the instruction must be replayed with that
+	 * data, not re-executed from scratch: re-executing repeats the fault forever.
+	 * So keep the replay state and the faulted opcode across the refill.
 	 */
 	if (frame == 0xb) {
-		mmu030_opcode = -1;
-		fill_prefetch_030_ntx();
+		if (sw_fixed && mmu030_retry && mmu030_opcode != -1) {
+			struct mmu030_access ad_save[MAX_MMU030_ACCESS + 1];
+			int idx_done_save = mmu030_idx_done;
+			uae_u32 opcode_save = mmu030_opcode;
+			for (int i = 0; i < MAX_MMU030_ACCESS + 1; i++)
+				ad_save[i] = mmu030_ad[i];
+			fill_prefetch_030_ntx();
+			for (int i = 0; i < MAX_MMU030_ACCESS + 1; i++)
+				mmu030_ad[i] = ad_save[i];
+			mmu030_idx_done = idx_done_save;
+			mmu030_opcode = opcode_save;
+		} else {
+			mmu030_opcode = -1;
+			fill_prefetch_030_ntx();
+		}
 	}
 #endif
 }
