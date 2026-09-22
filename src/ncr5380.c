@@ -894,6 +894,12 @@ static uae_u8 ncr5380_bget(struct soft_scsi *scsi, int reg)
 		scsi->irq = false;
 		if (Config_IsMachineFalcon())
 			FDC_ClearIRQ();
+		else if (Config_IsMachineTT())
+			/* The IRQ line must drop, or the next ncr5380_set_irq()
+			 * produces no edge on the MFP-TT GPIP and the interrupt
+			 * is lost: Atari System V waits forever for the end of
+			 * its first DMA read. */
+			MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_SCSI_NCR , MFP_GPIP_STATE_LOW );
 		break;
 		case 8: // fake dma port
 		v = raw_scsi_get_data(r, true);
@@ -964,6 +970,13 @@ void ncr5380_bput(struct soft_scsi *scsi, int reg, uae_u8 v)
 			scsi->dma_direction = 0;
 			scsi->dma_active = false;
 			scsi->dma_drq = false;
+		} else if (!(old & 2)) {
+			/* DMA mode just enabled: if the target has already moved
+			 * to a phase other than the one in the TCR, the real chip
+			 * raises the phase-mismatch interrupt at once. Atari
+			 * System V arms DMA mode after the command phase and
+			 * SLEEPS for exactly this interrupt. */
+			ncr5380_check_phase(scsi);
 		}
 		break;
 		case 5:
