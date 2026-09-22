@@ -27,6 +27,7 @@ const char NCR5380_fileid[] = "Hatari ncr5380.c";
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "ncr5380.h"
+#include "daynaport.h"
 #include "stMemory.h"
 #include "newcpu.h"
 #include "tos.h"
@@ -435,6 +436,34 @@ static bool scsi_emulate_analyze (struct scsi_data *sd)
 	data_len = ScsiBus.data_len;
 	cmd_len = scsicmdsizes[sd->cmd[0] >> 5];
 	sd->cmd_len = cmd_len;
+	if (sd->network)
+	{
+		/* DaynaPORT: the vendor commands reuse READ/WRITE opcodes with
+		 * their own length fields, so decide direction and size here */
+		switch (sd->cmd[0])
+		{
+		case 0x0a:	/* send frame */
+			sd->direction = 1;
+			ScsiBus.data_len = (sd->cmd[3] << 8) | sd->cmd[4];
+			break;
+		case 0x0d:	/* add multicast address */
+			sd->direction = 1;
+			ScsiBus.data_len = sd->cmd[4] ? sd->cmd[4] : 6;
+			break;
+		case 0x08:	/* receive */
+		case 0x09:	/* MAC + counters */
+		case 0x12:	/* INQUIRY */
+		case 0x03:	/* REQUEST SENSE */
+			sd->direction = -1;
+			ScsiBus.data_len = (sd->cmd[3] << 8) | sd->cmd[4];
+			break;
+		default:
+			sd->direction = 0;
+			ScsiBus.data_len = 0;
+			break;
+		}
+		return true;
+	}
 	switch (sd->cmd[0])
 	{
 	case 0x04: // FORMAT UNIT
@@ -572,7 +601,11 @@ static void raw_scsi_write_data(struct raw_scsi *rs, uae_u8 data)
 #if RAW_SCSI_DEBUG
 			write_log(_T("raw_scsi: data out finished, %d bytes\n"), ScsiBus.data_len);
 #endif
-			if (ScsiBus.dmawrite_to_fh)
+			if (sd->network)
+			{
+				DaynaPort_DataOut(&ScsiBus);
+			}
+			else if (ScsiBus.dmawrite_to_fh)
 			{
 				int r;
 				r = fwrite(ScsiBus.buffer, 1, ScsiBus.data_len, ScsiBus.dmawrite_to_fh);
@@ -739,7 +772,8 @@ static void dma_check(struct soft_scsi *ncr)
 			}
 		}
 	}
-	else if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
+	else if (ncr_soft_scsi.dma_direction > 0 &&
+	         (ScsiBus.dmawrite_to_fh || (ncr->rscsi.target && ncr->rscsi.target->network)))
 	{
 		/* write - if allowed */
 		if (STMemory_CheckAreaType(nDmaAddr, nDataLen, ABFLAG_RAM | ABFLAG_ROM))
@@ -1049,6 +1083,14 @@ bool Ncr5380_Init(void)
 	{
 		if (!ConfigureParams.Scsi[i].bUseDevice)
 			continue;
+		if (ConfigureParams.Scsi[i].nDeviceType == SCSI_DEVTYPE_NETWORK)
+		{
+			if (DaynaPort_Init(&ScsiBus.devs[i], ConfigureParams.Scsi[i].sNetworkIf))
+				bScsiEmuOn = true;
+			else
+				ConfigureParams.Scsi[i].bUseDevice = false;
+			continue;
+		}
 		if (HDC_InitDevice("SCSI", &ScsiBus.devs[i], &ConfigureParams.Scsi[i]) == 0)
 		{
 			nScsiPartitions += HDC_PartitionCount(ScsiBus.devs[i].image_file, TRACE_SCSI_CMD, NULL);
@@ -1068,6 +1110,7 @@ bool Ncr5380_Init(void)
  */
 void Ncr5380_UnInit(void)
 {
+	DaynaPort_UnInit();
 #if WITH_NCR5380
 	int i;
 
