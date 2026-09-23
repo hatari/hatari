@@ -575,7 +575,13 @@ static void raw_scsi_write_data(struct raw_scsi *rs, uae_u8 data)
 #endif
 				scsi_emulate_cmd(sd);	/* Hatari only */
 				scsi_start_transfer(sd);
-				rs->bus_phase = SCSI_SIGNAL_PHASE_DATA_OUT;
+				/* a network target that refuses the command (CHECK
+				 * CONDITION) goes straight to status, as the real
+				 * adapter does, instead of asking for the data */
+				if (sd->network && ScsiBus.status)
+					rs->bus_phase = SCSI_SIGNAL_PHASE_STATUS;
+				else
+					rs->bus_phase = SCSI_SIGNAL_PHASE_DATA_OUT;
 			} else if (sd->direction <= 0) {
 				scsi_emulate_cmd(sd);
 				scsi_start_transfer(sd);

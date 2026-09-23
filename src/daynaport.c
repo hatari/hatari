@@ -23,6 +23,27 @@
 
   then `--scsi-net 4=tap0` puts the adapter at SCSI id 4 with a
   00:80:19 (Dayna) MAC.
+
+  By default the adapter behaves like the ZuluSCSI/BlueSCSI emulations:
+  every command is accepted at any time. `--scsi-net 4=tap0,rom` instead
+  follows the real Dayna ROM (v2.0) as the SCSI/Link implementor's guide
+  describes it, so a driver can be tested against the hardware it will
+  meet:
+
+    - while disabled, only TEST UNIT READY, REQUEST SENSE, INQUIRY and
+      ENABLE are accepted; data commands answer CHECK CONDITION, sense
+      key 5 (illegal request)
+    - for 500 ms (emulated time) after ENABLE, data commands answer
+      CHECK CONDITION (sense key 2 here; the ROM's key for this window
+      is not documented), while TEST UNIT READY keeps answering GOOD
+    - ENABLE discards the frames queued for reception
+    - 0x09 answers 22 bytes (MAC + four counters), cut to the allocation
+    - REQUEST SENSE reports the last key, at most nine bytes
+
+  `,wedge=<n>` (with or without `rom`) also reproduces the ROM's
+  dropped-packet state: after <n> received frames, every receive answers
+  a header with the four bytes after the length all 0xFF and a nonsense
+  length, until the driver disables and re-enables the interface.
 */
 const char DaynaPort_fileid[] = "Hatari daynaport.c";
 
@@ -40,6 +61,8 @@ const char DaynaPort_fileid[] = "Hatari daynaport.c";
 #include "configuration.h"
 #include "hdc.h"
 #include "log.h"
+#include "cycles.h"
+#include "clocks_timings.h"
 #include "daynaport.h"
 
 #define DP_FRAME_MAX   1518          /* ethernet frame without CRC */
@@ -47,6 +70,13 @@ const char DaynaPort_fileid[] = "Hatari daynaport.c";
 
 static int tap_fd = -1;
 static bool dp_enabled;
+static bool dp_rom;                  /* real-ROM command gating */
+static int dp_wedge_after;           /* 0 = never wedge */
+static int dp_rx_count;              /* frames received since enable */
+static bool dp_wedged;
+static uint8_t dp_sense;             /* key for the next REQUEST SENSE */
+static uint64_t dp_settle_until;     /* CyclesGlobalClockCounter */
+static int dp_refused;               /* refusals since the last enable */
 static char dp_ifname[IFNAMSIZ];
 static const uint8_t dp_mac[6] = { 0x00, 0x80, 0x19, 0x1a, 0x7a, 0x01 };
 
@@ -80,6 +110,27 @@ bool DaynaPort_Init(SCSI_DEV *dev, const char *ifname)
 {
 #ifdef __linux__
 	struct ifreq ifr;
+	char name[IFNAMSIZ];
+	const char *opt;
+
+	/* "tap0[,rom][,wedge=<n>]" */
+	opt = strchr(ifname, ',');
+	snprintf(name, sizeof(name), "%.*s",
+	         opt ? (int)(opt - ifname) : (int)strlen(ifname), ifname);
+	dp_rom = false;
+	dp_wedge_after = 0;
+	while (opt)
+	{
+		opt++;
+		if (strncmp(opt, "rom", 3) == 0 && (opt[3] == ',' || opt[3] == 0))
+			dp_rom = true;
+		else if (strncmp(opt, "wedge=", 6) == 0)
+			dp_wedge_after = atoi(opt + 6);
+		else
+			Log_Printf(LOG_WARN, "DaynaPORT: unknown option '%s'\n", opt);
+		opt = strchr(opt, ',');
+	}
+	ifname = name;
 
 	if (tap_fd >= 0)
 		close(tap_fd);
@@ -108,8 +159,11 @@ bool DaynaPort_Init(SCSI_DEV *dev, const char *ifname)
 	dev->network = true;
 	dev->scsi_version = 2;
 	dp_enabled = false;
-	Log_Printf(LOG_INFO, "DaynaPORT: SCSI/Link on TAP interface '%s', MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
-	           dp_ifname, dp_mac[0], dp_mac[1], dp_mac[2], dp_mac[3], dp_mac[4], dp_mac[5]);
+	dp_wedged = false;
+	dp_sense = 0;
+	Log_Printf(LOG_INFO, "DaynaPORT: SCSI/Link on TAP interface '%s', MAC %02x:%02x:%02x:%02x:%02x:%02x%s%s\n",
+	           dp_ifname, dp_mac[0], dp_mac[1], dp_mac[2], dp_mac[3], dp_mac[4], dp_mac[5],
+	           dp_rom ? ", ROM behaviour" : "", dp_wedge_after ? ", wedging" : "");
 	return true;
 #else
 	Log_Printf(LOG_ERROR, "DaynaPORT: TAP networking is only available on Linux\n");
@@ -148,6 +202,44 @@ static uint8_t *dp_buf(SCSI_CTRLR *ctr, int size)
 }
 
 
+/** Answer CHECK CONDITION; the next REQUEST SENSE reports `key`. */
+static void dp_check(SCSI_CTRLR *ctr, uint8_t key)
+{
+	ctr->status = HD_STATUS_ERROR;
+	ctr->data_len = 0;
+	dp_sense = key;
+	dp_refused++;
+}
+
+/**
+ * ROM mode: may this data command run now? Refuses it (and returns false)
+ * while the interface is disabled or still settling after ENABLE.
+ */
+static bool dp_rom_ready(SCSI_CTRLR *ctr)
+{
+	if (!dp_rom)
+		return true;
+	if (!dp_enabled)
+	{
+		LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: 0x%02x refused, interface disabled\n", ctr->command[0]);
+		dp_check(ctr, 5);
+		return false;
+	}
+	if (CyclesGlobalClockCounter < dp_settle_until)
+	{
+		LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: 0x%02x refused, settling after enable\n", ctr->command[0]);
+		dp_check(ctr, 2);
+		return false;
+	}
+	if (dp_settle_until)
+	{
+		Log_Printf(LOG_INFO, "DaynaPORT: first data command (0x%02x) accepted after enable; %d refused before it\n",
+		           ctr->command[0], dp_refused);
+		dp_settle_until = 0;
+	}
+	return true;
+}
+
 /**
  * A command packet for the adapter is complete. IN commands fill the
  * response here; OUT commands only size the buffer, DaynaPort_DataOut()
@@ -176,15 +268,29 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 			buf[0] = 0x7f;               /* no such LUN */
 		break;
 
-	case 0x03:                           /* REQUEST SENSE: no error */
+	case 0x03:                           /* REQUEST SENSE: the last key */
 		size = cdb[4];
+		if (dp_rom)                      /* the ROM: 0 means 4, at most 9 */
+			size = size == 0 ? 4 : size > 9 ? 9 : size;
 		buf = dp_buf(ctr, size);
 		memset(buf, 0, size);
 		if (size > 0) buf[0] = 0x70;
-		if (size > 7) buf[7] = 10;
+		if (size > 2) buf[2] = dp_sense;
+		if (size > 7 && !dp_rom) buf[7] = 10;
+		dp_sense = 0;
 		break;
 
 	case 0x09:                           /* MAC address + counters */
+		if (!dp_rom_ready(ctr))
+			break;
+		if (dp_rom)                      /* ROM: four counters, 22 bytes */
+		{
+			int n = size < 22 ? size : 22;
+			buf = dp_buf(ctr, n);
+			memset(buf, 0, n);
+			memcpy(buf, dp_mac, n < 6 ? n : 6);
+			break;
+		}
 		buf = dp_buf(ctr, 18);
 		memset(buf, 0, 18);
 		memcpy(buf, dp_mac, 6);
@@ -193,6 +299,23 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 	case 0x0e:                           /* enable / disable */
 		dp_enabled = (cdb[5] & 0x80) != 0;
 		LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: interface %s\n", dp_enabled ? "enabled" : "disabled");
+		if (dp_enabled)
+		{
+			if (dp_wedged)
+				Log_Printf(LOG_INFO, "DaynaPORT: re-enabled, dropped-packet state cleared\n");
+			dp_wedged = false;
+			dp_rx_count = 0;
+		}
+		if (dp_enabled && dp_rom)
+		{
+			uint8_t frame[DP_FRAME_MAX];
+			/* the controller resets: queued frames are lost, and data
+			 * commands are refused for the next 500 ms */
+			while (tap_fd >= 0 && read(tap_fd, frame, sizeof(frame)) > 0)
+				;
+			dp_settle_until = CyclesGlobalClockCounter + MachineClocks.CPU_Freq_Emul / 2;
+			dp_refused = 0;
+		}
 		break;
 
 	case 0x08:                           /* receive one frame */
@@ -200,9 +323,20 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 		uint8_t frame[DP_FRAME_MAX];
 		int n = -1;
 
+		if (!dp_rom_ready(ctr))
+			break;
 		if (size < DP_HEADER + 64)
 		{
 			ctr->status = HD_STATUS_ERROR;
+			break;
+		}
+		if (dp_wedged)                   /* dropped-packet state */
+		{
+			buf = dp_buf(ctr, DP_HEADER);
+			buf[0] = 0x5a;
+			buf[1] = 0x3c;                   /* nonsense length */
+			buf[2] = buf[3] = buf[4] = buf[5] = 0xff;
+			LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: receive while wedged\n");
 			break;
 		}
 		if (dp_enabled && tap_fd >= 0)
@@ -210,6 +344,18 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 			do {
 				n = read(tap_fd, frame, sizeof(frame));
 			} while (n > 0 && !dp_wanted(frame));
+		}
+		if (n > 0 && dp_wedge_after && ++dp_rx_count > dp_wedge_after)
+		{
+			/* the adapter's buffer overflowed: this frame is lost and
+			 * the receiver stays wedged until disable/enable */
+			Log_Printf(LOG_INFO, "DaynaPORT: wedged after %d frames (dropped-packet state)\n", dp_wedge_after);
+			dp_wedged = true;
+			buf = dp_buf(ctr, DP_HEADER);
+			buf[0] = 0x5a;
+			buf[1] = 0x3c;
+			buf[2] = buf[3] = buf[4] = buf[5] = 0xff;
+			break;
 		}
 		if (n <= 0)
 		{
@@ -240,6 +386,8 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 	}
 
 	case 0x0a:                           /* send: data follows */
+		if (!dp_rom_ready(ctr))
+			break;
 		if (size <= 0 || size > DP_FRAME_MAX + 4)
 		{
 			ctr->status = HD_STATUS_ERROR;
@@ -249,6 +397,8 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 		break;
 
 	case 0x0d:                           /* add multicast address: data follows */
+		if (!dp_rom_ready(ctr))
+			break;
 		dp_buf(ctr, cdb[4] ? cdb[4] : 6);
 		break;
 

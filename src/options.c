@@ -445,7 +445,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SCSIVERSION,   NULL, "--scsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given SCSI drive ID" },
 	{ OPT_SCSINET,       NULL, "--scsi-net",
-	  "<id>=<tap>", "Emulate a DaynaPORT SCSI/Link ethernet adapter (0-7) on TAP interface <tap>" },
+	  "<id>=<tap>[,rom][,wedge=<n>]", "Emulate a DaynaPORT SCSI/Link ethernet adapter (0-7) on TAP interface <tap>; rom = real-ROM command gating, wedge = dropped-packet state after <n> frames" },
 	{ OPT_ACSIVERSION,   NULL, "--acsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given ACSI drive ID" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
