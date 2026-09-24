@@ -33,6 +33,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 #include "symbols.h"
 #include "stacktrace.h"
 #include "68kDisass.h"
+#include "debug.h"
 #include "console.h"
 #include "options.h"
 #include "tos.h"
@@ -44,6 +45,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 
 static uint32_t disasm_addr;     /* disasm address */
 static uint32_t memdump_addr;    /* memdump address */
+static int memdump_fc;           /* 0 = physical, else MMU function code to read through */
 static uint32_t fake_regs[8];    /* virtual debugger "registers" */
 static bool bFakeRegsUsed;     /* whether to show virtual regs */
 
@@ -481,7 +483,13 @@ static void print_mem_values(uint32_t addr, int count, int size, int base)
 	for (int i = 0; i < count; i++)
 	{
 		uint32_t value;
-		switch (size)
+		if (memdump_fc)
+		{
+			value = 0;
+			for (int j = 0; j < size; j++)
+				value = (value << 8) | debug_get_byte_mmu(addr + j, memdump_fc);
+		}
+		else switch (size)
 		{
 		case 4:
 			value = STMemory_ReadLong(addr);
@@ -526,7 +534,7 @@ static void print_mem_chars(uint32_t addr, uint8_t count)
 {
 	for (int i = 0; i < count; i++)
 	{
-		Str_PrintMemChar(debugOutput, STMemory_ReadByte(addr + i));
+		Str_PrintMemChar(debugOutput, memdump_fc ? debug_get_byte_mmu(addr + i, memdump_fc) : STMemory_ReadByte(addr + i));
 	}
 }
 
@@ -543,11 +551,19 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 	if (nArgc > 1)
 		mode = tolower((unsigned char)psArgs[arg][0]);
 
+	memdump_fc = 0;
 	if (!mode || isdigit((unsigned char)psArgs[arg][0]) || psArgs[arg][1])
 	{
 		/* no args, single digit or multiple chars -> default mode */
 		mode = 'b';
 		size = 1;
+	}
+	else if (mode == 's' || mode == 'u')
+	{
+		/* logical address, read through the MMU as supervisor/user data */
+		memdump_fc = (mode == 's') ? 5 : 1;
+		size = 1;
+		arg += 1;
 	}
 	else if ((size = get_type_width(mode)))
 	{
@@ -1486,10 +1502,13 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
 	  "dump memory",
-	  "[b|w|l] [<start address>[-<end address>| <count>]]\n"
+	  "[b|w|l|s|u] [<start address>[-<end address>| <count>]]\n"
 	  "\tdump memory at address or continue dump from previous address.\n"
 	  "\tBy default memory output is done as bytes, with 'w' or 'l'\n"
-	  "\toption, it will be done as words/longs instead.  Output amount\n"
+	  "\toption, it will be done as words/longs instead.  With 's' or\n"
+	  "\t'u' the address is a logical one, read (as bytes) through the\n"
+	  "\t68030 MMU as supervisor or user data (physical memory while\n"
+	  "\tthe MMU is not translating).  Output amount\n"
 	  "\tcan be given either as a count or an address range.",
 	  false },
 	{ DebugCpu_Struct, Symbols_MatchCpuDataAddress,
