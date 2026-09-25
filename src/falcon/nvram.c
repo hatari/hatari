@@ -47,8 +47,11 @@
   - all alarm handling
   - doing clock updates at 1Hz
     (instead of when regs are read)
-  - periodic divisor & rate-control bits
-  - alarm, update-end and periodic interrupt generation
+  - alarm and update-end interrupt generation
+
+  The periodic interrupt IS implemented (rate from register A, enable
+  from register B, PF/IRQF in register C, /IRQ on the TT-MFP GPIP6
+  line): Atari System V runs its 128 Hz system clock from it.
 */
 const char NvRam_fileid[] = "Hatari nvram.c";
 
@@ -63,9 +66,15 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "tos.h"
 #include "vdi.h"
 #include "m68000.h"
+#include "cycInt.h"
+#include "mfp.h"
+#include "clocks_timings.h"
 
 // Defs for NVRAM control register A (10) bits
 #define REG_BIT_UIP  0x80	/* update-in-progress */
+#define REG_DV_MASK  0x70	/* divider chain select */
+#define REG_DV_RUN   0x20	/* 32.768 kHz time base, chain running */
+#define REG_RS_MASK  0x0f	/* periodic interrupt rate select */
 // and 3 clock divider & 3 rate-control bits
 
 // Defs for NVRAM control register B (11) bits
@@ -203,17 +212,107 @@ static void NvRam_SetChecksum(void)
  * - alarm interrupt flag is set when time matches alarm time
  *   i.e. only once a day
  */
+/**
+ * Is the periodic interrupt divider chain running (reg A: DV=010, RS!=0)?
+ */
+static bool periodic_enabled(void)
+{
+	return (nvram[10] & REG_DV_MASK) == REG_DV_RUN && (nvram[10] & REG_RS_MASK) != 0;
+}
+
+/**
+ * Period of the periodic interrupt in microseconds, from reg A's RS bits
+ * (MC146818 table 3: RS=1 3.90625 ms, RS=2 7.8125 ms, RS>=3 2^(RS-1)/32768 s).
+ */
+static double periodic_period_us(void)
+{
+	int rs = nvram[10] & REG_RS_MASK;
+	if (rs == 1)
+		return 3906.25;
+	if (rs == 2)
+		return 7812.5;
+	return 1000000.0 * (double)(1 << (rs - 1)) / 32768.0;
+}
+
+/**
+ * Drive the RTC's /IRQ pin (active low). Only the TT wires it to an
+ * interrupt input (TT-MFP GPIP6); TOS leaves that MFP's AER bit 6 clear,
+ * so the falling edge is what raises the interrupt.
+ */
+static void set_irq_pin(bool active)
+{
+	if (!Config_IsMachineTT())
+		return;
+	if (active)
+	{
+		/* make sure a falling edge exists even if the line idles low */
+		MFP_GPIP_Set_Line_Input(pMFP_TT, MFP_TT_GPIP_LINE_RTC, MFP_GPIP_STATE_HIGH);
+		MFP_GPIP_Set_Line_Input(pMFP_TT, MFP_TT_GPIP_LINE_RTC, MFP_GPIP_STATE_LOW);
+	}
+	else
+		MFP_GPIP_Set_Line_Input(pMFP_TT, MFP_TT_GPIP_LINE_RTC, MFP_GPIP_STATE_HIGH);
+}
+
+/**
+ * Recompute IRQF from the enable bits (B) and flag bits (C) and drive the pin.
+ */
+static void update_irq(void)
+{
+	const uint8_t int_mask = REG_BIT_UF|REG_BIT_AF|REG_BIT_PF;
+
+	if (nvram[11] & nvram[12] & int_mask)
+	{
+		nvram[12] |= REG_BIT_IRQF;
+		set_irq_pin(true);
+	}
+	else
+	{
+		nvram[12] &= ~REG_BIT_IRQF;
+		set_irq_pin(false);
+	}
+}
+
+/**
+ * (Re)start or stop the periodic interrupt timer after a reg A/B write or
+ * a reset. Adding an interrupt that is already pending just reschedules it.
+ */
+static void update_periodic(void)
+{
+	if (periodic_enabled())
+	{
+		int cycles = (int)(periodic_period_us() * MachineClocks.CPU_Freq_Emul / 1000000.0);
+		CycInt_AddRelativeInterrupt(cycles, INT_CPU_CYCLE, INTERRUPT_RTC_PERIODIC);
+	}
+	else
+		CycInt_RemovePendingInterrupt(INTERRUPT_RTC_PERIODIC);
+}
+
+/**
+ * Periodic interrupt tick: set PF, raise /IRQ if PIE, reschedule.
+ */
+void NvRam_InterruptHandler_Periodic(void)
+{
+	CycInt_AcknowledgeInterrupt();
+	if (!periodic_enabled())
+		return;
+	nvram[12] |= REG_BIT_PF;
+	update_irq();
+	CycInt_AddRelativeInterrupt((int)(periodic_period_us() * MachineClocks.CPU_Freq_Emul / 1000000.0),
+	                            INT_CPU_CYCLE, INTERRUPT_RTC_PERIODIC);
+}
+
+/* Reading reg C clears every flag. We don't emulate the 1 Hz update cycle
+ * or alarms, so UF is set again at once (so programs polling it still see
+ * it); the same shortcut is kept for PF while the periodic divider is NOT
+ * running, otherwise PF is real and set by the timer.
+ */
 static void clear_reg_c(void)
 {
-	/* => set flags for fastest 2 interrupts right away */
-	nvram[12] = REG_BIT_UF|REG_BIT_PF;
-	/* are these interrupts also enable in reg B? */
-	if (nvram[11] & nvram[12])
-	{
-		/* -> set also interrupt request flag */
-		nvram[12] |= REG_BIT_IRQF;
-		/* TODO: generate interrupt */
-	}
+	nvram[12] = REG_BIT_UF;
+	if (!periodic_enabled())
+		nvram[12] |= REG_BIT_PF;
+	/* the shortcut flags may raise IRQF right back, as before */
+	update_irq();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -271,6 +370,7 @@ void NvRam_Reset(void)
 	nvram[11] &= ~(REG_BIT_SQWE|REG_BIT_UIE|REG_BIT_AIE|REG_BIT_PIE);
 	/* and interrupt flag bits */
 	clear_reg_c();
+	update_periodic();
 
 	nvram_index = 0;
 }
@@ -399,11 +499,23 @@ static struct tm* getFrozenTime(void)
  * If NVRAM data mode bit is set, returns given value,
  * otherwise returns it as BCD.
  */
+/**
+ * Encode a clock value as reg B's data-mode bit asks: BCD (default) or binary.
+ */
+static uint8_t clockval(uint8_t value);
+
 static uint8_t bin2BCD(uint8_t value)
 {
 	if ((nvram[11] & REG_BIT_DM))
 		return value;
 	return ((value / 10) << 4) | (value % 10);
+}
+
+static uint8_t clockval(uint8_t value)
+{
+	if (nvram[11] & REG_BIT_DM)
+		return value;
+	return bin2BCD(value);
 }
 
 
@@ -420,13 +532,13 @@ void NvRam_Data_ReadByte(void)
 	case 1: /* alarm seconds */
 	case 3:	/* alarm minutes */
 	case 5: /* alarm hour */
-		value = bin2BCD(nvram[nvram_index]);
+		value = clockval(nvram[nvram_index]);
 		break;
 	case 0:
-		value = bin2BCD(getFrozenTime()->tm_sec);
+		value = clockval(getFrozenTime()->tm_sec);
 		break;
 	case 2:
-		value = bin2BCD(getFrozenTime()->tm_min);
+		value = clockval(getFrozenTime()->tm_min);
 		break;
 	case 4:
 		value = getFrozenTime()->tm_hour;
@@ -436,22 +548,22 @@ void NvRam_Data_ReadByte(void)
 			value = value % 12;
 			if (value == 0)
 				value = 12;
-			value = bin2BCD(value) | pmflag;
+			value = clockval(value) | pmflag;
 		}
 		else
-			value = bin2BCD(value);
+			value = clockval(value);
 		break;
 	case 6:
-		value = bin2BCD(getFrozenTime()->tm_wday + 1);
+		value = clockval(getFrozenTime()->tm_wday + 1);
 		break;
 	case 7:
-		value = bin2BCD(getFrozenTime()->tm_mday);
+		value = clockval(getFrozenTime()->tm_mday);
 		break;
 	case 8:
-		value = bin2BCD(getFrozenTime()->tm_mon + 1);
+		value = clockval(getFrozenTime()->tm_mon + 1);
 		break;
 	case 9:
-		value = bin2BCD(getFrozenTime()->tm_year - year_offset);
+		value = clockval(getFrozenTime()->tm_year - year_offset);
 		break;
 	case 10:
 		/* control reg A
@@ -502,9 +614,6 @@ void NvRam_Data_ReadByte(void)
 
 void NvRam_Data_WriteByte(void)
 {
-	/* enable & flag bits in B & C regs match each other -> use same mask for both */
-	const uint8_t int_mask = REG_BIT_UF|REG_BIT_AF|REG_BIT_PF;
-
 	uint8_t value = IoMem_ReadByte(0xff8963);
 	switch (nvram_index)
 	{
@@ -514,24 +623,21 @@ void NvRam_Data_WriteByte(void)
 	case 10:
 		/* UIP bit is read-only */
 		value = (value & ~REG_BIT_UIP) | (nvram[10] & REG_BIT_UIP);
+		nvram[10] = value;
+		update_periodic();
 		break;
 	case 11:
-		if (value & int_mask)
-		{
-			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM interrupt enable bits 0x%x\n", value & int_mask);
-			if (nvram[12] & int_mask)
-			{
-				/* reg B enabling bits matched reg C flag bits */
-				nvram[12] |= REG_BIT_IRQF;
-				/* TODO: generate interrupt */
-			}
-			/* TODO: start updating reg C flag bits & generate interrupts when appropriate */
-		}
+		if (value & (REG_BIT_UIE|REG_BIT_AIE))
+			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM interrupt enable bits 0x%x\n",
+			           value & (REG_BIT_UIE|REG_BIT_AIE));
 		if (value & REG_BIT_SET)
 		{
 			/* refresh clock as its updating is suspended while SET is enabled */
 			refreshFrozenTime(true);
 		}
+		nvram[11] = value;
+		update_periodic();
+		update_irq();
 		break;
 	case 12:
 	case 13:
