@@ -48,7 +48,7 @@ jobs:
     runs-on: windows-latest
     env:
       MSYS: winsymlinks:nativestrict
-      MSYSTEM: MINGW64
+      MSYSTEM: UCRT64
       CHERE_INVOKING: 1
     steps:
     - uses: actions/checkout@v6
@@ -57,12 +57,12 @@ jobs:
         choco install -y --no-progress msys2
         C:\tools\msys64\usr\bin\bash -lc "pacman --noconfirm -S --needed \
           make pkg-config diffutils \
-          mingw-w64-x86_64-cmake \
-          mingw-w64-x86_64-gcc \
-          mingw-w64-x86_64-SDL2 \
-          mingw-w64-x86_64-libpng \
-          mingw-w64-x86_64-portmidi \
-          mingw-w64-x86_64-libarchive"
+          mingw-w64-ucrt-x86_64-cmake \
+          mingw-w64-ucrt-x86_64-gcc \
+          mingw-w64-ucrt-x86_64-sdl3 \
+          mingw-w64-ucrt-x86_64-libpng \
+          mingw-w64-ucrt-x86_64-portmidi \
+          mingw-w64-ucrt-x86_64-libarchive"
     - name: Compile Hatari
       run: |
         C:\tools\msys64\usr\bin\bash -lc "cmake -G 'MSYS Makefiles' ."
