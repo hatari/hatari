@@ -87,6 +87,9 @@ Emulator improvements:
     and new tclow/tcmed/tchigh values for Falcon TC modes
 - NatFeats:
   - New NF_CYCLES call to retrieve (unsigned) 32-bit cycle counter
+- Remote API:
+  - New "leftdown" / "leftup" / "mousemove" mouse commands to
+    better support GUI usage automation
 - Tracing:
   - "event" option for tracing option changes on events
 - Debugger:
@@ -123,6 +126,7 @@ Tools:
 - Profile data includes more detailed Hatari configuration information
 - Profile post-processor accepts "fnmatch" patterns for all
   options that take symbol names
+- "hconsole" support for the new remote API mouse commands
 
 Testing additions:
 - Test for verifying parsing of all Hatari options
