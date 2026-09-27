@@ -2,7 +2,7 @@ Contents:
 
 1. Introduction
 1.1 Notation
-2. Hatari issues
+2. Missing Hatari emulation features
 3. Building m68k kernel
 3.1 Kernel config notes
 4. Building root file system
@@ -18,9 +18,11 @@ Contents:
 9.1 Debian installer
 9.2 Running initrd as normal disk
 9.3 Bootstrapping Debian installation on PC
-10. Linux kernel issues
-10.1 Known issues with workarounds
-10.2 TODO / investigate more
+10 Known issues (+ workarounds)
+10.1 Hatari issues
+10.2 Linux kernel issues
+10.3 Unreproducible issues
+10.4 TODO / investigate more
 
 
 1. Introduction
@@ -57,12 +59,14 @@ them change frequently. Replace "*" in those file names with the
 version available in the given remote directory!
 
 
-2. Hatari issues
-----------------
+2. Missing Hatari emulation features
+------------------------------------
 
 - LILO reset code has not yet been updated from Aranym's Falcon
   AfterBurner behavior to normal Falcon (they use different reset
-  addresses), so "reboot" command fails with LILO
+  addresses), so "reboot" command fails with LILO and SysRq reboot
+  ("b") request causes double bus error (though poweroff ("o") works):
+	echo b > /proc/sysrq-trigger
 
 - PC address points to ST-RAM in debugger even for emulated Linux
   code running in TT-RAM, because it is not MMU-translated
@@ -158,9 +162,8 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
 - You can fine-tune kernel config for your requirements with:
    $ ARCH=m68k CROSS_COMPILE=m68k-linux-gnu- make -j4 menuconfig
 
-- Use "optimize for size" instead of "optimize for performance".
-  Latter is 1/4th (1MB) larger, and does not currently work
-  properly, although it boots much faster
+- "Optimize for size" is used instead of "Optimize for performance".
+  Latter is 1/4th (1MB) larger, although it boots much faster
 
 - With v6.17 or newer, "dead code elimination" option can be
   used to get 1/2MB smaller kernel image
@@ -674,34 +677,11 @@ $ aranym-mmu -l linux.config
 ------------------------------------------------------------
 
 
-10. Linux kernel issues
------------------------
+10 Known issues (+ workarounds)
+-------------------------------
 
-10.1 Known issues with workarounds
-----------------------------------
-
-- Builds configured for performance (-O2) instead of size (-Os), and
-  built with Debian 12 (bookworm) m68k GCC (12.2), will Oops once boot
-  reaches user-space
-
-  Workaround: kernel configured for size (in included kernel.config)
-
-- Old (4.x?) Linux versions do not work if kernel is loaded to TT-RAM
-
-  Workaround: Load kernel to ST-RAM or use more recent kernel version
-
-- Hatari debug output shows IDE and DSP reset messages on Falcon at
-  2Hz (from floppy media change detection) if Linux is started with
-  "--lilo", instead of from TOS.  This is because TOS initializes PSG
-  port-A register bits to sensible values and Linux does not.
-
-  Workaround: included kernel patch
-
-- Atari TT boot freezes with constant "unexpected interrupt from 112"
-  messages, due to Linux SCU register setup regression.
-
-  Workaround: use >=6.11 Linux kernel, or kernel patch:
-  https://github.com/torvalds/linux/commit/f70065a9fd988983b2c693631b801f25a615fc04
+10.1 Hatari issues
+------------------
 
 - Older Hatari version prefetch emulation was incorrect for bus
   errors.  This caused user-space program crashes if either (or both)
@@ -710,16 +690,69 @@ $ aranym-mmu -l linux.config
   This problem was very visible with the tools included to statically
   linked Busybox, but those issues cannot be reproduced any more.
 
-  Fix: Use Hatari >=2.6 version.
+  => Fix: Use Hatari >=2.6 version.
+
+- When 040 or 060 data cache is enabled, boots crash to double bus
+  error. Although screen is black, CPU trace indicates a panic. With
+  040, panic is called in atari_stram_init(), with 60, somewhere else.
+
+  => Workaround: disable CPU data cache for 040/060 ("--data-cache off")
+
+  (There was a regression in Hatari <2.5, where there was a panic with
+  040 & 060 after reaching user-space, even with the CPU data cache
+  emulation disabled.)
+
+  When booting Linux with "bootstra.prg" instead directly with LILO,
+  kernel panics immediately even with the cache emulation disabled.
+
+  => Workaround: boot 040/060 with LILO ("--lilo ...")
+
+  Note: these did not happen with 2019 v2.3-dev Git version (and Linux
+  version of that time). Linux also boots fine on real 060 Falcon:
+	https://www.youtube.com/watch?v=8Sriz45Z4oM
+
+
+10.2 Linux kernel issues
+------------------------
+
+- Old (4.x?) Linux versions do not work if kernel is loaded to TT-RAM
+
+  => Workaround: Load kernel to ST-RAM or use more recent kernel version
+
+- Hatari debug output shows IDE and DSP reset messages on Falcon at
+  2Hz (from floppy media change detection) if Linux is started with
+  "--lilo", instead of from TOS.  This is because TOS initializes PSG
+  port-A register bits to sensible values and Linux does not.
+
+  => Workaround: kernel patch included with Hatari (Git)
+
+- Atari TT boot freezes with constant "unexpected interrupt from 112"
+  messages, due to Linux SCU register setup regression.
+
+  => Fix: use >=6.11 Linux kernel, or kernel patch:
+  https://github.com/torvalds/linux/commit/f70065a9fd988983b2c693631b801f25a615fc04
 
 - Kernel versions 6.16-6.17 include regression to lock alignment checks
   that can cause kernel warnings and (eventually) a non-working console.
 
-  Fix: Use some other kernel version, or kernel patch:
+  => Fix: Use some other kernel version, or kernel patch:
   https://github.com/torvalds/linux/commit/c97513cddcfc235f2522617980838e500af21d01
 
 
-10.2 TODO / investigate more
+10.4 Unreproducible issues
+--------------------------
+
+- Some builds configured for performance (-O2) instead of size (-Os),
+  and built with Debian 12 (bookworm) m68k GCC (12.2), were Oopsing
+  once boot reached user-space. Cannot reproduce that any more with
+  Debian 13 (Trixie) / m68kk GCC (14.2) builds, nor with the earlier
+  v6.15 (O2) kernel build.  This may have been related to the Hatari
+  prefetch issue, and/or specific to its earlier (Debian) build env.
+
+  => Workaround: kernel configured for size (included "kernel.config")
+
+
+10.3 TODO / investigate more
 ----------------------------
 
 - Kernel does not recognize ACSI drives at all, although kernel
@@ -746,20 +779,6 @@ Kernel panic - not syncing: VFS: Unable to mount root fs on unknown-block(0,0)
 ------------------------------------------------------------
   Only SCSI & IDE drives are recognized
 
-- with Hatari >=2.5, Linux works again[1] on 040 & 060, when CPU data
-  cache emulation is disabled (--data-cache off).
-
-  However, when data cache is enabled, boots crash to double bus
-  error.  Although screen is black, CPU trace indicates a panic. With
-  040, panic is called in atari_stram_init(), with 60, somewhere else.
-
-  Note: when booting Linux with "bootstra.prg" instead directly with
-  LILO, kernel panics immediately even with cache emulation disabled.
-
-  [1] In previous Hatari versions, there was panic on reaching user-space.
-
-  These did not happen with 2019 v2.3-dev Git version (and Linux
-  version of that time). Linux also boots fine on real 060 Falcon:
-	https://www.youtube.com/watch?v=8Sriz45Z4oM
+  => workaround: have root file system on IDE master or slave
 
 - Busybox "halt" & "reboot" do nothing, although klibc versions work fine
