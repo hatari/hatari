@@ -3039,7 +3039,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Mini F1 (demo)</td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>-</td>
       <td>-</td>
       <td>Freezes when the game would start (until VideoAddressCounter == $2A?).
@@ -3048,7 +3048,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>-</td>
       <td>emu</td>
       <td>Only STE Joypad button 3 starts the game. After selecting speeder
@@ -3147,7 +3147,7 @@ VGA one are indicated separately.</p>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td class="minor">2.5</td>
+      <td class="minor">2.7-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Colors wrong in classic version. TC version just exits, but
@@ -3543,14 +3543,14 @@ FPU.</p>
     <tr>
       <td>Abstract:
       <a href="https://www.pouet.net/prod.php?which=8582">X-perience</a></td>
-      <td class="major">2.6</td>
+      <td class="major">2.7-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>v2.5: Dots do not show in the "4096 dots" screen, and
           demo does not progress further from it, music just plays.
 	  Supposed to be for VGA, but screen is proper size only
 	  with RGB<br>
-	  v2.6: Freezes right at start</td>
+	  v2.6+: Freezes right at start</td>
     </tr>
     <tr>
       <td>Aggression:
@@ -3734,7 +3734,7 @@ FPU.</p>
     <tr>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=23589">Bound 4</a></td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes with music playing, waiting on DSP interrupt (or Video Address Counter?)</td>
@@ -3743,7 +3743,7 @@ FPU.</p>
       <td>Crac:
       <a href="http://www.pouet.net/prod.php?which=25559">Bound 5</a>
       </td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>yes</td>
       <td>emu</td>
       <td>Freezes in tiger screen, with music playing</td>
@@ -4047,10 +4047,11 @@ FPU.</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=15676">_</a></td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes after few screens to illegal DSP instructions</td>
+      <td>With 50Hz RGB, freezes after few screens to illegal DSP instructions,
+          With 50Hz VGA, screen output freezes few frames later to a bus error</td>
     </tr>
     <tr>
       <td>Escape:
@@ -4463,7 +4464,7 @@ FPU.</p>
     <tr>
       <td>Opium:
       <a href="http://www.pouet.net/prod.php?which=17822">Chrome Dragon</a></td>
-      <td class="minor">2.6</td>
+      <td class="minor">2.7-dev</td>
       <td>yes</td>
       <td>-</td>
       <td>Requires RGB. At least since v1.8, music is missing.
@@ -5003,16 +5004,18 @@ and <a href="https://github.com/th-otto/fpsp">sources</a>.
     </tr>
     <tr>
       <td><a href="http://www.leonik.net/dml/sec_apex3.py">Apex Alpha (demo)</a></td>
-      <td class="minor">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>-</td>
-      <td>Requires MMU + FPU.  Screen isn't drawn properly, but
+      <td>Requires MMU + FPU.<br>
+          v2.5: Screen isn't drawn properly, but
           dragging scorpion image over top + bottom left screen
 	  area reveals GUI buttons that can be moved around the
-	  screen. Doesn't seem to do much else</td>
+	  screen. Doesn't seem to do much else.<br>
+	  v2.6+: freezes at start</td>
     </tr>
     <tr>
       <td><a href="http://umich.edu/~archive/atari/Falcon/Graphics/">Apex demo v2.10</a></td>
-      <td class="major">2.5</td>
+      <td class="major">2.7-dev</td>
       <td>emu</td>
       <td>apex210d.prg crashes on startup. Separate image viewer programs work fine.
           On real Falcon, application (its bus error detection for Expose digitizer)

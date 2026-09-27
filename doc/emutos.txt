@@ -766,6 +766,7 @@ Free/shareware/PD games:
 - Teserae*
 - The errand boy (text adventure)
 - The lost world (line-A bitblits)
+- Tiny Quest     (color version)
 - Toogle*        (works an any machine)
 - Toop
 - Trace
@@ -907,6 +908,7 @@ Monochrome games:
 - Take2*        (line-A bitblit)
 - Tenebra-1*
 - Tenebra-2*
+- Tiny Quest    (mono version)
 - Wallball
 - Whack a Virus (SillyVenture 2022 edition)
 
@@ -1772,7 +1774,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Chorensha (DSP version)
 - Conquest of Elysium II (preview)
 - Crown of Creation (preview)
-- Des Lazers & des Hommes
+- Des Lazers & des Hommes v2
 - Double Bobble 2000* (by Reservoir Gods)
   - For v1.0, disable DSP from Hatari
 - Epi-Lepsie (by PARX)
@@ -1807,6 +1809,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Wotanoid (Asteroids clone)
 
 Games working under EmuTOS >= v1.2:
+- Des Lazers & des Hommes v3/extended (needs >= 8MB)
 - Tetrhex (1.41)
 
 Games working under EmuTOS >= v1.3 (XBios TC support):
