@@ -16,7 +16,12 @@
   - PCAP (libpcap; Npcap on Windows): the frames go straight onto a real
     host interface, so the guest is a machine on the LAN. Needs capture
     rights (root or CAP_NET_RAW on Linux, access to /dev/bpf* on macOS,
-    Npcap installed on Windows).
+    Npcap installed on Windows). Only frames arriving on the interface are
+    seen, so the host itself can't talk to the guest over it (other LAN
+    machines can); most Wi-Fi access points drop frames from the guest's
+    MAC. On a veth or bridge fed by the host's own stack, turn TX checksum
+    offload off (ethtool -K <peer> tx off) or TCP from the host arrives
+    with unfinished checksums and the guest drops it.
 
   The emulated adapters poll for frames (DaynaPORT's receive command), so
   every backend works without threads: SLIRP's sockets and timers are
