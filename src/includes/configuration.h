@@ -264,7 +264,7 @@ typedef struct
 typedef enum
 {
   SCSI_DEVTYPE_DISK,
-  SCSI_DEVTYPE_NETWORK      /* DaynaPORT SCSI/Link on TAP interface sNetworkIf */
+  SCSI_DEVTYPE_NETWORK      /* DaynaPORT SCSI/Link on host network sNetworkIf */
 } SCSI_DEVTYPE;
 
 typedef struct
@@ -274,7 +274,7 @@ typedef struct
   int nBlockSize;
   int nScsiVersion;
   SCSI_DEVTYPE nDeviceType;
-  char sNetworkIf[32];
+  char sNetworkIf[256];               /* hostnet.h spec + DaynaPORT options */
 } CNF_SCSIDEV;
 
 typedef enum

@@ -15,14 +15,21 @@
           and a 4-byte CRC; an empty queue answers six zero bytes
     0x0D  add a multicast address (6 bytes out, ignored here)
 
-  Frames go to a host TAP interface (Linux only). The interface has to
-  exist and be owned by the user running Hatari:
+  Frames go to the host through one of hostnet.c's backends:
 
-    ip tuntap add dev tap0 mode tap user $USER
-    ip addr add 192.168.30.1/24 dev tap0 && ip link set tap0 up
+    --scsi-net 4=slirp          user-mode NAT: no setup, any OS; the guest
+                                gets 10.0.2.15 by DHCP (net=, host=, dns=,
+                                guest= and hostfwd= change that, see
+                                hostnet.h), e.g. telnet into the guest with
+                                slirp,hostfwd=tcp:2323-:23
+    --scsi-net 4=pcap:<if>      bridged onto a host interface (libpcap;
+                                Npcap on Windows): pcap:list names them
+    --scsi-net 4=tap0           a Linux TAP interface, created once with
+                                ip tuntap add dev tap0 mode tap user $USER
+                                ip addr add 192.168.30.1/24 dev tap0
+                                ip link set tap0 up
 
-  then `--scsi-net 4=tap0` puts the adapter at SCSI id 4 with a
-  00:80:19 (Dayna) MAC.
+  The adapter sits at the given SCSI id with a 00:80:19 (Dayna) MAC.
 
   By default the adapter behaves like the ZuluSCSI/BlueSCSI emulations:
   every command is accepted at any time. `--scsi-net 4=tap0,rom` instead
@@ -48,14 +55,8 @@
 const char DaynaPort_fileid[] = "Hatari daynaport.c";
 
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
-#ifdef __linux__
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <linux/if_tun.h>
-#endif
 
 #include "main.h"
 #include "configuration.h"
@@ -64,11 +65,12 @@ const char DaynaPort_fileid[] = "Hatari daynaport.c";
 #include "cycles.h"
 #include "clocks_timings.h"
 #include "daynaport.h"
+#include "hostnet.h"
 
-#define DP_FRAME_MAX   1518          /* ethernet frame without CRC */
+#define DP_FRAME_MAX   HOSTNET_FRAME_MAX  /* ethernet frame without CRC */
 #define DP_HEADER      6
 
-static int tap_fd = -1;
+static hostnet_t *dp_net;
 static bool dp_enabled;
 static bool dp_rom;                  /* real-ROM command gating */
 static int dp_wedge_after;           /* 0 = never wedge */
@@ -77,7 +79,6 @@ static bool dp_wedged;
 static uint8_t dp_sense;             /* key for the next REQUEST SENSE */
 static uint64_t dp_settle_until;     /* CyclesGlobalClockCounter */
 static int dp_refused;               /* refusals since the last enable */
-static char dp_ifname[IFNAMSIZ];
 static const uint8_t dp_mac[6] = { 0x00, 0x80, 0x19, 0x1a, 0x7a, 0x01 };
 
 static const uint8_t dp_inquiry[36] =
@@ -102,58 +103,34 @@ static uint32_t dp_crc32(const uint8_t *p, int n)
 }
 
 
-/**
- * Open the TAP interface for a SCSI slot configured as a network adapter.
- * Returns true on success; the device is then enabled on the bus.
- */
-bool DaynaPort_Init(SCSI_DEV *dev, const char *ifname)
+/* the adapter's own options, after the backend's: rom, wedge=<n> */
+static bool dp_option(const char *opt)
 {
-#ifdef __linux__
-	struct ifreq ifr;
-	char name[IFNAMSIZ];
-	const char *opt;
+	if (strncmp(opt, "rom", 3) == 0 && (opt[3] == ',' || opt[3] == 0))
+		dp_rom = true;
+	else if (strncmp(opt, "wedge=", 6) == 0)
+		dp_wedge_after = atoi(opt + 6);
+	else
+		return false;
+	return true;
+}
 
-	/* "tap0[,rom][,wedge=<n>]" */
-	opt = strchr(ifname, ',');
-	snprintf(name, sizeof(name), "%.*s",
-	         opt ? (int)(opt - ifname) : (int)strlen(ifname), ifname);
+/**
+ * Open the host network for a SCSI slot configured as a network adapter:
+ * spec is "<backend>[,<option>...]" (see hostnet.h), plus the adapter's
+ * own options rom and wedge=<n>. Returns true on success; the device is
+ * then enabled on the bus.
+ */
+bool DaynaPort_Init(SCSI_DEV *dev, const char *spec)
+{
+	char desc[160];
+
 	dp_rom = false;
 	dp_wedge_after = 0;
-	while (opt)
-	{
-		opt++;
-		if (strncmp(opt, "rom", 3) == 0 && (opt[3] == ',' || opt[3] == 0))
-			dp_rom = true;
-		else if (strncmp(opt, "wedge=", 6) == 0)
-			dp_wedge_after = atoi(opt + 6);
-		else
-			Log_Printf(LOG_WARN, "DaynaPORT: unknown option '%s'\n", opt);
-		opt = strchr(opt, ',');
-	}
-	ifname = name;
-
-	if (tap_fd >= 0)
-		close(tap_fd);
-	tap_fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK);
-	if (tap_fd < 0)
-	{
-		Log_Printf(LOG_ERROR, "DaynaPORT: cannot open /dev/net/tun: %s\n", strerror(errno));
+	HostNet_Close(dp_net);
+	dp_net = HostNet_Open(spec, dp_mac, dp_option, desc, sizeof(desc));
+	if (!dp_net)
 		return false;
-	}
-	memset(&ifr, 0, sizeof(ifr));
-	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
-	if (ioctl(tap_fd, TUNSETIFF, &ifr) < 0)
-	{
-		Log_Printf(LOG_ERROR, "DaynaPORT: TAP interface '%s': %s "
-		           "(create it with: ip tuntap add dev %s mode tap user $USER)\n",
-		           ifname, strerror(errno), ifname);
-		close(tap_fd);
-		tap_fd = -1;
-		return false;
-	}
-	memcpy(dp_ifname, ifr.ifr_name, sizeof(dp_ifname));
-	dp_ifname[sizeof(dp_ifname) - 1] = 0;
 	memset(dev, 0, sizeof(*dev));
 	dev->enabled = true;
 	dev->network = true;
@@ -161,21 +138,16 @@ bool DaynaPort_Init(SCSI_DEV *dev, const char *ifname)
 	dp_enabled = false;
 	dp_wedged = false;
 	dp_sense = 0;
-	Log_Printf(LOG_INFO, "DaynaPORT: SCSI/Link on TAP interface '%s', MAC %02x:%02x:%02x:%02x:%02x:%02x%s%s\n",
-	           dp_ifname, dp_mac[0], dp_mac[1], dp_mac[2], dp_mac[3], dp_mac[4], dp_mac[5],
+	Log_Printf(LOG_INFO, "DaynaPORT: SCSI/Link on %s, MAC %02x:%02x:%02x:%02x:%02x:%02x%s%s\n",
+	           desc, dp_mac[0], dp_mac[1], dp_mac[2], dp_mac[3], dp_mac[4], dp_mac[5],
 	           dp_rom ? ", ROM behaviour" : "", dp_wedge_after ? ", wedging" : "");
 	return true;
-#else
-	Log_Printf(LOG_ERROR, "DaynaPORT: TAP networking is only available on Linux\n");
-	return false;
-#endif
 }
 
 void DaynaPort_UnInit(void)
 {
-	if (tap_fd >= 0)
-		close(tap_fd);
-	tap_fd = -1;
+	HostNet_Close(dp_net);
+	dp_net = NULL;
 }
 
 
@@ -308,11 +280,10 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 		}
 		if (dp_enabled && dp_rom)
 		{
-			uint8_t frame[DP_FRAME_MAX];
 			/* the controller resets: queued frames are lost, and data
 			 * commands are refused for the next 500 ms */
-			while (tap_fd >= 0 && read(tap_fd, frame, sizeof(frame)) > 0)
-				;
+			if (dp_net)
+				HostNet_Flush(dp_net);
 			dp_settle_until = CyclesGlobalClockCounter + MachineClocks.CPU_Freq_Emul / 2;
 			dp_refused = 0;
 		}
@@ -339,10 +310,10 @@ void DaynaPort_EmulateCommand(SCSI_CTRLR *ctr)
 			LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: receive while wedged\n");
 			break;
 		}
-		if (dp_enabled && tap_fd >= 0)
+		if (dp_enabled && dp_net)
 		{
 			do {
-				n = read(tap_fd, frame, sizeof(frame));
+				n = HostNet_Recv(dp_net, frame, sizeof(frame));
 			} while (n > 0 && !dp_wanted(frame));
 		}
 		if (n > 0 && dp_wedge_after && ++dp_rx_count > dp_wedge_after)
@@ -417,7 +388,7 @@ void DaynaPort_DataOut(SCSI_CTRLR *ctr)
 {
 	if (ctr->command[0] != 0x0a)
 		return;
-	if (!dp_enabled || tap_fd < 0)
+	if (!dp_enabled || !dp_net)
 		return;
 	int len = ctr->data_len;
 	if (ctr->command[5] != 0 && len >= 4)
@@ -430,8 +401,8 @@ void DaynaPort_DataOut(SCSI_CTRLR *ctr)
 			len = n;
 		}
 	}
-	if (write(tap_fd, ctr->buffer, len) != len)
-		Log_Printf(LOG_WARN, "DaynaPORT: send of %d bytes failed: %s\n", len, strerror(errno));
+	if (!HostNet_Send(dp_net, ctr->buffer, len))
+		Log_Printf(LOG_WARN, "DaynaPORT: send of %d bytes failed\n", len);
 	else
 		LOG_TRACE(TRACE_SCSI_CMD, "DaynaPORT: sent %d bytes\n", len);
 }
