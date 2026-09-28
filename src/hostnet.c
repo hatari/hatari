@@ -50,6 +50,13 @@ const char HostNet_fileid[] = "Hatari hostnet.c";
 
 #ifdef HAVE_SLIRP
 #include <slirp/libslirp.h>
+/* 4.9 polls sockets as SOCKETs, which on 64-bit Windows don't fit an int */
+#if SLIRP_CHECK_VERSION(4, 9, 0)
+#define HN_SLIRP_SOCKETS 1
+typedef slirp_os_socket hn_socket;
+#else
+typedef int hn_socket;
+#endif
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -244,11 +251,11 @@ static void slirp_cb_timer_mod(void *timer, int64_t expire_ms, void *opaque)
 		((struct hn_timer *)timer)->expire_ms = expire_ms;
 }
 
-static void slirp_cb_register_fd(int fd, void *opaque) { }
-static void slirp_cb_unregister_fd(int fd, void *opaque) { }
+static void slirp_cb_register_fd(hn_socket fd, void *opaque) { }
+static void slirp_cb_unregister_fd(hn_socket fd, void *opaque) { }
 static void slirp_cb_notify(void *opaque) { }
 
-static int slirp_cb_add_poll(int fd, int events, void *opaque)
+static int slirp_cb_add_poll(hn_socket fd, int events, void *opaque)
 {
 	hostnet_t *net = opaque;
 	short ev = 0;
@@ -303,7 +310,11 @@ static void slirp_pump(hostnet_t *net)
 	int i, rc;
 
 	net->npollfds = 0;
+#ifdef HN_SLIRP_SOCKETS
+	slirp_pollfds_fill_socket(net->slirp, &timeout, slirp_cb_add_poll, net);
+#else
 	slirp_pollfds_fill(net->slirp, &timeout, slirp_cb_add_poll, net);
+#endif
 #ifdef _WIN32
 	rc = net->npollfds ? WSAPoll(net->pollfds, net->npollfds, 0) : 0;
 #else
@@ -387,9 +398,14 @@ static const SlirpCb slirp_callbacks = {
 	.timer_new = slirp_cb_timer_new,
 	.timer_free = slirp_cb_timer_free,
 	.timer_mod = slirp_cb_timer_mod,
+	.notify = slirp_cb_notify,
+#ifdef HN_SLIRP_SOCKETS
+	.register_poll_socket = slirp_cb_register_fd,
+	.unregister_poll_socket = slirp_cb_unregister_fd,
+#else
 	.register_poll_fd = slirp_cb_register_fd,
 	.unregister_poll_fd = slirp_cb_unregister_fd,
-	.notify = slirp_cb_notify,
+#endif
 };
 
 static bool slirp_open(hostnet_t *net, const char *opts,
@@ -404,7 +420,11 @@ static bool slirp_open(hostnet_t *net, const char *opts,
 	int nfwd = 0;
 
 	memset(&cfg, 0, sizeof(cfg));
+#ifdef HN_SLIRP_SOCKETS
+	cfg.version = 6;             /* register_poll_socket */
+#else
 	cfg.version = 1;
+#endif
 	cfg.in_enabled = true;
 	inet_pton(AF_INET, "10.0.2.0", &cfg.vnetwork);
 	cfg.vhost.s_addr = 0;
@@ -642,12 +662,14 @@ int HostNet_Recv(hostnet_t *net, uint8_t *frame, int max)
 {
 	switch (net->kind)
 	{
+#ifdef HAVE_TAP
 	case NET_TAP:
 	{
 		int n = net->fd >= 0 ? (int)read(net->fd, frame, max) : -1;
 
 		return n > 0 ? n : 0;
 	}
+#endif
 #ifdef HAVE_SLIRP
 	case NET_SLIRP:
 		if (net->q_count == 0)
@@ -676,8 +698,10 @@ bool HostNet_Send(hostnet_t *net, const uint8_t *frame, int len)
 {
 	switch (net->kind)
 	{
+#ifdef HAVE_TAP
 	case NET_TAP:
 		return net->fd >= 0 && write(net->fd, frame, len) == len;
+#endif
 #ifdef HAVE_SLIRP
 	case NET_SLIRP:
 		slirp_input(net->slirp, frame, len);
