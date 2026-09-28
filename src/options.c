@@ -445,7 +445,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SCSIVERSION,   NULL, "--scsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given SCSI drive ID" },
 	{ OPT_SCSINET,       NULL, "--scsi-net",
-	  "<id>=<tap>[,rom][,wedge=<n>]", "Emulate a DaynaPORT SCSI/Link ethernet adapter (0-7) on TAP interface <tap>; rom = real-ROM command gating, wedge = dropped-packet state after <n> frames" },
+	  "<id>=<net>[,rom][,wedge=<n>]", "Emulate a DaynaPORT SCSI/Link ethernet adapter (0-7). <net>: slirp[,hostfwd=tcp:<hostport>-:<guestport>] (user-mode NAT), pcap:<if> (bridged; pcap:list), or a Linux TAP interface name; rom = real-ROM command gating, wedge = dropped-packet state after <n> frames" },
 	{ OPT_ACSIVERSION,   NULL, "--acsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given ACSI drive ID" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
@@ -1854,7 +1854,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			if (drive < 0 || drive >= MAX_SCSI_DEVS)
 				return Opt_ShowError(OPT_SCSINET, str, "Invalid SCSI <id>, must be 0-7");
 			if (!str || !*str)
-				return Opt_ShowError(OPT_SCSINET, arg, "TAP interface name missing");
+				return Opt_ShowError(OPT_SCSINET, arg, "network (slirp, pcap:<if> or a TAP interface) missing");
 			strncpy(ConfigureParams.Scsi[drive].sNetworkIf, str,
 			        sizeof(ConfigureParams.Scsi[drive].sNetworkIf) - 1);
 			ConfigureParams.Scsi[drive].nDeviceType = SCSI_DEVTYPE_NETWORK;
