@@ -419,9 +419,9 @@ static bool endsInNewline(const char *msg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Output string to log file
+ * Output string to log file, arguments as a va_list
  */
-void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+static void Log_VPrintf(LOGTYPE nType, const char *psFormat, va_list args)
 {
 	if (!(hLogFile && nType <= TextLogLevel))
 		return;
@@ -436,9 +436,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	{
 		/* output directly */
 		fprintf(hLogFile, "%s: ", prefixes[nType]);
-		va_start(argptr, psFormat);
-		fprintf(hLogFile, psFormat, argptr);
-		va_end(argptr);
+		vfprintf(hLogFile, psFormat, args);
 		if (!endsInNewline(psFormat))
 		    fputs("\n", hLogFile);
 		return;
@@ -454,7 +452,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	len -= prefix_len;
 
 	/* add message */
-	va_start(argptr, psFormat);
+	va_copy(argptr, args);
 	count = vsnprintf(msg, len, psFormat, argptr);
 	va_end(argptr);
 
@@ -466,7 +464,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 		msg += prefix_len;
 		len -= prefix_len;
 
-		va_start(argptr, psFormat);
+		va_copy(argptr, args);
 		count = vsnprintf(msg, len, psFormat, argptr);
 		va_end(argptr);
 	}
@@ -474,6 +472,18 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	/* buffer / output with newline */
 	addMissingNewline(msg + count - 1);
 	addMsgRepeat(hLogFile);
+}
+
+/**
+ * Output string to log file
+ */
+void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+{
+	va_list argptr;
+
+	va_start(argptr, psFormat);
+	Log_VPrintf(nType, psFormat, argptr);
+	va_end(argptr);
 }
 
 
@@ -489,7 +499,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	if (hLogFile && nType <= TextLogLevel)
 	{
 		va_start(argptr, psFormat);
-		Log_Printf(nType, psFormat, argptr);
+		Log_VPrintf(nType, psFormat, argptr);
 		va_end(argptr);
 	}
 
