@@ -31,7 +31,7 @@ const char HDC_fileid[] = "Hatari hdc.c";
 
 
 /*
-  ACSI emulation: 
+  ACSI emulation:
   ACSI commands are six byte-packets sent to the
   hard drive controller (which is on the HD unit, not in the ST)
 
@@ -46,7 +46,7 @@ const char HDC_fileid[] = "Hatari hdc.c";
   The ACSI command set is a subset of the SCSI standard.
   (for details, see the X3T9.2 SCSI draft documents
   from 1985, for an example of writing ACSI commands,
-  see the TOS DMA boot code) 
+  see the TOS DMA boot code)
 */
 
 // #define DISALLOW_HDC_WRITE
@@ -237,7 +237,12 @@ static void HDC_Cmd_Inquiry(SCSI_CTRLR *ctr)
 	 * Peripheral Device Type according to the SCSI standard */
 	buf[0] = HDC_GetLUN(ctr) == 0 ? 0 : 0x7F;
 
+	/* For SCSI-2 and newer, the response data format is SCSI-2 */
 	buf[2] = dev->scsi_version;
+	if (dev->scsi_version >= 2)
+	{
+		buf[3] = 0x02;
+	}
 
 	ctr->status = HD_STATUS_OK;
 
