@@ -13,7 +13,10 @@
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip with a non-volatile RAM area.
 
-  The MC146818 address space is made of 2 parts :
+  The Atari TT uses the MC146818A chip
+  The Atari Falcon uses the DS1287 chip, which is pin compatible with the MC146818A
+
+  The MC146818A address space is made of 2 parts :
    - 14 bytes used by the RTC and to control alarm, timer, irq, ...
    - 50 bytes of non volatile RAM that can be used by the OS to store
      various settings
@@ -53,6 +56,15 @@
 
   See: https://www.nxp.com/docs/en/data-sheet/MC146818.pdf
 
+
+  Pins :
+    - CKOUT is not connected
+    - SQW Out is not connected
+    - IRQ :
+       - on TT, IRQ is connected to the 2nd MFP on GPIP6 using the XRTCIRQ line
+       - on Falcon, IRQ is not connected
+
+
   Not implemented (as no known use-case):
   - all alarm handling
   - doing clock updates at 1Hz
@@ -73,6 +85,9 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "tos.h"
 #include "vdi.h"
 #include "m68000.h"
+#include "cycInt.h"
+#include "video.h"
+#include "mfp.h"
 
 // Defs for NVRAM control register A (10) bits (read/write, except UIP)
 #define REG_BIT_UIP  0x80	/* update-in-progress */
@@ -100,6 +115,13 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 // bits 0-6 are always 0
 #define REG_BIT_VRT  0x80	/* valid RAM and time */
 
+
+#define		MC146818_IRQ_ON				0	/* O/low sets IRQ line */
+#define		MC146818_IRQ_OFF			1	/* 1/high clears IRQ line */
+
+static uint8_t	MC146818_IRQ_Line;
+
+
 // Defs for checksum
 #define CKS_RANGE_START	14
 #define CKS_RANGE_END	(14+47)
@@ -117,9 +139,13 @@ static uint8_t nvram[64] = {
 };
 
 
+
+
+
 static uint8_t nvram_index;
 static char nvram_filename[FILENAME_MAX];
 static int year_offset;
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -203,41 +229,94 @@ static void NvRam_SetChecksum(void)
 }
 
 
+
 /*-----------------------------------------------------------------------*/
 /**
- * Register C interrupt status flags clearing.
- *
- * Flags are cleared both on resets and register C reads.
- * Because rest of bits are always zero, whole register goes to zero.
- *
- * However, because interrupt handling isn't emulated yet
- * (there isn't even a known Atari use-case for them),
- * and most of them would occur quickly:
- * - update-ended interrupt flag is set at 1Hz clock update cycle
- * - periodic interrupt is set based on divider & rate-control clock rate
- * - alarm interrupt flag is set when time matches alarm time
- *   i.e. only once a day
+ * Set or reset the MC146818's IRQ signal
+ * IRQ signal is inverted (0/low sets irq, 1/high clears irq)
+ *  - On TT, IRQ pin is connected to the 2nd MFP GPIP6
+ *  - On Falcon, IRQ pin is not connected
  */
-static void clear_reg_c(void)
+static void     MC146818_Set_Line_IRQ ( uint8_t bit )
 {
-	/* => set flags for fastest 2 interrupts right away */
-	nvram[0x0c] = REG_BIT_UF|REG_BIT_PF;
-	/* are these interrupts also enable in reg B? */
-	if (nvram[0x0b] & nvram[0x0c])
+        LOG_TRACE ( TRACE_NVRAM, "nvram set irq line val=%d %s VBL=%d HBL=%d\n" , bit , bit?"off":"on" , nVBLs , nHBL );
+
+	if (!Config_IsMachineTT())
+		return;
+
+	MC146818_IRQ_Line = bit;
+
+	if ( bit == MC146818_IRQ_ON )			// 0
 	{
-		/* -> set also interrupt request flag */
-		nvram[0x0c] |= REG_BIT_IRQF;
-		/* TODO: generate interrupt */
+		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_RTC , MFP_GPIP_STATE_LOW );
+	}
+	else						// 1
+	{
+		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_RTC , MFP_GPIP_STATE_HIGH );
 	}
 }
+
+
+
+static void	MC146818_Update_IRQ ( void )
+{
+	uint8_t		interrupt_enable;
+	uint8_t		interrupt_flag;
+	uint8_t		IRQ_new;
+
+//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_in=%d pc=%x\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , SCC.IRQ_Line , M68000_GetPC() );
+
+	/* which interrupts are enabled to raise IRQ ? */
+	interrupt_enable = nvram[0x0b] & ( REG_BIT_UIE | REG_BIT_AIE  | REG_BIT_PIE );
+	/* which interrupt conditions are set ? */
+        interrupt_flag = nvram[0x0c] & ( REG_BIT_UF | REG_BIT_AF  | REG_BIT_PF );
+
+	if ( interrupt_enable & interrupt_flag )	/* bits position are the same in _enable and _flag */
+	{
+		nvram[0x0c] |= REG_BIT_IRQF;
+		IRQ_new = MC146818_IRQ_ON;
+	}
+	else
+	{
+		nvram[0x0c] &= ~REG_BIT_IRQF;
+		IRQ_new = MC146818_IRQ_OFF;
+	}
+
+	LOG_TRACE ( TRACE_NVRAM, "nvram update irq_new=%d VBL=%d HBL=%d\n" , IRQ_new , nVBLs , nHBL );
+
+	/* Update IRQ line if needed */
+	if ( IRQ_new != MC146818_IRQ_Line )
+		MC146818_Set_Line_IRQ ( IRQ_new );
+}
+
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
  * NvRam_Reset: Called during init and reset, used for resetting the
  * emulated chip.
+ *
+ * This can also force some values in RAM depending on the current video mode
  */
 void NvRam_Reset(void)
 {
+	/*
+	 * Reset the chip
+	 */
+
+	/* clear SWQE + interrupt enable bits */
+	nvram[0x0b] &= ~(REG_BIT_SQWE|REG_BIT_UIE|REG_BIT_AIE|REG_BIT_PIE);
+
+	/* clear all interrupt flags */
+	nvram[0x0c] &= ~(REG_BIT_UF|REG_BIT_AF|REG_BIT_PF|REG_BIT_IRQF);
+
+	MC146818_Set_Line_IRQ ( MC146818_IRQ_OFF );	/* IRQ line goes high */
+
+	nvram_index = 0;
+
+
+	/* Set some default values in RAM, depending on the current video mode */
 	if (bUseVDIRes)
 	{
 		/* The objective is to start the TOS with a video mode similar
@@ -282,12 +361,6 @@ void NvRam_Reset(void)
 		}
 		NvRam_SetChecksum();
 	}
-	/* reset clears SWQE + interrupt enable bits */
-	nvram[0x0b] &= ~(REG_BIT_SQWE|REG_BIT_UIE|REG_BIT_AIE|REG_BIT_PIE);
-	/* and interrupt flag bits */
-	clear_reg_c();
-
-	nvram_index = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -482,25 +555,27 @@ void NvRam_Data_ReadByte(void)
 		value = nvram[nvram_index];
 		break;
 	case 0x0b:
-		/* status reg C, read-only
-		 * 0xf0 interrupt status bits, 0x0f unused/zero
-		 * register is cleared after read
-		 */
-		value = nvram[nvram_index];
-		clear_reg_c();
-		break;
-	case 0x0c:
 		/* control reg B
 		 * set, interrupt enable, sqw enable, clock mode, daylight savings bits
 		 * writing SET bit aborts/suspends UIP and clears UIP bit
 		 */
-		/* fall-through */
+		break;
+	case 0x0c:
+		/* status reg C, read-only
+		 * bits 4-7 interrupt status bits, bits 0-3 unused/zero
+		 * register is cleared after read and irq is updated
+		 */
+		value = nvram[nvram_index];
+		nvram[0x0c] = 0;
+		MC146818_Update_IRQ();
+		break;
 	case 0x0d:
 		/* status reg D, read-only
 		 * Valid RAM and Time bit, rest of bits are zero/unused
 		 */
-		/* fall-through */
-	default:
+		break;
+
+	default:				/* RAM 0x0E - 0x3F */
 		value = nvram[nvram_index];
 		break;
 	}
