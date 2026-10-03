@@ -4091,6 +4091,16 @@ int GemDOS_Trap(void)
 	int Finished = false;
 	uint16_t sr = M68000_GetSR();
 
+	/* When booting from an emulated GEMDOS HD, TOS's own boot logic
+	 * only knows about the floppy and leaves _bootdev at 0. Keep it
+	 * pointing at the emulated boot drive, so that programs building
+	 * paths from _bootdev find their files there (the Nova/NVDI
+	 * graphics drivers load their config from X:\AUTO\ with X taken
+	 * from _bootdev, the NVDI installer unpacks to the "boot drive") */
+	if (ConfigureParams.HardDisk.bBootFromHardDisk && GEMDOS_EMU_ON
+	    && STMemory_ReadWord(0x446) != nBootDrive)
+		STMemory_WriteWord(0x446, nBootDrive);
+
 	/* Read SReg from stack to see if parameters are on User or Super stack  */
 	CallingSReg = STMemory_ReadWord(Regs[REG_A7]);
 	CallingPC = STMemory_ReadLong(Regs[REG_A7] + SIZE_WORD);
