@@ -474,6 +474,7 @@ Color demos:
 - Pause (by Cerebral Vortex / Dekadence / SMFX)
 - Phaleon Gigademo (by Next) - select "fast loader"
 - PONG_CRK (fake cracktro by Overlanders)
+- Pong Wars (by Neil Rackett)
 - Posh (by Checkpoint)
 - POV disk 165 (except for EiL 99 invite)
 - Princess of Doom (by Brainheadsinteractive)
@@ -649,6 +650,7 @@ Free/shareware/PD games:
 - 2048            (by Paradize)
 - A Day at the Races
 - Abombinaball    (STF47)
+- Agents Alpha    (FreePascal port)
 - Alterra
 - Archon 3.5k     (by Deltaforce)
 - Alien Blockade* (quixx)
@@ -687,6 +689,7 @@ Free/shareware/PD games:
 - Flip'em* 4KB   (puzzle)
 - Fly Robin Fly
 - Fokker         (2-player biplanes, use joystick 0)
+- FreeNukum      (ST port of open source Duke Nukem clone)
 - French adaptations of classic games:
   Boulderdash, Demineur, Jewel, Qbert, Sokoban
 - Frogger*
@@ -1280,6 +1283,7 @@ Color games:
 - Bombaman
 - Boom (screen flashes during scrolling messages)
 - Breakdance (scene game, STOS)
+- Bruce Lee (SMS port)
 - Cannon Fodder STe conversion:
   https://www.atari-forum.com/viewtopic.php?p=497189#p497189
 - Catch Me If You Can*
@@ -1287,6 +1291,7 @@ Color games:
 - ChuChu Rocket* (RG's full version)
 - Crash Time Plumber
 - Defender* (Williams version port, works also on ST & Falcon)
+- Desert Strike STE* (AI Amiga port)
 - Detonator
 - Dread* (playable Wolf3D clone demo v1905)
 - Droid STE rewrite
@@ -1297,8 +1302,11 @@ Color games:
 - Frogs (optional STE audio/blitter support, MIDI multiplayer)
 - Giana Sisters STE rewrite:
   http://atari-forum.com/viewtopic.php?f=3&t=26360
+- Green Beret (AI arcade port)
 - H Mec 2 (line-A bitblit)
 - Invasion of the Emerald Saucers
+- Koules (DMA sound, Atari port by Neil Rackett)
+- MegaLemmings STE (AGT + AI, unstable)
 - Metal Slug STE (mission 1)
 - Micromachines preview (by .tSCc)
 - Mr Boomer (line-A bitblit)
@@ -1329,10 +1337,12 @@ Color games:
   http://www.happydaze.se/scummvm-lite-atari/
 - Shotgun (STE enhanced)
 - Skulls (shareware "minesweeper")
+- Sonic STE (port of Sonic Hedgehog clone)
 - Space Zot
 - Sporny's Wrecking Ball
 - Spy 4k
 - Stardust* (tunnel sequence demo)
+- STEArcade (AI ports of Z80 arcade games)
 - STEtris (STOS)
 - STrEet Fighter II (incomplete)
 - Stupid balloon game (joysticks swapped?)
@@ -1340,12 +1350,15 @@ Color games:
 - Supa Zazai Da
 - Super Tetris (STE enhanced)
 - The chronicles of Omega
+- The Legend of Zelda - Return of the Hylian (AI port of Zelda clone)
+- Toadies STE* (AI port from Amiga Worms clone)
 - Tomtar
 - Trapped II (DMA audio, line-A functions 1, 2, 3, 5, 7, 9)
 - Treasure in Cave (by Freedom)
 - Ultimate Arena v1.3 light (slow with EmuTOS)
 - Utopos* (demo)
 - Warriors of Light v0.63e
+- Wings of Fury STE (AI Amiga port)
 - Wolfenstein3D v0.8a* (a bit unstable)
 - Zaptastic
 - Zero-5 (demo)
@@ -1470,13 +1483,15 @@ Working games:
 - GEM Shapes
   - Sounds do not work on ST + needs at least 480x400 mode
 - GEM Slashem v3.3.1
-- "Hacked" Heretic & Hexen (SDL ports by Miro)
+- "Hacked" Heretic & Hexen (SDL ports by Miro, with MIDI support)
+ - 16MB TT-RAM, sampled sounds work well only on Falcon
 - Kniff (Omikron Basic v3.60)
   - Needs 640x480@256 mode (VDI mode on TT, VGA monitor on Falcon)
 - Mau Mau de luxe (Omikron Basic v3.60)
   - Needs 800x600@256 mode (8-bit VDI mode)
-- OpenDUNE
+- OpenDUNE (works nowadays on all Atari machines, but fastest on TT)
 - OpenTTD (start from TT-low with 256MBs of TT-RAM)
+- OpenTyrian (needs at least 020 / 8MB RAM)
 - Oxyd (Falcon version)
 - PM Doom, Heretic & Hexen v0.55 (ports by Patrice Mandin)
 - ScummVM 2.8, 2.9 (lite build by Miro)
@@ -1722,6 +1737,7 @@ Games working under EmuTOS >= v1.0:
 - Impulse* (Breakout clone)
 - Jeu de Poker (VGA only)
   - Needs 640x480@256 mode
+- Kestrel (2x "tetris" with story, AI original)
 - King Solitaire
 - Lamemine
 - L'Abbaye Des Morts
@@ -1730,6 +1746,7 @@ Games working under EmuTOS >= v1.0:
 - LlamaZap (free version)
   - Requires joypad, not joystick
 - Madtris
+- Mad TV (AI DOS/Amiga port)
 - Masters of Chaos (multiplayer "dungeon master")
 - Nibe
 - Offworld Security
@@ -1775,6 +1792,7 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
 - Conquest of Elysium II (preview)
 - Crown of Creation (preview)
 - Des Lazers & des Hommes v2
+- Des Lazers & des Hommes v3 (needs >4MB RAM)
 - Double Bobble 2000* (by Reservoir Gods)
   - For v1.0, disable DSP from Hatari
 - Epi-Lepsie (by PARX)
@@ -1790,7 +1808,6 @@ Games working under EmuTOS >= v1.1.1 (DSP support + fixes):
   - Some sounds missing with EmuTOS v1.0
 - NoMess (GEM, requires color icon support)
 - OpenJazz (060 Atari port)
-- OpenTyrian (060 Atari port)
 - Pong 2000 demo (use joypad)
 - Push It
 - Racer (by Thadoss/Dune)
@@ -1914,6 +1931,8 @@ Applications working under EmuTOS >= v1.1 (with DSP support):
    - Due to program bugs, start from 320x200@256 resolution
 - DSPDebug (by Brainstorm)
 - DSPdit (by .tSCc)
+- F030OPL2 (midiplayer with DSP OPL2 (Adlib) backend)
+- F030SID (AI assisted DSP SID player)
 - Falcon Sound CPX
 - FlaySID
 - Flextracker (use VGA)
