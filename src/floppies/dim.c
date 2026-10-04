@@ -141,10 +141,10 @@ bool DIM_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int Ima
 	}
 #else
 	fhdl = fopen(pszFileName, "rb");
-	if (fhndl != NULL)
+	if (fhdl != NULL)
 	{
-		fread(pDimFile, 32, 1, fhndl);
-		fclose(fhndl);
+		fread(pDimFile, 32, 1, fhdl);
+		fclose(fhdl);
 	}
 #endif
 
