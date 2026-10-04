@@ -65,7 +65,21 @@
        - on Falcon, IRQ is not connected
 
 
+  The clock is kept updated using a small battery cell connected to the chip (even
+  when the TT / Falcon is powered OFF)
+  When booting, the TOS (Atari one or EmuTOS) will test the battery state using
+  bit 7 VRT in register D. If this bit is set, the TOS assumes the date/time
+  are correct and will copy them to the gemdos variables.
+  If VRT is not set, TOS will init the RTC using the release date stored in the TOS image
+  (for example TOS 3.06 will use 1989/06/08 00:00:00)
+
+
+
   Not implemented (as no known use-case):
+
+  - SQW
+
+  - DSE
   - all alarm handling
   - doing clock updates at 1Hz
     (instead of when regs are read)
@@ -88,6 +102,7 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "cycInt.h"
 #include "video.h"
 #include "mfp.h"
+#include "clocks_timings.h"
 
 // Defs for NVRAM control register A (10) bits (read/write, except UIP)
 #define REG_BIT_UIP  0x80	/* update-in-progress */
@@ -142,9 +157,24 @@ static uint8_t nvram[64] = {
 
 
 
-static uint8_t nvram_index;
-static char nvram_filename[FILENAME_MAX];
-static int year_offset;
+static char		nvram_filename[FILENAME_MAX];
+
+static uint8_t		nvram_index;
+static int		year_offset;
+static uint8_t		dse_done;
+
+
+static int64_t		Clock_micro;				/* Incremented every VBL to update the RTC every second */
+
+
+static struct tm*	getFrozenTime ( void );
+static uint8_t		convert_24h_ampm ( uint8_t hour , uint8_t *pPM_flag );
+static uint8_t		convert_ampm_24h ( uint8_t hour , uint8_t pm_flag );
+static uint8_t		bin2BCD ( uint8_t value );
+static uint8_t		BCD2bin ( uint8_t value );
+
+static void		NvRam_Clock_Init ( void );
+static void		NvRam_Clock_Check_Alarm ( void );
 
 
 
@@ -299,11 +329,18 @@ static void	MC146818_Update_IRQ ( void )
  *
  * This can also force some values in RAM depending on the current video mode
  */
-void NvRam_Reset(void)
+void NvRam_Reset( bool bCold)
 {
 	/*
 	 * Reset the chip
 	 */
+
+	/* On power up, we clear control regs (this is not documented in the */
+	/* datasheet but we do it to avoid random behaviour) */
+	if ( bCold )
+	{
+	      nvram[0x0a] = nvram[0x0b] = nvram[0x0c] = nvram[0x0d] = 0x00;
+	}
 
 	/* clear SWQE + interrupt enable bits */
 	nvram[0x0b] &= ~(REG_BIT_SQWE|REG_BIT_UIE|REG_BIT_AIE|REG_BIT_PIE);
@@ -372,6 +409,7 @@ void NvRam_Init(void)
 	const char sBaseName[] = "hatari.nvram";
 	const char *psHomeDir;
 
+
 	// set up the nvram filename
 	psHomeDir = Paths_GetHatariHome();
 	if (strlen(psHomeDir)+sizeof(sBaseName)+1 < sizeof(nvram_filename))
@@ -400,18 +438,21 @@ void NvRam_Init(void)
 		nvram[NVRAM_KEYBOARDLAYOUT] = ConfigureParams.Keyboard.nKbdLayout;
 
 	NvRam_SetChecksum();
-	NvRam_Reset();
+	NvRam_Reset( true );
 
-	/* Set suitable tm->tm_year offset
+	/* Set suitable tm->tm_year offset and init the RTC
 	 * (tm->tm_year starts from 1900, NVRAM year from 1968)
 	 */
 	year_offset = 68;
-	if (!ConfigureParams.System.nRtcYear)
-		return;
+	if (ConfigureParams.System.nRtcYear)
+	{
+		time_t ticks = time(NULL);
+		int year = 1900 + localtime(&ticks)->tm_year;
+		year_offset += year - ConfigureParams.System.nRtcYear;
+	}
 
-	time_t ticks = time(NULL);
-	int year = 1900 + localtime(&ticks)->tm_year;
-	year_offset += year - ConfigureParams.System.nRtcYear;
+	NvRam_Clock_Init();
+	Clock_micro = 0;
 }
 
 
@@ -454,6 +495,203 @@ void NvRam_Select_WriteByte(void)
 }
 
 
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init the RTC content with the host date/time
+ * Date/time will then be increased every second by NvRam_Clock_Update
+ *
+ * We set REG_BIT_VRT in reg D to tell the TOS that the RTC is valid
+ */
+static void NvRam_Clock_Init ( void )
+{
+	uint8_t		hour;
+	uint8_t		pm_flag;
+
+	nvram[0] = bin2BCD(getFrozenTime()->tm_sec);
+	nvram[2] = bin2BCD(getFrozenTime()->tm_min);
+
+	hour = getFrozenTime()->tm_hour;
+	hour = convert_24h_ampm ( hour , &pm_flag);	/* take into account 24H or AM/PM for hour */
+	nvram[4] = bin2BCD(hour) | pm_flag;
+
+	nvram[6] = bin2BCD(getFrozenTime()->tm_wday + 1);
+	nvram[7] = bin2BCD(getFrozenTime()->tm_mday);
+	nvram[8] = bin2BCD(getFrozenTime()->tm_mon + 1);
+	nvram[9] = bin2BCD(getFrozenTime()->tm_year - year_offset);
+
+	nvram[0x0d] |= REG_BIT_VRT;
+
+fprintf ( stderr , "nvram clock init : %02d-%02d-%02d %d %02d:%02d:%02d\n" ,BCD2bin(nvram[9]),BCD2bin(nvram[8]),BCD2bin(nvram[7]),BCD2bin(nvram[6]),BCD2bin(nvram[4]&0x7f),BCD2bin(nvram[2]),BCD2bin(nvram[0]) );
+}
+
+
+
+
+/*
+ * Update the RTC values on every second
+ *
+ * Year is 0-99 and is supposed to be relative to 1900 (although that's not
+ * mentioned in the datasheet). So "68" means "1968" and this is a leap year.
+ * Later TOS and EmuTOS are using "68" as the "year_offset" for the RTC,
+ * because it allowed to represent dates from 1968 to 2068 and it was compatible
+ * with the way the RTC handles leap year
+ */
+
+void NvRam_Clock_Update ( void )
+{
+	int64_t	FrameDuration_micro;
+	uint8_t sec, min, hour, wday, day, month, year;
+	uint8_t pm_flag;
+	/* Max number of days per month */
+	uint8_t day_max[ 12 ] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31  };
+	uint8_t max;
+
+	/* Check if more than 1 second passed since last increment of date/time */
+	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
+	Clock_micro += FrameDuration_micro;
+	if ( Clock_micro < 1000000 )
+		return;						/* Less than 1 second, don't increment date/time yet */
+	Clock_micro -= 1000000;
+
+	/* Don't update RTC when SET bit is set in reg B */
+	if ( nvram[0x0b] & REG_BIT_SET )
+		return;
+
+	sec =	BCD2bin( nvram[0] );
+	min =	BCD2bin( nvram[2] );
+
+	if ( nvram[0x0b] & REG_BIT_24H )
+		hour =	BCD2bin( nvram[4] );			/* 24H mode */
+	else
+	{
+		pm_flag = nvram[4] & 0x80;			/* 0=AM else PM */
+		hour =	BCD2bin( nvram[4] & 0x7f );
+		hour = convert_ampm_24h ( hour , pm_flag );
+	}
+
+	wday =	BCD2bin( nvram[6] );
+	day =	BCD2bin( nvram[7] );
+	month =	BCD2bin( nvram[8] );
+	year =	BCD2bin( nvram[9] );
+
+	if ( month > 12 )					/* ensure month is correct to access day_max[] */
+		month = 12;
+
+fprintf ( stderr , "nvram clock in : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
+
+
+	/* Seconds */
+	sec++;
+	if ( sec <= 59 )
+		goto done;
+	sec = 0;
+
+	/* Minutes */
+	min++;
+	if ( min <= 59 )
+		goto done;
+	min = 0;
+
+	/* Hours */
+	hour++;
+	if ( hour <= 23 )
+		goto done;
+	hour = 0;
+
+	/* Day of week 1..7 */
+	wday++ ;
+	if ( wday > 7 )
+		wday = 1;
+
+	/* Day of month 1..31 */
+	day++;
+	max = day_max[ month-1 ];
+
+	if ( ( month == 2 ) && ( ( year % 4 ) == 0 ) )		/* february and leap year (eg 68) */
+		max = 29;
+
+	if ( day <= max )
+		goto done;
+	day = 1;
+
+	/* Month 1..12 */
+	month++;
+	if ( month <= 12 )
+		goto done;
+	month = 1;
+
+	/* Year 0..99 */
+	year++;
+	if ( year <= 99 )
+		goto done;
+	year = 0;
+
+done:
+
+	/*
+	 * Special case if daylight saving is enabled
+	 *  - on the last sunday of april 02:00:00 AM becomes 03:00:00
+	 *  - on the last sunday of october 02:00:00 AM becomes 01:00:00
+	 */
+	if ( nvram[0x0b] & REG_BIT_DSE )
+	{
+		if ( ( month == 4 ) && ( wday == 1 ) && ( day >= 24 )		/* last sunday of april */
+		  && ( hour == 2 ) && ( min == 0 ) && ( sec == 0 ) )		/* 02:00:00 */
+			hour = 3;
+
+		else if ( ( month == 10 ) && ( wday == 1 ) && ( day >= 25 )	/* last sunday of october */
+		  && ( hour == 2 ) && ( min == 0 ) && ( sec == 0 )		/* 02:00:00 */
+		  && ( dse_done == 0 ) )					/* ensure we don't loop on 02:00:00 -> 01:00:00 */
+			{ hour = 1; dse_done = 1; }
+
+		else if ( ( hour >= 2 ) && ( dse_done == 1 ) )			/* >= 02:00:00 */
+			dse_done = 0;						/* Any hour after 02:00:00 reset dse_done */
+	}
+
+
+fprintf ( stderr , "nvram clock out : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
+
+	nvram[0] = bin2BCD( sec );
+	nvram[2] = bin2BCD( min );
+
+	hour = convert_24h_ampm ( hour , &pm_flag);	/* take into account 24H or AM/PM for hour */
+	nvram[4] = bin2BCD(hour) | pm_flag;
+
+	nvram[6] = bin2BCD( wday );
+	nvram[7] = bin2BCD( day );
+	nvram[8] = bin2BCD( month );
+	nvram[9] = bin2BCD( year );
+
+	NvRam_Clock_Check_Alarm();
+}
+
+
+
+/*
+ * Check if the alarm hour/min/sec is matching the current time in the RTC
+ * If so, set the AF bit in reg C. Else clear AF bit.
+ *
+ * If an alarm field has bit 6-7 set (ie >= 0xc0) then it's considered as "don't care"
+ * and match any corresponding value
+ */
+
+void NvRam_Clock_Check_Alarm ( void )
+{
+	if ( ( ( nvram[0] == nvram[1] ) || ( nvram[1] >= 0xc0 ) )	/* sec */
+	  && ( ( nvram[2] == nvram[3] ) || ( nvram[3] >= 0xc0 ) )	/* min */
+	  && ( ( nvram[4] == nvram[5] ) || ( nvram[5] >= 0xc0 ) ) )	/* hour */
+		nvram[0x0c] |= REG_BIT_AF;
+	else
+		nvram[0x0c] &= ~REG_BIT_AF;
+
+	MC146818_Update_IRQ();
+}
+
+
+
+
 /*-----------------------------------------------------------------------*/
 
 static struct tm* refreshFrozenTime(bool refresh)
@@ -483,6 +721,61 @@ static struct tm* getFrozenTime(void)
 }
 
 
+
+
+/*
+ * Convert 'hour' between 24h mode and AM/PM mode, depending on REG_BIT_24H bit in reg B
+ *
+ * - in 24H mode, hour is 0 .. 23
+ * - in AM/PM mode, hour is 1 .. 12
+ *
+ * 12:00 AM is 00:00 24h
+ * 12:00 PM is 12:00 24h
+ */
+
+/* input : hour 0..23
+ * output : hour 0..23 or 1..12 with am/pm flag
+ */
+static uint8_t convert_24h_ampm ( uint8_t hour , uint8_t *pPM_flag )
+{
+	if ( (nvram[0x0b] & REG_BIT_24H) == 0 )		/* AM/PM mode, hour = 1 ... 12 */
+	{
+		*pPM_flag = (hour == 0 || hour >= 13) ? 0x80 : 0;
+		hour = hour % 12;
+		if (hour == 0)
+			hour = 12;
+	}
+	else						/* 24H mode, hour = 0 ... 23 */
+		*pPM_flag = 0;
+
+	return hour;
+}
+
+
+/* input : hour 0..23 or 1..12 with am/pm flag
+ * output : hour 0..23
+ */
+static uint8_t convert_ampm_24h ( uint8_t hour , uint8_t pm_flag )
+{
+	if ( (nvram[0x0b] & REG_BIT_24H) == 0 )		/* AM/PM mode, hour = 1 ... 12 */
+	{
+		if ( pm_flag == 0 )
+		{
+			if ( hour == 12 )		/* 12 AM -> 00 ; 1..11 AM -> no change */
+				hour = 0;
+		}
+		else
+		{
+			if ( hour != 12 )		/* 12 PM -> 12 ; 1..11 PM -> 13..23 */
+				hour += 12;
+		}
+	}
+
+	return hour;
+}
+
+
+
 /**
  * If NVRAM data mode bit is set, returns given value as binary
  * otherwise returns it as BCD.
@@ -495,6 +788,15 @@ static uint8_t bin2BCD(uint8_t value)
 }
 
 
+static uint8_t BCD2bin(uint8_t value)
+{
+	if ((nvram[0x0b] & REG_BIT_DM))
+		return value;
+	return ( value >> 4 ) * 10 + (value & 0x0f);
+}
+
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Read from RTC/NVRAM data register ($ff8963)
@@ -505,42 +807,22 @@ void NvRam_Data_ReadByte(void)
 
 	switch(nvram_index)
 	{
-	case 1: /* alarm seconds */
-	case 3:	/* alarm minutes */
-	case 5: /* alarm hour */
-		value = bin2BCD(nvram[nvram_index]);
+	case 0:					/* second */
+	case 2:					/* minute */
+	case 4:					/* hour */
+	case 6:					/* wday */
+	case 7:					/* day */
+	case 8:					/* month */
+	case 9:					/* year */
+		value = nvram[nvram_index];
 		break;
-	case 0:
-		value = bin2BCD(getFrozenTime()->tm_sec);
+
+	case 1:					/* alarm second */
+	case 3:					/* alarm minute */
+	case 5:					/* alarm hour */
+		value = nvram[nvram_index];
 		break;
-	case 2:
-		value = bin2BCD(getFrozenTime()->tm_min);
-		break;
-	case 4:
-		value = getFrozenTime()->tm_hour;
-		if (!(nvram[0x0b] & REG_BIT_24H))
-		{
-			uint8_t pmflag = (value == 0 || value >= 13) ? 0x80 : 0;
-			value = value % 12;
-			if (value == 0)
-				value = 12;
-			value = bin2BCD(value) | pmflag;
-		}
-		else
-			value = bin2BCD(value);
-		break;
-	case 6:
-		value = bin2BCD(getFrozenTime()->tm_wday + 1);
-		break;
-	case 7:
-		value = bin2BCD(getFrozenTime()->tm_mday);
-		break;
-	case 8:
-		value = bin2BCD(getFrozenTime()->tm_mon + 1);
-		break;
-	case 9:
-		value = bin2BCD(getFrozenTime()->tm_year - year_offset);
-		break;
+
 	case 0x0a:
 		/* control reg A
 		 * read-only UIP bit + clock dividers & rate selectors
@@ -559,6 +841,7 @@ void NvRam_Data_ReadByte(void)
 		 * set, interrupt enable, sqw enable, clock mode, daylight savings bits
 		 * writing SET bit aborts/suspends UIP and clears UIP bit
 		 */
+		value = nvram[nvram_index];
 		break;
 	case 0x0c:
 		/* status reg C, read-only
@@ -573,6 +856,7 @@ void NvRam_Data_ReadByte(void)
 		/* status reg D, read-only
 		 * Valid RAM and Time bit, rest of bits are zero/unused
 		 */
+		value = nvram[nvram_index];
 		break;
 
 	default:				/* RAM 0x0E - 0x3F */
@@ -598,14 +882,36 @@ void NvRam_Data_WriteByte(void)
 	uint8_t value = IoMem_ReadByte(0xff8963);
 	switch (nvram_index)
 	{
-	case 0:
-		/* high-order bit read-only: don't care as we always read from host */
+	case 0x00:
+	case 0x02:
+	case 0x04:
+	case 0x06:
+	case 0x07:
+	case 0x08:
+	case 0x09:
+		/* Change RTC values */
+		/* Don't do anything here, it will be done during next call to NvRam_Clock_Update() */
 		break;
+
+	case 0x01:
+	case 0x03:
+	case 0x05:
+		/* Change alarm hour/min/sec */
+		/* Don't check alarm here, it will be done during next call to NvRam_Clock_Update() */
+		break;
+
 	case 0x0a:
 		/* UIP bit is read-only */
 		value = (value & ~REG_BIT_UIP) | (nvram[10] & REG_BIT_UIP);
 		break;
 	case 0x0b:
+		/* Hatari specific code to automatically re-init RTC with default host date/time */
+		/* each time DM or 12/24 modes are changed */
+		uint8_t old_dm_24 = nvram[0x0b] & ( REG_BIT_24H | REG_BIT_DM );
+		uint8_t new_dm_24 = value & ( REG_BIT_24H | REG_BIT_DM );
+		if ( old_dm_24 != new_dm_24 )
+			NvRam_Clock_Init();
+
 		if (value & int_mask)
 		{
 			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM interrupt enable bits 0x%x\n", value & int_mask);

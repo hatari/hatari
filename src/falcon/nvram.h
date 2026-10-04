@@ -40,11 +40,12 @@
 #define NVRAM_CHKSUM1	62
 #define NVRAM_CHKSUM2	63
 
-extern void NvRam_Reset(void);
+extern void NvRam_Reset(bool bCold);
 extern void NvRam_Init(void);
 extern void NvRam_UnInit(void);
 extern void NvRam_Select_ReadByte(void);
 extern void NvRam_Select_WriteByte(void);
+extern void NvRam_Clock_Update(void);
 extern void NvRam_Data_ReadByte(void);
 extern void NvRam_Data_WriteByte(void);
 extern void NvRam_Info(FILE *fp, uint32_t dummy);
