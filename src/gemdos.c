@@ -4365,6 +4365,10 @@ void GemDOS_Boot(void)
 	/* Setup new GEMDOS handler, see "cart_asm.s" */
 	M68000_Flush_Instr_Cache(0x0084, SIZE_LONG);
 	STMemory_WriteLong(0x0084, CART_GEMDOS);
+
+	/* Most TOS versions have reset _bootdev during their own boot */
+	if (ConfigureParams.HardDisk.bBootFromHardDisk && GEMDOS_EMU_ON)
+		STMemory_WriteWord(0x446, nBootDrive);
 }
 
 
