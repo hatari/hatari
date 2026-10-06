@@ -64,6 +64,10 @@
        - on TT, IRQ is connected to the 2nd MFP on GPIP6 using the XRTCIRQ line
        - on Falcon, IRQ is not connected
 
+  Input Clock :
+    - On TT, the MC146818A is connected to an external freq on OSC1 at 32.768 kHz
+    - On Falcon, the DS1287 is not connected to any external freq on OSC1, it uses
+      its own internal oscillator
 
   The clock is kept updated using a small battery cell connected to the chip (even
   when the TT / Falcon is powered OFF)
@@ -73,6 +77,8 @@
   If VRT is not set, TOS will init the RTC using the release date stored in the TOS image
   (for example TOS 3.06 will use 1989/06/08 00:00:00)
 
+  On Falcon, the DS1287 is not connected to an external battery, the chip includes
+  itw own battery to keep the RTC and the RAM updated even when power is OFF
 
 
   Not implemented (as no known use-case):
@@ -553,6 +559,19 @@ void NvRam_Clock_Update ( void )
 	/* Check if more than 1 second passed since last increment of date/time */
 	FrameDuration_micro = ClocksTimings_GetVBLDuration_micro ( ConfigureParams.System.nMachineType , nScreenRefreshRate );
 	Clock_micro += FrameDuration_micro;
+
+	/* Simulate clearing the UIP bit after a small delay of ~2 ms */
+	/* NOTE : here we use the VBL duration, which is a much bigger delay of ~20 ms*/
+	/* but this is enough to set / clear UIP regularly, in case a program */
+	/* is monitoring the UIP bit before reading the RTC content */
+	if ( ( Clock_micro >= MC146818_UPDATE_DURATION_US )	/* More than 1984 us since end of previous update */
+	  && ( nvram[0x0a] & REG_BIT_UIP ) )			/* UIP not cleared yet */
+	{
+		nvram[0x0a] &= ~REG_BIT_UIP;
+		nvram[0x0c] |=  REG_BIT_UF;			/* Set update-ended IRQ flag */
+		MC146818_Update_IRQ();
+	}
+
 	if ( Clock_micro < 1000000 )
 		return;						/* Less than 1 second, don't increment date/time yet */
 	Clock_micro -= 1000000;
@@ -560,6 +579,9 @@ void NvRam_Clock_Update ( void )
 	/* Don't update RTC when SET bit is set in reg B */
 	if ( nvram[0x0b] & REG_BIT_SET )
 		return;
+
+	/* Set UIP bit in reg A */
+	nvram[0x0a] |= REG_BIT_UIP;
 
 	sec =	BCD2bin( nvram[0] );
 	min =	BCD2bin( nvram[2] );
@@ -828,20 +850,12 @@ void NvRam_Data_ReadByte(void)
 	case 0x0a:
 		/* control reg A
 		 * read-only UIP bit + clock dividers & rate selectors
-		 *
-		 * UIP is suspended during SET, otherwise
-		 * dummy toggling it is enough to fool programs
 		 */
-		if (nvram[0x0b] & REG_BIT_SET)
-			nvram[nvram_index] &= ~REG_BIT_UIP;
-		else
-			nvram[nvram_index] ^= REG_BIT_UIP;
 		value = nvram[nvram_index];
 		break;
 	case 0x0b:
 		/* control reg B
 		 * set, interrupt enable, sqw enable, clock mode, daylight savings bits
-		 * writing SET bit aborts/suspends UIP and clears UIP bit
 		 */
 		value = nvram[nvram_index];
 		break;
@@ -878,10 +892,8 @@ void NvRam_Data_ReadByte(void)
 
 void NvRam_Data_WriteByte(void)
 {
-	/* enable & flag bits in B & C regs match each other -> use same mask for both */
-	const uint8_t int_mask = REG_BIT_UF|REG_BIT_AF|REG_BIT_PF;
-
 	uint8_t value = IoMem_ReadByte(0xff8963);
+
 	switch (nvram_index)
 	{
 	case 0x00:
@@ -903,7 +915,7 @@ void NvRam_Data_WriteByte(void)
 		break;
 
 	case 0x0a:
-		/* UIP bit is read-only */
+		/* UIP bit is read-only, we keep its value from reg A */
 		value = (value & ~REG_BIT_UIP) | (nvram[10] & REG_BIT_UIP);
 		break;
 	case 0x0b:
@@ -914,22 +926,9 @@ void NvRam_Data_WriteByte(void)
 		if ( old_dm_24 != new_dm_24 )
 			NvRam_Clock_Init();
 
-		if (value & int_mask)
-		{
-			Log_Printf(LOG_WARN, "Write to unimplemented RTC/NVRAM interrupt enable bits 0x%x\n", value & int_mask);
-			if (nvram[0x0c] & int_mask)
-			{
-				/* reg B enabling bits matched reg C flag bits */
-				nvram[0x0c] |= REG_BIT_IRQF;
-				/* TODO: generate interrupt */
-			}
-			/* TODO: start updating reg C flag bits & generate interrupts when appropriate */
-		}
+		/* If Update is suspended, then UIP bit is cleared */
 		if (value & REG_BIT_SET)
-		{
-			/* refresh clock as its updating is suspended while SET is enabled */
-			refreshFrozenTime(true);
-		}
+			nvram[0x0a] &= ~REG_BIT_UIP;
 		break;
 	case 0x0c:
 	case 0x0d:
