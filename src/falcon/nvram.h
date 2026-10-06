@@ -37,8 +37,6 @@
 /* FIXME: give better names to these (maybe byte order if there is any?) 
  * keep track on NvRam_SetChecksum()!
  */
-#define NVRAM_CHKSUM1	62
-#define NVRAM_CHKSUM2	63
 
 extern void NvRam_Reset(bool bCold);
 extern void NvRam_Init(void);

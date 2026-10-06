@@ -134,14 +134,16 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #define		MC146818_IRQ_ON				0	/* O/low sets IRQ line */
 #define		MC146818_IRQ_OFF			1	/* 1/high clears IRQ line */
 
+#define		MC146818_UPDATE_DURATION_US		1984	/* 1984 us to update the clock on every second */
+
 static uint8_t	MC146818_IRQ_Line;
 
 
 // Defs for checksum
 #define CKS_RANGE_START	14
 #define CKS_RANGE_END	(14+47)
-#define CKS_RANGE_LEN	(CKS_RANGE_END-CKS_RANGE_START+1)
-#define CKS_LOC			(14+48)
+#define CKS_POS_BYTE1	62
+#define CKS_POS_BYTE2	63
 
 #define NVRAM_START  14
 #define NVRAM_LEN    50
@@ -244,8 +246,8 @@ static bool NvRam_Save(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create NVRAM checksum. The checksum is over all bytes except the
- * checksum bytes themselves; these are at the very end.
+ * Create NVRAM checksum. The checksum is over all bytes from 0x0E to 0x3D except the
+ * checksum bytes themselves at 0x3E and 0x3F
  */
 static void NvRam_SetChecksum(void)
 {
@@ -254,8 +256,8 @@ static void NvRam_SetChecksum(void)
 	
 	for(i = CKS_RANGE_START; i <= CKS_RANGE_END; ++i)
 		sum += nvram[i];
-	nvram[NVRAM_CHKSUM1] = ~sum;
-	nvram[NVRAM_CHKSUM2] = sum;
+	nvram[CKS_POS_BYTE1] = ~sum;
+	nvram[CKS_POS_BYTE2] = sum;
 }
 
 
