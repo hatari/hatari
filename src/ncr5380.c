@@ -902,6 +902,8 @@ static uae_u8 ncr5380_bget(struct soft_scsi *scsi, int reg)
 		scsi->irq = false;
 		if (Config_IsMachineFalcon())
 			FDC_ClearIRQ();
+		else if (Config_IsMachineTT())
+			MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_SCSI_NCR , MFP_GPIP_STATE_LOW );
 		break;
 		case 8: // fake dma port
 		v = raw_scsi_get_data(r, true);
