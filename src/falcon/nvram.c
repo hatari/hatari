@@ -83,7 +83,7 @@
 
   As of october 2026, nearly all the chip functions are emulated
     - update clock every second, including support for dayligh saving time,
-      12/24 hour mode, binary or bdc encoding
+      12/24 hour mode, binary or bcd encoding
     - UIP bit changing between 0 and 1 when clock is updated
     - periodic timer at any possible frequency
     - all 3 interrupt sources : alarm, clock update, periodic timer
@@ -953,6 +953,7 @@ void NvRam_Data_ReadByte ( void )
 void NvRam_Data_WriteByte ( void )
 {
 	uint8_t value = IoMem_ReadByte(0xff8963);
+	uint8_t old_dm_24 , new_dm_24;
 
 	switch (nvram_index)
 	{
@@ -989,7 +990,6 @@ void NvRam_Data_WriteByte ( void )
 		/* bits 1,2 : 24H/12H mode and data mode (binary or bcd) */
 		/* Hatari specific code to automatically re-init RTC with default host date/time */
 		/* each time DM or 12/24 modes are changed */
-		uint8_t old_dm_24 , new_dm_24;
 
 		old_dm_24 = nvram[0x0b] & ( REG_BIT_24H | REG_BIT_DM );
 		new_dm_24 = value & ( REG_BIT_24H | REG_BIT_DM );
