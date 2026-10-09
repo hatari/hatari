@@ -33,6 +33,7 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 #include "symbols.h"
 #include "stacktrace.h"
 #include "68kDisass.h"
+#include "debug.h"
 #include "console.h"
 #include "options.h"
 #include "tos.h"
@@ -44,6 +45,10 @@ const char DebugCpu_fileid[] = "Hatari debugcpu.c";
 
 static uint32_t disasm_addr;     /* disasm address */
 static uint32_t memdump_addr;    /* memdump address */
+/* memdump address space: physical memory, or a logical address read
+ * through the MMU as supervisor / user data */
+enum { MEMDUMP_PHYSICAL, MEMDUMP_SUPER, MEMDUMP_USER };
+static int memdump_space;        /* address space of the last memdump */
 static uint32_t fake_regs[8];    /* virtual debugger "registers" */
 static bool bFakeRegsUsed;     /* whether to show virtual regs */
 
@@ -469,32 +474,75 @@ static unsigned get_type_width(char mode)
 
 
 /**
+ * Helper: read one memory item.
+ * @param addr    the item's address
+ * @param size    the size of the item in bytes
+ * @param space   MEMDUMP_PHYSICAL to read physical memory, or MEMDUMP_SUPER
+ *                / MEMDUMP_USER to read a logical address through the MMU
+ *                as supervisor / user data
+ * @param value   the item is stored here
+ * @return        false if the MMU can't translate (part of) the item
+ */
+static bool read_mem_value(uint32_t addr, int size, int space, uint32_t *value)
+{
+	uint32_t phys;
+
+	if (space == MEMDUMP_PHYSICAL)
+	{
+		switch (size)
+		{
+		case 4:
+			*value = STMemory_ReadLong(addr);
+			break;
+		case 2:
+			*value = STMemory_ReadWord(addr);
+			break;
+		case 1:
+		default:
+			*value = STMemory_ReadByte(addr);
+			break;
+		}
+		return true;
+	}
+	/* byte by byte, as an item can straddle two pages */
+	*value = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (!debug_mmu_translate_data(addr + i, space == MEMDUMP_SUPER, &phys))
+			return false;
+		*value = (*value << 8) | STMemory_ReadByte(phys);
+	}
+	return true;
+}
+
+/**
  * Helper: print `count` `size` sized memory items from `addr` in `base`.
  * @param addr    the start address
  * @param count   the amount of items that should be printed
  * @param size    the size of one item
  * @param base    the number base
+ * @param space   the address space, see read_mem_value()
  */
-static void print_mem_values(uint32_t addr, int count, int size, int base)
+static void print_mem_values(uint32_t addr, int count, int size, int base, int space)
 {
 	const char *separator = "";
 	for (int i = 0; i < count; i++)
 	{
 		uint32_t value;
-		switch (size)
+		if (!read_mem_value(addr, size, space, &value))
 		{
-		case 4:
-			value = STMemory_ReadLong(addr);
-			break;
-		case 2:
-			value = STMemory_ReadWord(addr);
-			break;
-		case 1:
-		default:
-			value = STMemory_ReadByte(addr);
-			break;
+			/* the MMU can't translate it */
+			int width;
+			switch (base)
+			{
+			case 1: width = 8*size; break;
+			case 8: width = 3*size; break;
+			default: width = 2*size; break;
+			}
+			fprintf(debugOutput, "%s%.*s", separator, width,
+				"--------------------------------");
 		}
-		switch (base)
+		else switch (base)
 		{
 		case 1:
 			fputs(separator, debugOutput);
@@ -521,43 +569,71 @@ static void print_mem_values(uint32_t addr, int count, int size, int base)
  * user-configured conversion for host character conversion.
  * @param addr   The ST RAM start address
  * @param count  the amount of bytes that should get printed
+ * @param space  the address space, see read_mem_value()
  */
-static void print_mem_chars(uint32_t addr, uint8_t count)
+static void print_mem_chars(uint32_t addr, uint8_t count, int space)
 {
 	for (int i = 0; i < count; i++)
 	{
-		Str_PrintMemChar(debugOutput, STMemory_ReadByte(addr + i));
+		uint32_t value;
+		if (read_mem_value(addr + i, 1, space, &value))
+			Str_PrintMemChar(debugOutput, value);
+		else
+			fputc('-', debugOutput);
 	}
 }
 
 /**
  * Do a memory dump, args = starting address.
  */
+/**
+ * Helper: the lower-cased mode letter if `arg` is a single non-digit
+ * character, else 0 (an address, a count or a symbol)
+ */
+static char mode_letter(const char *arg)
+{
+	if (arg[0] && !arg[1] && !isdigit((unsigned char)arg[0]))
+		return tolower((unsigned char)arg[0]);
+	return 0;
+}
+
 int DebugCpu_MemDump(int nArgc, char *psArgs[])
 {
 	int arg = 1;
-	unsigned size;
+	unsigned size = 1;
 	char mode = 0;
+	int space = memdump_space;
 	uint32_t memdump_upper = 0;
 
-	if (nArgc > 1)
-		mode = tolower((unsigned char)psArgs[arg][0]);
-
-	if (!mode || isdigit((unsigned char)psArgs[arg][0]) || psArgs[arg][1])
+	/* without arguments, continue in the address space used last */
+	if (nArgc > arg)
 	{
-		/* no args, single digit or multiple chars -> default mode */
-		mode = 'b';
-		size = 1;
+		space = MEMDUMP_PHYSICAL;
+		mode = mode_letter(psArgs[arg]);
 	}
-	else if ((size = get_type_width(mode)))
+	if (mode == 's' || mode == 'u')
 	{
+		/* logical address, read through the MMU as supervisor/user data */
+		space = (mode == 's') ? MEMDUMP_SUPER : MEMDUMP_USER;
+		arg += 1;
+		mode = nArgc > arg ? mode_letter(psArgs[arg]) : 0;
+	}
+	if (mode)
+	{
+		if (!(size = get_type_width(mode)))
+		{
+			fprintf(stderr, "Invalid mode (not [s|u] [b|w|l])!\n");
+			return DEBUGGER_CMDDONE;
+		}
 		arg += 1;
 	}
-	else
+	if (space != MEMDUMP_PHYSICAL && !debug_mmu_translating())
 	{
-		fprintf(stderr, "Invalid width mode (not b|w|l)!\n");
+		fprintf(stderr, "'s' and 'u' need an MMU that translates addresses!\n");
+		memdump_space = MEMDUMP_PHYSICAL;
 		return DEBUGGER_CMDDONE;
 	}
+	memdump_space = space;
 
 	if (nArgc > arg)
 	{
@@ -607,12 +683,12 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 
 		/* print addr: HEX */
 		fprintf(debugOutput, "%08X: ", memdump_addr);
-		print_mem_values(memdump_addr, cols, size, 16);
+		print_mem_values(memdump_addr, cols, size, 16, memdump_space);
 
 		/* print character data */
 		align = (all-cols)*(2*size+1);
 		fprintf(debugOutput, "%*c", align + 2, ' ');
-		print_mem_chars(memdump_line, cols*size);
+		print_mem_chars(memdump_line, cols*size, memdump_space);
 		fprintf(debugOutput, "\n");
 
 		memdump_addr += cols*size;
@@ -805,9 +881,9 @@ static int DebugCpu_Struct(int nArgc, char *psArgs[])
 			if (split)
 				fprintf(debugOutput, "  ");
 			if (type == 'c')
-				print_mem_chars(addr, cols);
+				print_mem_chars(addr, cols, MEMDUMP_PHYSICAL);
 			else
-				print_mem_values(addr, cols, size, base);
+				print_mem_values(addr, cols, size, base, MEMDUMP_PHYSICAL);
 			fprintf(debugOutput, "\n");
 
 			addr += cols * size;
@@ -1153,9 +1229,9 @@ static int DebugCpu_MemFind(int nArgc, char *psArgs[])
 
 		/* print <addr>: <hex> <chars> */
 		fprintf(debugOutput, "%08X: ", find_addr);
-		print_mem_values(find_addr, count, size, 16);
+		print_mem_values(find_addr, count, size, 16, MEMDUMP_PHYSICAL);
 		fprintf(debugOutput, "  ");
-		print_mem_chars(find_addr, count*size);
+		print_mem_chars(find_addr, count*size, MEMDUMP_PHYSICAL);
 		fprintf(debugOutput, "\n");
 
 		matches++;
@@ -1486,10 +1562,14 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
 	  "dump memory",
-	  "[b|w|l] [<start address>[-<end address>| <count>]]\n"
+	  "[s|u] [b|w|l] [<start address>[-<end address>| <count>]]\n"
 	  "\tdump memory at address or continue dump from previous address.\n"
 	  "\tBy default memory output is done as bytes, with 'w' or 'l'\n"
-	  "\toption, it will be done as words/longs instead.  Output amount\n"
+	  "\toption, it will be done as words/longs instead.  With 's' or\n"
+	  "\t'u' the address is a logical one, read through the MMU as\n"
+	  "\tsupervisor or user data, and '--' marks what the MMU can't\n"
+	  "\ttranslate.  Without arguments, the dump continues from the\n"
+	  "\tprevious address in the same address space.  Output amount\n"
 	  "\tcan be given either as a count or an address range.",
 	  false },
 	{ DebugCpu_Struct, Symbols_MatchCpuDataAddress,
