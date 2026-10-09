@@ -534,6 +534,13 @@ void mmu_bus_error(uaecptr addr, uae_u32 val, int fc, bool write, int size,uae_u
 	rmw_cycle = false;
 	locked_rmw_cycle = false;
 	regs.mmu_fault_addr = addr;
+#ifdef WINUAE_FOR_HATARI
+	if (!nonmmu && !mmu_debugger)
+		LOG_TRACE(TRACE_CPU_EXCEPTION, "mmu%03d page fault addr %08x %s fc %d pc %08x %s %08x\n",
+			currprefs.mmu_model % 1000, addr, write ? "write" : "read", fc, regs.instruction_pc,
+			currprefs.mmu_model == 68040 ? "ssw" : "fslw",
+			currprefs.mmu_model == 68040 ? regs.mmu_ssw : regs.mmu_fslw);
+#endif
 
 #if 0
 	activate_debugger ();
