@@ -9,6 +9,7 @@
   - Adaption to Hatari (c) 2006 by Thomas Huth
   - Copyright (c) 2015 Thorsten Otto of ARAnyM dev team
   - Adaption to Hatari (c) 2019 by Eero Tamminen
+  - Major rewrite (c) 2026 Nicolas Pomarède
 
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip with a non-volatile RAM area.
@@ -78,20 +79,25 @@
   (for example TOS 3.06 will use 1989/06/08 00:00:00)
 
   On Falcon, the DS1287 is not connected to an external battery, the chip includes
-  itw own battery to keep the RTC and the RAM updated even when power is OFF
+  its own battery to keep the RTC and the RAM updated even when power is OFF
 
+  As of october 2026, nearly all the chip functions are emulated
+    - update clock every second, including support for dayligh saving time,
+      12/24 hour mode, binary or bdc encoding
+    - UIP bit changing between 0 and 1 when clock is updated
+    - periodic timer at any possible frequency
+    - all 3 interrupt sources : alarm, clock update, periodic timer
 
-  Not implemented (as no known use-case):
+  not emulated :
+    - Square Wave generator : SQW pin is not connected on TT and Falcon
 
-  - SQW
+  Apart from keeping date/time when computer is powered off, there's not many programs
+  making use of the rest of the capabilities of the MC146818A.
+  One such program is Atari System V unix (ASV) which requires the periodic timer
+  to operate (it uses a 128 Hz timer)
 
-  - DSE
-  - all alarm handling
-  - doing clock updates at 1Hz
-    (instead of when regs are read)
-  - periodic divisor & rate-control bits
-  - alarm, update-end and periodic interrupt generation
 */
+
 const char NvRam_fileid[] = "Hatari nvram.c";
 
 #include <time.h>
@@ -111,7 +117,7 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "clocks_timings.h"
 
 // Defs for NVRAM control register A (10) bits (read/write, except UIP)
-#define REG_BIT_UIP  0x80	/* update-in-progress */
+#define REG_BIT_UIP 0x80	/* update-in-progress */
 #define REG_DV_MASK 0x70	/* divider control, bits 4,5,6 */
 #define REG_RS_MASK 0x0f	/* rate select, bits 0,1,2,3 */
 
@@ -175,6 +181,7 @@ static uint8_t		dse_done;
 static int64_t		Clock_micro;				/* Incremented every VBL to update the RTC every second */
 
 
+static void		NvRam_Set_Periodic_Timer_Int ( uint8_t reg_a_value );
 static struct tm*	getFrozenTime ( void );
 static uint8_t		convert_24h_ampm ( uint8_t hour , uint8_t *pPM_flag );
 static uint8_t		convert_ampm_24h ( uint8_t hour , uint8_t pm_flag );
@@ -312,21 +319,46 @@ static void	MC146818_Update_IRQ ( void )
 	if ( interrupt_enable & interrupt_flag )	/* bits position are the same in _enable and _flag */
 	{
 		nvram[0x0c] |= REG_BIT_IRQF;
-		IRQ_new = MC146818_IRQ_ON;
+		IRQ_new = MC146818_IRQ_ON;		/* = 0 */
 	}
 	else
 	{
 		nvram[0x0c] &= ~REG_BIT_IRQF;
-		IRQ_new = MC146818_IRQ_OFF;
+		IRQ_new = MC146818_IRQ_OFF;		/* = 1 */
 	}
 
-	LOG_TRACE ( TRACE_NVRAM, "nvram update irq_new=%d VBL=%d HBL=%d\n" , IRQ_new , nVBLs , nHBL );
+	LOG_TRACE ( TRACE_NVRAM, "nvram update reg_b_enable=0x%02x reg_c_flag=0x%02x irq_new=%d VBL=%d HBL=%d\n" , interrupt_enable , interrupt_flag , IRQ_new , nVBLs , nHBL );
 
 	/* Update IRQ line if needed */
 	if ( IRQ_new != MC146818_IRQ_Line )
 		MC146818_Set_Line_IRQ ( IRQ_new );
 }
 
+
+
+/*
+ * Interrupt called each time the periodic timer expires
+ */
+
+void	MC146818_InterruptHandler_PeriodicTimer ( void )
+{
+	int	PendingCyclesOver;
+
+	/* Number of internal cycles we went over for this timer ( <= 0 ) */
+	PendingCyclesOver = -PendingInterruptCount;			/* >= 0 */
+
+	LOG_TRACE ( TRACE_SCC, "nvram interrupt handler pending_cyc=%d VBL=%d HBL=%d\n" , PendingCyclesOver , nVBLs , nHBL );
+
+	/* Remove this interrupt from list and re-order */
+	CycInt_AcknowledgeInterrupt();
+
+	/* Set the PF interrupt flag and update IRQ state */
+	nvram[0x0c] |= REG_BIT_PF;
+	MC146818_Update_IRQ();
+
+	/* Restart or stop the periodic timer, depending on current value of reg A */
+	NvRam_Set_Periodic_Timer_Int ( nvram[0x0a] );
+}
 
 
 
@@ -474,36 +506,6 @@ void NvRam_UnInit(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Read from RTC/NVRAM offset selection register ($ff8961)
- */
-void NvRam_Select_ReadByte(void)
-{
-	IoMem_WriteByte(0xff8961, nvram_index);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Write to RTC/NVRAM offset selection register ($ff8961)
- */
-void NvRam_Select_WriteByte(void)
-{
-	uint8_t value = IoMem_ReadByte(0xff8961);
-
-	if (value < sizeof(nvram))
-	{
-		nvram_index = value;
-	}
-	else
-	{
-		Log_Printf(LOG_WARN, "NVRAM: trying to set out-of-bound position (%d)\n", value);
-	}
-}
-
-
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -531,7 +533,7 @@ static void NvRam_Clock_Init ( void )
 
 	nvram[0x0d] |= REG_BIT_VRT;
 
-fprintf ( stderr , "nvram clock init : %02d-%02d-%02d %d %02d:%02d:%02d\n" ,BCD2bin(nvram[9]),BCD2bin(nvram[8]),BCD2bin(nvram[7]),BCD2bin(nvram[6]),BCD2bin(nvram[4]&0x7f),BCD2bin(nvram[2]),BCD2bin(nvram[0]) );
+//fprintf ( stderr , "nvram clock init : %02d-%02d-%02d %d %02d:%02d:%02d\n" ,BCD2bin(nvram[9]),BCD2bin(nvram[8]),BCD2bin(nvram[7]),BCD2bin(nvram[6]),BCD2bin(nvram[4]&0x7f),BCD2bin(nvram[2]),BCD2bin(nvram[0]) );
 }
 
 
@@ -715,6 +717,47 @@ void NvRam_Clock_Check_Alarm ( void )
 
 
 
+/*
+ * In our case the MC146818A runs at 32.768 kHz, so the only divider bits
+ * combination that starts the periodic timer is 010 = 0x02
+ */
+
+static void NvRam_Set_Periodic_Timer_Int ( uint8_t reg_a_value )
+{
+	uint8_t	dv , rs;
+	int	freq;
+	int	cycles;
+
+	/* bits 0,1,2,3 : RS */
+	rs = reg_a_value & 0x0f;
+	/* bits 4,5,6 : DV */
+	dv = ( reg_a_value >> 4 ) & 0x07;
+
+	/* Is timer stopped ? */
+	if ( ( dv != 0x02 ) || ( rs == 0 ) )
+	{
+		LOG_TRACE(TRACE_NVRAM, "NVRAM: stop periodic timer rs=0x%x dv=0x%x pc=%x\n", rs, dv, M68000_GetPC());
+		CycInt_RemovePendingInterrupt ( INTERRUPT_MC146818_PERIODIC_TIMER );
+		return;
+	}
+
+	/* Timer is ON */
+
+	/* From datasheet table 5, timer freq is 32768 >> ( rs-1 )
+	 * except for rs=1 (256 Hz) and rs=2 (128 Hz)
+	 * eg : rs=6   freq = 32768 >> 5 = 1024 Hz
+	 */
+	if      ( rs == 1 )	freq = 256;
+	else if ( rs == 2 )	freq = 128;
+	else			freq = MachineClocks.MC146818A_Freq >> ( rs-1 );
+
+	LOG_TRACE(TRACE_NVRAM, "NVRAM: start periodic timer rs=0x%x dv=0x%x freq=%d Hz pc=%x\n", rs, dv, freq , M68000_GetPC());
+
+        cycles = MachineClocks.CPU_Freq / freq; 	       /* Convert freq in CPU cycles */
+	CycInt_AddRelativeInterrupt ( cycles, INT_CPU_CYCLE, INTERRUPT_MC146818_PERIODIC_TIMER );
+}
+
+
 
 /*-----------------------------------------------------------------------*/
 
@@ -823,6 +866,36 @@ static uint8_t BCD2bin(uint8_t value)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Read from RTC/NVRAM offset selection register ($ff8961)
+ */
+void NvRam_Select_ReadByte(void)
+{
+	IoMem_WriteByte(0xff8961, nvram_index);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to RTC/NVRAM offset selection register ($ff8961)
+ */
+void NvRam_Select_WriteByte(void)
+{
+	uint8_t value = IoMem_ReadByte(0xff8961);
+
+	if (value < sizeof(nvram))
+	{
+		nvram_index = value;
+	}
+	else
+	{
+		Log_Printf(LOG_WARN, "NVRAM: trying to set out-of-bound position (%d)\n", value);
+	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Read from RTC/NVRAM data register ($ff8963)
  */
 void NvRam_Data_ReadByte(void)
@@ -915,10 +988,18 @@ void NvRam_Data_WriteByte(void)
 		break;
 
 	case 0x0a:
-		/* UIP bit is read-only, we keep its value from reg A */
-		value = (value & ~REG_BIT_UIP) | (nvram[10] & REG_BIT_UIP);
+		/* bits 0,1,2,3 : RS */
+		/* bits 4,5,6 : DV */
+
+		/* UIP bit 7 is read-only, we keep its value from reg A */
+		value = (value & ~REG_BIT_UIP) | (nvram[0x0a] & REG_BIT_UIP);
+
+		NvRam_Set_Periodic_Timer_Int ( value );
 		break;
 	case 0x0b:
+		/* bit 0 : DSE, daylight saving enabled */
+
+		/* bits 1,2 : 24H/12H mode and data mode (binary or bcd) */
 		/* Hatari specific code to automatically re-init RTC with default host date/time */
 		/* each time DM or 12/24 modes are changed */
 		uint8_t old_dm_24 = nvram[0x0b] & ( REG_BIT_24H | REG_BIT_DM );
@@ -926,9 +1007,16 @@ void NvRam_Data_WriteByte(void)
 		if ( old_dm_24 != new_dm_24 )
 			NvRam_Clock_Init();
 
-		/* If Update is suspended, then UIP bit is cleared */
+		/* bit 3 : SQWE : enable square wave on SQW pin */
+		/*  -> not used in TT/Falcon */
+
+		/* bits 4,5,6 : UIE, AIE, PIE : update irq */
+		MC146818_Update_IRQ();
+
+		/* bit 7 : SET clock : clock's update every second is suspended and UIP bit is cleared */
 		if (value & REG_BIT_SET)
 			nvram[0x0a] &= ~REG_BIT_UIP;
+
 		break;
 	case 0x0c:
 	case 0x0d:

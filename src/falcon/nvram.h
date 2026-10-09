@@ -38,16 +38,21 @@
  * keep track on NvRam_SetChecksum()!
  */
 
-extern void NvRam_Reset(bool bCold);
-extern void NvRam_Init(void);
-extern void NvRam_UnInit(void);
-extern void NvRam_Select_ReadByte(void);
-extern void NvRam_Select_WriteByte(void);
-extern void NvRam_Clock_Update(void);
-extern void NvRam_Data_ReadByte(void);
-extern void NvRam_Data_WriteByte(void);
-extern void NvRam_Info(FILE *fp, uint32_t dummy);
-extern int NvRam_GetKbdLayoutCode(void);
+extern void	NvRam_Reset(bool bCold);
+extern void	NvRam_Init(void);
+extern void	NvRam_UnInit(void);
+
+extern void	MC146818_InterruptHandler_PeriodicTimer ( void );
+
+extern void	NvRam_Clock_Update(void);
+
+extern void	NvRam_Select_ReadByte(void);
+extern void	NvRam_Select_WriteByte(void);
+extern void	NvRam_Data_ReadByte(void);
+extern void	NvRam_Data_WriteByte(void);
+
+extern void	NvRam_Info(FILE *fp, uint32_t dummy);
+extern int	NvRam_GetKbdLayoutCode(void);
 
 /* for tos.c */
 static inline bool NvRam_Present(void)
