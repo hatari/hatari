@@ -989,8 +989,10 @@ void NvRam_Data_WriteByte ( void )
 		/* bits 1,2 : 24H/12H mode and data mode (binary or bcd) */
 		/* Hatari specific code to automatically re-init RTC with default host date/time */
 		/* each time DM or 12/24 modes are changed */
-		uint8_t old_dm_24 = nvram[0x0b] & ( REG_BIT_24H | REG_BIT_DM );
-		uint8_t new_dm_24 = value & ( REG_BIT_24H | REG_BIT_DM );
+		uint8_t old_dm_24 , new_dm_24;
+
+		old_dm_24 = nvram[0x0b] & ( REG_BIT_24H | REG_BIT_DM );
+		new_dm_24 = value & ( REG_BIT_24H | REG_BIT_DM );
 		if ( old_dm_24 != new_dm_24 )
 			NvRam_Clock_Init();
 
