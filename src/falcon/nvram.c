@@ -177,9 +177,12 @@ static uint8_t		nvram_index;
 static int		year_offset;
 static uint8_t		dse_done;
 
-
 static int64_t		Clock_micro;				/* Incremented every VBL to update the RTC every second */
 
+
+/*--------------------------------------------------------------*/
+/* Local functions prototypes					*/
+/*--------------------------------------------------------------*/
 
 static void		NvRam_Set_Periodic_Timer_Int ( uint8_t reg_a_value );
 static struct tm*	getHostLocalTime ( void );
@@ -198,7 +201,7 @@ static void		NvRam_Clock_Check_Alarm ( void );
  * Load NVRAM data from file
  * This restores bytes 0x0E - 0x3F and leaves the RTC unchanged (bytes 0x00 - 0x0D)
  */
-static bool NvRam_Load(void)
+static bool NvRam_Load ( void )
 {
 	bool ret = false;
 	FILE *f = fopen(nvram_filename, "rb");
@@ -262,7 +265,7 @@ static bool NvRam_Save(void)
  * Create NVRAM checksum. The checksum is over all bytes from 0x0E to 0x3D except the
  * checksum bytes themselves at 0x3E and 0x3F
  */
-static void NvRam_SetChecksum(void)
+static void NvRam_SetChecksum ( void )
 {
 	int i;
 	unsigned char sum = 0;
@@ -308,8 +311,6 @@ static void	MC146818_Update_IRQ ( void )
 	uint8_t		interrupt_enable;
 	uint8_t		interrupt_flag;
 	uint8_t		IRQ_new;
-
-//fprintf ( stderr , "scc update irq wr9=$%02x ius=$%02x rr3=$%02x irq_in=%d pc=%x\n" , SCC.Chn[0].WR[9] , SCC.IUS , SCC.Chn[0].RR[3] , SCC.IRQ_Line , M68000_GetPC() );
 
 	/* which interrupts are enabled to raise IRQ ? */
 	interrupt_enable = nvram[0x0b] & ( REG_BIT_UIE | REG_BIT_AIE  | REG_BIT_PIE );
@@ -369,7 +370,7 @@ void	MC146818_InterruptHandler_PeriodicTimer ( void )
  *
  * This can also force some values in RAM depending on the current video mode
  */
-void NvRam_Reset( bool bCold)
+void NvRam_Reset ( bool bCold)
 {
 	/*
 	 * Reset the chip
@@ -444,7 +445,7 @@ void NvRam_Reset( bool bCold)
 /**
  * Initialization
  */
-void NvRam_Init(void)
+void NvRam_Init ( void )
 {
 	const char sBaseName[] = "hatari.nvram";
 	const char *psHomeDir;
@@ -500,7 +501,7 @@ void NvRam_Init(void)
 /**
  * De-Initialization
  */
-void NvRam_UnInit(void)
+void NvRam_UnInit ( void )
 {
 	NvRam_Save();		// save NVRAM file upon exit automatically (should be conditionalized)
 }
@@ -605,8 +606,7 @@ void NvRam_Clock_Update ( void )
 	if ( month > 12 )					/* ensure month is correct to access day_max[] */
 		month = 12;
 
-fprintf ( stderr , "nvram clock in : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
-
+	LOG_TRACE(TRACE_NVRAM, "NVRAM update clock in : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
 
 	/* Seconds */
 	sec++;
@@ -655,7 +655,6 @@ fprintf ( stderr , "nvram clock in : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year,
 	year = 0;
 
 done:
-
 	/*
 	 * Special case if daylight saving is enabled
 	 *  - on the last sunday of april 02:00:00 AM becomes 03:00:00
@@ -676,8 +675,7 @@ done:
 			dse_done = 0;						/* Any hour after 02:00:00 reset dse_done */
 	}
 
-
-fprintf ( stderr , "nvram clock out : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
+	LOG_TRACE(TRACE_NVRAM, "NVRAM update clock out : %02d-%02d-%02d %d %02d:%02d:%02d\n" , year, month, day, wday, hour, min, sec );
 
 	nvram[0] = bin2BCD( sec );
 	nvram[2] = bin2BCD( min );
@@ -836,15 +834,15 @@ static uint8_t convert_ampm_24h ( uint8_t hour , uint8_t pm_flag )
  * If NVRAM data mode bit is set, returns given value as binary
  * otherwise returns it as BCD.
  */
-static uint8_t bin2BCD(uint8_t value)
+static uint8_t bin2BCD ( uint8_t value )
 {
 	if ((nvram[0x0b] & REG_BIT_DM))
 		return value;
 	return ((value / 10) << 4) | (value % 10);
 }
 
-
-static uint8_t BCD2bin(uint8_t value)
+/* Opposite function : convert a binary or BCD value and return the binary value */
+static uint8_t BCD2bin ( uint8_t value )
 {
 	if ((nvram[0x0b] & REG_BIT_DM))
 		return value;
@@ -857,7 +855,7 @@ static uint8_t BCD2bin(uint8_t value)
 /**
  * Read from RTC/NVRAM offset selection register ($ff8961)
  */
-void NvRam_Select_ReadByte(void)
+void NvRam_Select_ReadByte (void )
 {
 	IoMem_WriteByte(0xff8961, nvram_index);
 }
@@ -867,7 +865,7 @@ void NvRam_Select_ReadByte(void)
 /**
  * Write to RTC/NVRAM offset selection register ($ff8961)
  */
-void NvRam_Select_WriteByte(void)
+void NvRam_Select_WriteByte ( void )
 {
 	uint8_t value = IoMem_ReadByte(0xff8961);
 
@@ -887,7 +885,7 @@ void NvRam_Select_WriteByte(void)
 /**
  * Read from RTC/NVRAM data register ($ff8963)
  */
-void NvRam_Data_ReadByte(void)
+void NvRam_Data_ReadByte ( void )
 {
 	uint8_t value = 0;
 
@@ -952,7 +950,7 @@ void NvRam_Data_ReadByte(void)
  * Write to RTC/NVRAM data register ($ff8963)
  */
 
-void NvRam_Data_WriteByte(void)
+void NvRam_Data_WriteByte ( void )
 {
 	uint8_t value = IoMem_ReadByte(0xff8963);
 
@@ -1019,12 +1017,15 @@ void NvRam_Data_WriteByte(void)
 }
 
 
-void NvRam_Info(FILE *fp, uint32_t dummy)
+void NvRam_Info ( FILE *fp, uint32_t dummy )
 {
 	fprintf(fp, "- File: '%s'\n", nvram_filename);
-	fprintf(fp, "- Time: from host (regs: 0, 2, 4, 6-9)\n");
+	fprintf(fp, "- Time: %02d-%02d-%02d %d %02d:%02d:%02d pm/am=%s (0,2,4,6,7,8,9)\n" ,
+		BCD2bin(nvram[9]), BCD2bin(nvram[8]), BCD2bin(nvram[7]), BCD2bin(nvram[6]),
+		BCD2bin(nvram[4]&0x7f), BCD2bin(nvram[2]), BCD2bin(nvram[0]),
+		nvram[4]&0x7f ? "pm":"am" );
 	fprintf(fp, "- Alarm: %02d:%02d:%02d (1, 3, 5)\n",
-		bin2BCD(nvram[5]), bin2BCD(nvram[3]), bin2BCD(nvram[1]));
+		BCD2bin(nvram[5]), BCD2bin(nvram[3]), BCD2bin(nvram[1]));
 	fprintf(fp, "- Control reg A: 0x%02x (10)\n", nvram[0x0a]);
 	fprintf(fp, "- Control reg B: 0x%02x (11)\n", nvram[0x0b]);
 	fprintf(fp, "- Status reg A:  0x%02x (12)\n", nvram[0x0c]);
