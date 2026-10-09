@@ -182,7 +182,7 @@ static int64_t		Clock_micro;				/* Incremented every VBL to update the RTC every
 
 
 static void		NvRam_Set_Periodic_Timer_Int ( uint8_t reg_a_value );
-static struct tm*	getFrozenTime ( void );
+static struct tm*	getHostLocalTime ( void );
 static uint8_t		convert_24h_ampm ( uint8_t hour , uint8_t *pPM_flag );
 static uint8_t		convert_ampm_24h ( uint8_t hour , uint8_t pm_flag );
 static uint8_t		bin2BCD ( uint8_t value );
@@ -519,17 +519,17 @@ static void NvRam_Clock_Init ( void )
 	uint8_t		hour;
 	uint8_t		pm_flag;
 
-	nvram[0] = bin2BCD(getFrozenTime()->tm_sec);
-	nvram[2] = bin2BCD(getFrozenTime()->tm_min);
+	nvram[0] = bin2BCD(getHostLocalTime()->tm_sec);
+	nvram[2] = bin2BCD(getHostLocalTime()->tm_min);
 
-	hour = getFrozenTime()->tm_hour;
+	hour = getHostLocalTime()->tm_hour;
 	hour = convert_24h_ampm ( hour , &pm_flag);	/* take into account 24H or AM/PM for hour */
 	nvram[4] = bin2BCD(hour) | pm_flag;
 
-	nvram[6] = bin2BCD(getFrozenTime()->tm_wday + 1);
-	nvram[7] = bin2BCD(getFrozenTime()->tm_mday);
-	nvram[8] = bin2BCD(getFrozenTime()->tm_mon + 1);
-	nvram[9] = bin2BCD(getFrozenTime()->tm_year - year_offset);
+	nvram[6] = bin2BCD(getHostLocalTime()->tm_wday + 1);
+	nvram[7] = bin2BCD(getHostLocalTime()->tm_mday);
+	nvram[8] = bin2BCD(getHostLocalTime()->tm_mon + 1);
+	nvram[9] = bin2BCD(getHostLocalTime()->tm_year - year_offset);
 
 	nvram[0x0d] |= REG_BIT_VRT;
 
@@ -761,32 +761,21 @@ static void NvRam_Set_Periodic_Timer_Int ( uint8_t reg_a_value )
 
 /*-----------------------------------------------------------------------*/
 
-static struct tm* refreshFrozenTime(bool refresh)
-{
-	static struct tm frozen_time;
-
-	if (refresh)
-	{
-		/* update frozen time */
-		time_t tim = time(NULL);
-		frozen_time = *localtime(&tim);
-	}
-	return &frozen_time;
-}
-
-/**
- * Returns pointer to "frozen time".  Unless NVRAM SET time bit is set,
- * that's first refreshed from host clock (= doing "RTC update cycle").
- * Correct applications have SET bit enabled while they write clock registers.
+/*
+ * Return a pointer to a "struct tm" containing the local time from the
+ * PC host used to run Hatari.
+ * This is used to init the RTC to a valid date/time when emulation is started
  */
-static struct tm* getFrozenTime(void)
-{
-	if (nvram[0x0b] & REG_BIT_SET)
-		return refreshFrozenTime(false);
-	else
-		return refreshFrozenTime(true);
-}
 
+static struct tm* getHostLocalTime(void)
+{
+	static struct tm host_local_time;
+
+	time_t tim = time(NULL);
+	host_local_time = *localtime(&tim);
+
+	return &host_local_time;
+}
 
 
 
