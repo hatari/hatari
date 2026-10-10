@@ -46,11 +46,13 @@ profile report.
 
 Usage:
 	$name <path> <opcode> [options]
+	$name <report>
 
 Arguments:
 	path    - Path to Atari program to profile
 	opcode  - 2-digit GEMDOS opcode in hex
 	options - Extra options to provide for Hatari
+	report  - Profiler report
 
 Examples:
 	# profile program until it terminates with Pterm() (0x4C):
@@ -60,11 +62,19 @@ Examples:
 	# under Falcon emulation:
 	$name ./f030mid.tos 3C --machine falcon -s 4
 
+	# show overview of earlier produced profile report
+	$name $data
+
 ERROR: $1!
 
 EOF
 	exit 1
 }
+
+if [ $# -eq 1 ] && [ -f "$1" ]; then
+	show_overview "$1"
+	exit 0
+fi
 
 # process command line args
 if [ $# -lt 2 ]; then
