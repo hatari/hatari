@@ -125,6 +125,7 @@ Emulator improvements:
   - Open Windows console automatically for debugger
 
 Tools:
+- New "hatari-prg-profile" script to demonstrate profiling of Atari programs
 - Profile data includes more detailed Hatari configuration information
 - Profile post-processor accepts "fnmatch" patterns for all
   options that take symbol names

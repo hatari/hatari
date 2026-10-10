@@ -1,0 +1,66 @@
+.TH "hatari-prg-profile" "1" "2026-10-18" "Hatari" "Hatari utilities"
+.SH NAME
+hatari\-prg\-profile \- profile performance of given Atari program
+.SH SYNOPSIS
+.B hatari\-prg\-profile
+<\fIpath\fP> <\fIopcode\fP> [\fIoptions\fP]
+.SH DESCRIPTION
+Runs given Atari program from GEMDOS HD with Hatari and profiles its
+execution until program calls the specified GEMDOS \fopcode\fP. Saves
+the profile data, post-processes it, and shows overview of the
+generated profile report.
+.PP
+Profiling requires program to have debug symbols; either included to
+the binary itself, or in a separate "<program name>.sym" file.
+.PP
+Profile data is saved to same directory where the Atari program is,
+and the report generated from it, is saved to the current directory.
+.SH ARGUMENTS
+.TP
+.B path
+Path to Atari program to profile.
+.TP
+.B opcode
+2-digit GEMDOS opcode in hex.
+.TP
+.B options
+Extra options for provide for Hatari.
+.SH NOTES
+This is mostly an example because it provides only an overview profile
+of the whole program execution (until specified GEMDOS call).
+.PP
+Whereas automating profiling of more specific parts of the program
+would require (at least) setting up suitable (program-specific)
+breakpoints (to start profiling and save the data) for relevant points
+in its execution.
+.PP
+Script does not support callgraph generation either, because for more
+complex programs finding suitable post-processing options for reducing
+callgraph to a readable size, while still retaining relevant
+information, can take quite a lot of iteration.
+.PP
+Whereas in simple programs, only thing needed for reasonable
+callgraphs, is re-running the post-processor command shown by the
+script with an additional "\-g" option, and view the resulting
+\fIGraphviz\fP ".dot" files with (e.g.) \fIxdot\fP utility.
+.SH EXAMPLES
+.TP
+Profile program until it terminates with Pterm() (0x4C):
+.B hatari\-prg\-profile ./hello.tos 4C
+.TP
+Profile OPL2 DSP midiplayer until Fcreate() (0x3C), under Falcon emulation:
+.B hatari\-prg\-profile ./f030mid.tos 3C \-\-machine falcon \-s 4
+.SH SEE ALSO
+.IR hatari (1), xdot (1)
+.SH "AUTHOR"
+Written by Eero Tamminen <oak at helsinkinet fi>.
+.SH "LICENSE"
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+.SH "NO WARRANTY"
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
