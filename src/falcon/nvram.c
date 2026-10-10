@@ -380,7 +380,10 @@ void NvRam_Reset ( bool bCold)
 	/* datasheet but we do it to avoid random behaviour) */
 	if ( bCold )
 	{
-	      nvram[0x0a] = nvram[0x0b] = nvram[0x0c] = nvram[0x0d] = 0x00;
+		nvram[0x0a] = nvram[0x0c] = nvram[0x0d] = 0x00;
+		/* Default to binary mode and not to BCD (TOS and EmuTOS only */
+		/* handle binary mode) */
+		nvram[0x0b] = REG_BIT_DM|REG_BIT_24H;
 	}
 
 	/* clear SWQE + interrupt enable bits */
