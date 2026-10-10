@@ -221,3 +221,15 @@ void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int count) {}
 void Disasm_GetColumns(int *columns) {}
 void Disasm_SetColumns(int *columns) {}
 void Disasm_DisableColumn(int column, const int *oldcols, int *newcols) {}
+
+/* fake MMU translation for the debugger (debug/debugcpu.c memdump s/u) */
+bool debug_mmu_translating(void);
+bool debug_mmu_translating(void)
+{
+	return false;
+}
+bool debug_mmu_translate_data(uint32_t addr, bool super, uint32_t *phys);
+bool debug_mmu_translate_data(uint32_t addr, bool super, uint32_t *phys)
+{
+	return false;
+}
