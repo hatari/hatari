@@ -153,8 +153,8 @@ const char ClocksTimings_fileid[] = "Hatari clocks_timings.c";
 #define ATARI_MEGA_STE_NTSC_MCLK	32215905			/* CPU_Freq = 16.1079525 MHz */
 #define ATARI_MEGA_STE_EXT_OSC		16021226			/* OSC U408 */
 
-#define ATARI_TT_PAL_MCLK		32084988			/* CPU_Freq = 32.084988 MHz */
-#define ATARI_TT_NTSC_MCLK		32215905			/* CPU_Freq = 32.215905 MHz */
+#define ATARI_TT_MCLK			32215905			/* CPU_Freq = 32.215905 MHz */
+									/* There's no PAL/NTSC variant, only VGA */
 
 #define ATARI_FALCON_PAL_MCLK		32084988			/* CPU_Freq = 16.042494 MHz */
 #define ATARI_FALCON_NTSC_MCLK		32215905			/* CPU_Freq = 16.1079525 MHz */
@@ -288,7 +288,7 @@ void	ClocksTimings_InitMachine ( MACHINETYPE MachineType )
 	{
 		int	CLK32, CLK16, CLK8, FCCLK, CLK4, CLK2, CLKX5;
 
-		MachineClocks.MCLK_Freq		= ATARI_TT_PAL_MCLK;			/* 32.084988 MHz */
+		MachineClocks.MCLK_Freq		= ATARI_TT_MCLK;			/* 32.215905 MHz */
 		CLK32				= MachineClocks.MCLK_Freq;
 
 		MachineClocks.TTVIDEO_Freq	= MachineClocks.MCLK_Freq;		/* 32 MHz */
