@@ -212,10 +212,15 @@ static const int16_t LMC1992_Bass_Treble_Table[16] =
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 12, 12, 12
 };
 
-static const int DmaSndSampleRates[4] =
+static const int DmaSndSampleRates_STE[4] =
 {
 	6258, 12517, 25033, 50066
 };
+static const int DmaSndSampleRates_TT[4] =
+{
+	6292, 12584, 25168, 50337
+};
+
 
 
 
@@ -229,7 +234,7 @@ static void	DmaSnd_FIFO_Refill(void);
 static int8_t	DmaSnd_FIFO_PullByte(void);
 static void	DmaSnd_FIFO_SetStereo(void);
 
-static int	DmaSnd_DetectSampleRate(void);
+static int	DmaSnd_DetectSampleRate(uint16_t soundMode);
 static void	DmaSnd_StartNewFrame(void);
 static inline int DmaSnd_EndOfFrameReached(void);
 
@@ -441,10 +446,15 @@ static void DmaSnd_FIFO_SetStereo(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Returns the frequency corresponding to the 2 lower bits of dma.soundMode
+ * Note that TT uses slightly different frequencies than the STE (due to a different
+ * 32 MHz main clock)
  */
-static int DmaSnd_DetectSampleRate(void)
+static int DmaSnd_DetectSampleRate(uint16_t soundMode)
 {
-	return DmaSndSampleRates[dma.soundMode & 3];
+	if ( Config_IsMachineTT() )
+		return DmaSndSampleRates_TT[soundMode & 3];
+	else
+		return DmaSndSampleRates_STE[soundMode & 3];
 }
 
 
@@ -574,7 +584,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 
 	/* DMA Anti-alias filter */
-	if (DmaSnd_DetectSampleRate() >  nAudioFrequency)
+	if (DmaSnd_DetectSampleRate(dma.soundMode) >  nAudioFrequency)
 		DmaSnd_LowPass = true;
 	else
 		DmaSnd_LowPass = false;
@@ -584,7 +594,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 	/* Compute ratio between DMA's sound frequency and host computer's sound frequency, */
 	/* use << 32 to simulate floating point precision */
-	FreqRatio = ( ((int64_t)DmaSnd_DetectSampleRate()) << 32 ) / nAudioFrequency;
+	FreqRatio = ( ((int64_t)DmaSnd_DetectSampleRate(dma.soundMode)) << 32 ) / nAudioFrequency;
 
 	if (dma.soundMode & DMASNDMODE_MONO)
 	{
@@ -1009,7 +1019,7 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 		int FrameCycles, HblCounterVideo, LineCycles;
 		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("DMA snd mode write: 0x%02x mode=%s freq=%d video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-			SoundModeNew, SoundModeNew & DMASNDMODE_MONO ? "mono" : "stereo" , DmaSndSampleRates[ SoundModeNew & 3 ],
+			SoundModeNew, SoundModeNew & DMASNDMODE_MONO ? "mono" : "stereo" , DmaSnd_DetectSampleRate( SoundModeNew ),
 			FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
