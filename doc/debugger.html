@@ -366,10 +366,14 @@ the DSP, use "dm" and "dd" commands.
 <pre>
 &gt; help memdump
 'memdump' or 'm' - dump memory
-Usage:  m [b|w|l] [start address-[end address| count]]
+Usage:  m [s|u] [b|w|l] [start address-[end address| count]]
 	dump memory at address or continue dump from previous address.
 	By default memory output is done as bytes, with 'w' or 'l'
-	option, it will be done as words/longs instead.  Output amount
+	option, it will be done as words/longs instead.  With 's' or
+	'u' the address is a logical one, read through the MMU as
+	supervisor or user data, and '--' marks what the MMU can't
+	translate.  Without arguments, the dump continues from the
+	previous address in the same address space.  Output amount
 	can be given either as a count or an address range.
 </pre>
 <pre>
