@@ -61,6 +61,7 @@ typedef struct scsi_data {
 	unsigned long hdSize;       /* Size of the hard disk in sectors */
 	unsigned long blockSize;    /* Size of a sector in bytes */
 	int scsi_version;
+	bool network;               /* DaynaPORT ethernet adapter, not a disk */
 	/* For NCR5380 emulation: */
 	int direction;
 	uint8_t msgout[4];

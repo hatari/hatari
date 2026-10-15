@@ -9,6 +9,12 @@
 /* Define if you have the PortMidi library */
 #cmakedefine HAVE_PORTMIDI 1
 
+/* Define if you have libslirp (user-mode NAT networking) */
+#cmakedefine HAVE_SLIRP 1
+
+/* Define if you have libpcap / Npcap (bridged networking) */
+#cmakedefine HAVE_PCAP 1
+
 /* Define if you have the libarchive library */
 #cmakedefine HAVE_LIBARCHIVE 1
 

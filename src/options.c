@@ -171,6 +171,7 @@ typedef enum {
 	OPT_ACSIHDIMAGE,
 	OPT_SCSIHDIMAGE,
 	OPT_SCSIVERSION,
+	OPT_SCSINET,
 	OPT_ACSIVERSION,
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
@@ -443,6 +444,8 @@ static const opt_t HatariOptions[] = {
 	  "<id>=<file>", "Emulate a SCSI harddrive (0-7) with an image <file>" },
 	{ OPT_SCSIVERSION,   NULL, "--scsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given SCSI drive ID" },
+	{ OPT_SCSINET,       NULL, "--scsi-net",
+	  "<id>=<net>[,rom][,wedge=<n>]", "Emulate a DaynaPORT SCSI/Link ethernet adapter (0-7). <net>: slirp[,hostfwd=tcp:<hostport>-:<guestport>] (user-mode NAT), pcap:<if> (bridged; pcap:list), or a Linux TAP interface name; rom = real-ROM command gating, wedge = dropped-packet state after <n> frames" },
 	{ OPT_ACSIVERSION,   NULL, "--acsi-ver",
 	  "<id>=<version>", "Which SCSI version (1-2) to emulate for given ACSI drive ID" },
 	{ OPT_IDEMASTERHDIMAGE,   NULL, "--ide-master",
@@ -1841,8 +1844,22 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 					&ConfigureParams.Scsi[drive].bUseDevice);
 			if (ok)
 			{
+				ConfigureParams.Scsi[drive].nDeviceType = SCSI_DEVTYPE_DISK;
 				bLoadAutoSave = false;
 			}
+			break;
+
+		case OPT_SCSINET:
+			str = Opt_DriveValue(arg, &drive);
+			if (drive < 0 || drive >= MAX_SCSI_DEVS)
+				return Opt_ShowError(OPT_SCSINET, str, "Invalid SCSI <id>, must be 0-7");
+			if (!str || !*str)
+				return Opt_ShowError(OPT_SCSINET, arg, "network (slirp, pcap:<if> or a TAP interface) missing");
+			strncpy(ConfigureParams.Scsi[drive].sNetworkIf, str,
+			        sizeof(ConfigureParams.Scsi[drive].sNetworkIf) - 1);
+			ConfigureParams.Scsi[drive].nDeviceType = SCSI_DEVTYPE_NETWORK;
+			ConfigureParams.Scsi[drive].bUseDevice = true;
+			bLoadAutoSave = false;
 			break;
 
 		case OPT_SCSIVERSION:
