@@ -520,7 +520,11 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 {
 	int	i;
 
-	pMFP->GPIP = 0;
+	/* GPIP is not cleared: after a reset all the pins are inputs, and
+	 * their levels are those of the lines driving them, which the MFP's
+	 * reset doesn't change. Clearing them would make the next fall of a
+	 * line that is still high no edge at all (e.g. the TT RTC's IRQ line
+	 * after a RESET instruction, losing its periodic interrupt for good) */
 	pMFP->AER = 0;
 	pMFP->DDR = 0;
 	pMFP->IERA = 0;
