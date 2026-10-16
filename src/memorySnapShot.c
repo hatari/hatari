@@ -57,6 +57,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "falcon/dsp.h"
 #include "falcon/crossbar.h"
 #include "falcon/videl.h"
+#include "falcon/nvram.h"
 #include "statusbar.h"
 #include "hatari-glue.h"
 
@@ -371,6 +372,7 @@ void MemorySnapShot_Capture_Do(void)
 		ConvGen_MemorySnapShot_Capture(true);
 		SCC_MemorySnapShot_Capture(true);
 		SCU_MemorySnapShot_Capture(true);
+		MC146818_MemorySnapShot_Capture(true);
 
 		/* end marker */
 		MemorySnapShot_Store(&magic, sizeof(magic));
@@ -467,6 +469,7 @@ void MemorySnapShot_Restore_Do(void)
 		ConvGen_MemorySnapShot_Capture(false);
 		SCC_MemorySnapShot_Capture(false);
 		SCU_MemorySnapShot_Capture(false);
+		MC146818_MemorySnapShot_Capture(false);
 
 		/* version string check catches release-to-release
 		 * state changes, bCaptureError catches too short

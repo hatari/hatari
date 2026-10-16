@@ -106,6 +106,7 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 #include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
+#include "memorySnapShot.h"
 #include "nvram.h"
 #include "paths.h"
 #include "tos.h"
@@ -193,6 +194,29 @@ static uint8_t		BCD2bin ( uint8_t value );
 
 static void		NvRam_Clock_Init ( void );
 static void		NvRam_Clock_Check_Alarm ( void );
+
+
+
+/*
+ * Save/restore the content the RTC and the control registers 0x00 - 0x0D
+ *
+ * (the rest of the RAM 0x0E - 0x3F that can be freely used to store data
+ * will be handled by NvRam_Load/NvRam_Save)
+ */
+
+void	MC146818_MemorySnapShot_Capture(bool bSave)
+{
+	int i;
+
+	for ( i=0 ; i <= 13 ; i++ )
+		MemorySnapShot_Store( &nvram[i], sizeof(nvram[i]) );
+
+	MemorySnapShot_Store( &nvram_index, sizeof(nvram_index) );
+	MemorySnapShot_Store( &year_offset, sizeof(year_offset) );
+	MemorySnapShot_Store( &dse_done, sizeof(dse_done) );
+	MemorySnapShot_Store( &Clock_micro, sizeof(Clock_micro) );
+}
+
 
 
 

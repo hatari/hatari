@@ -41,6 +41,7 @@
 extern void	NvRam_Reset(bool bCold);
 extern void	NvRam_Init(void);
 extern void	NvRam_UnInit(void);
+extern void	MC146818_MemorySnapShot_Capture(bool bSave);
 
 extern void	MC146818_InterruptHandler_PeriodicTimer ( void );
 
