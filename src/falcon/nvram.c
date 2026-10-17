@@ -141,7 +141,9 @@ const char NvRam_fileid[] = "Hatari nvram.c";
 
 // Defs for NVRAM status register D (13) bits (read only)
 // bits 0-6 are always 0
-#define REG_BIT_VRT  0x80	/* valid RAM and time */
+#define REG_BIT_VRT  0x80	/* valid RAM and time : depends on the Power Sense (PS) pin */
+				/* which reports the state of the external battery used */
+				/* to power the MC146818A when the TT/Falcon is powered off */
 
 
 #define		MC146818_IRQ_ON				0	/* O/low sets IRQ line */
@@ -416,6 +418,9 @@ void NvRam_Reset ( bool bCold)
 	/* clear all interrupt flags */
 	nvram[0x0c] &= ~(REG_BIT_UF|REG_BIT_AF|REG_BIT_PF|REG_BIT_IRQF);
 
+	/* VRT bit is always set in Hatari to simulate a working external battery */
+	nvram[0x0d] |= REG_BIT_VRT;
+
 	MC146818_Set_Line_IRQ ( MC146818_IRQ_OFF );	/* IRQ line goes high */
 
 	nvram_index = 0;
@@ -476,7 +481,6 @@ void NvRam_Init ( void )
 {
 	const char sBaseName[] = "hatari.nvram";
 	const char *psHomeDir;
-
 
 	// set up the nvram filename
 	psHomeDir = Paths_GetHatariHome();
@@ -558,8 +562,6 @@ static void NvRam_Clock_Init ( void )
 	nvram[7] = bin2BCD(getHostLocalTime()->tm_mday);
 	nvram[8] = bin2BCD(getHostLocalTime()->tm_mon + 1);
 	nvram[9] = bin2BCD(getHostLocalTime()->tm_year - year_offset);
-
-	nvram[0x0d] |= REG_BIT_VRT;
 
 //fprintf ( stderr , "nvram clock init : %02d-%02d-%02d %d %02d:%02d:%02d\n" ,BCD2bin(nvram[9]),BCD2bin(nvram[8]),BCD2bin(nvram[7]),BCD2bin(nvram[6]),BCD2bin(nvram[4]&0x7f),BCD2bin(nvram[2]),BCD2bin(nvram[0]) );
 }
