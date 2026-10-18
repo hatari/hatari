@@ -1496,6 +1496,12 @@ are just STE enhanced.  These are marked with '*' (for more info, see
           DMA sound, joypad support. Works also on ST + Falcon</td>
     </tr>
     <tr>
+      <td><a href="https://www.atari-forum.com/viewtopic.php?p=502039">Desert Strike STE</a></td>
+      <td>2.5</td>
+      <td>AI-assisted Amiga(+DOS) port.  Removes both top + bottom
+          border for larger game area</td>
+    </tr>
+    <tr>
       <td><a href="https://demozoo.org/productions/334215/">Detonator</a></td>
       <td>2.4</td>
       <td>&nbsp;</td>
@@ -1540,6 +1546,11 @@ are just STE enhanced.  These are marked with '*' (for more info, see
       <td><a href="http://paradize.final-memory.org/games.shtml">Manga Puzzle</a></td>
       <td>before 1.0</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.atari-forum.com/viewtopic.php?t=46430">MegaLemmings STE</a></td>
+      <td>2.5</td>
+      <td>AGT + AI-assisted code, 160 levels. 4MB RAM + 60MB HDD</td>
     </tr>
     <tr>
       <td><a href="https://demozoo.org/productions/334217/">Nano Cave</a></td>
@@ -1682,6 +1693,13 @@ are just STE enhanced.  These are marked with '*' (for more info, see
       <td>1.0</td>
       <td>HW scrolling, DMA sound, overscan.
           Supports joypad</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.atari-forum.com/viewtopic.php?p=502325">Toadies STE</a></td>
+      <td>2.5</td>
+      <td>AI-assisted Amiga Worms clone port.  Bottom border
+          removal works on MegaSTE, but is reported not to on STE
+	  (although it works on Hatari)</td>
     </tr>
     <tr>
       <td>TomTar</td>
@@ -2318,9 +2336,9 @@ href="http://www.umich.edu/~archive/atari/Games/Space/zero_5.zip">Zero-5</a><br 
 <h2>TT software compatibility list</h2>
 
 <p>Most programs that work on TT work also in the Falcon emulation.
-As all 1-8 bit GEM programs work without problems under TT emulation
-this section lists only programs that have TT-specific features or
-e.g. require specific resolution.</p>
+As all 1-8 bit GEM programs work without problems under TT emulation,
+this section lists of those only ones that have TT-specific features
+or e.g. require specific resolution.</p>
 
 <h3>TT applications and games</h3>
 
@@ -2369,9 +2387,11 @@ e.g. require specific resolution.</p>
           achieve a usable frame rate</td>
     </tr>
     <tr>
-      <td><a href="https://mikro.naprvyraz.sk/download.htm">HHeretic and HHexen</a></td>
+      <td><a href="https://github.com/mikrosk/hheretic">HHeretic</a>
+          and <a href="https://github.com/mikrosk/hhexen">HHexen</a></td>
       <td>2.4</td>
-      <td>"Hacked" (fixed) SDL versions of original open source versions</td>
+      <td>"Hacked" (fixed) SDL versions of original open source releases.
+          Work with demo WADs. MIDI music support</td>
     </tr>
     <tr>
       <td>Kniff</td>
@@ -2408,6 +2428,17 @@ e.g. require specific resolution.</p>
 	   Game startup takes minutes with nothing happening on screen.
 	   Works also on Falcons with FPU and no DSP, as long as it's
 	   started from 256-color resolution</td>
+    </tr>
+    <tr>
+      <td><a href="https://www.atari-forum.com/viewtopic.php?t=29873">OpenDUNE</a></td>
+      <td>2.5</td>
+      <td>030 version (recent ST..MegaSTE support by Neil Rackett
+          added YM music in addition to MIDI music)</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/mikrosk/opentyrian/">OpenTyrian</a></td>
+      <td>2.5</td>
+      <td>Needs 8+MB RAM</td>
     </tr>
     <tr>
       <td>Oxyd 2 TT</td>
@@ -2517,13 +2548,13 @@ e.g. require specific resolution.</p>
     <tr>
       <td>tSCc:
       <a href="http://s390174849.online.de/ray.tscc.de/misc.htm#ttruecol">TC fish / blobs</a></td>
-      <td class="minor">2.4</td>
-      <td>Does not interlace properly, but is viewable</td>
+      <td>2.5</td>
+      <td>Interlace picture + ball animation</td>
     </tr>
     <tr>
       <td>tSCc:
       <a href="http://s390174849.online.de/ray.tscc.de/misc.htm#tthires">TT-hires</a></td>
-      <td class="major">2.4</td>
+      <td class="major">2.7-dev</td>
       <td>Needs 8MB. Slideshow flickers badly + graphics and colors are wrong</td>
     </tr>
     <tr>
@@ -2791,6 +2822,13 @@ VGA one are indicated separately.</p>
       <td>DB in 4KB</td>
     </tr>
     <tr>
+      <td>Des Lazers et Des Hommes (DLDH2)</td>
+      <td>2.3</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>(Also the <a href="https://www.atari-forum.com/viewtopic.php?p=498478">enhanced v3</a> works)</td>
+    </tr>
+    <tr>
       <td>Dino Run</td>
       <td>2.5</td>
       <td>yes</td>
@@ -2980,13 +3018,6 @@ VGA one are indicated separately.</p>
       <td>yes</td>
       <td>dummy emu</td>
       <td>Background music if DSP emu enabled</td>
-    </tr>
-    <tr>
-      <td>Lasers and Hommes (DLDH2)</td>
-      <td>2.3</td>
-      <td>yes</td>
-      <td>emu</td>
-      <td></td>
     </tr>
     <tr>
       <td><a href="https://atari.joska.no/abbayedesmorts/">L'Abbaye Des Morts</a></td>
@@ -4806,7 +4837,8 @@ and <a href="https://github.com/th-otto/fpsp">sources</a>.
       <td>yes</td>
       <td>-</td>
       <td>8MB + (060 internal) FPU + FPSP060. Sound only with DSP.
-          Best with 32Mhz CPU.  Needs original data files</td>
+          Best with 32Mhz CPU. Mac port. Needs original Worms
+	  (PC or Mac) data files</td>
     </tr>
   </tbody>
 </table>
@@ -5068,6 +5100,23 @@ and <a href="https://github.com/th-otto/fpsp">sources</a>.
       <td>1.1</td>
       <td>-</td>
       <td>Very nice</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/AnimaInCorpore/F030OPL2/">F030OPL2</a> v0.2.2</td>
+      <td class="minor">2.7-dev</td>
+      <td>emu</td>
+      <td>DSP emulated OPL2 (Adlib emulation) + both live MIDI IN
+          and MIDI file playback, with 9-voice polyphony
+          (developed under Hatari with AI, verified on real HW).
+	  MIDI IN does not work under Hatari</td>
+    </tr>
+    <tr>
+      <td><a href="https://github.com/AnimaInCorpore/F030SID/">F030SID</a> v0.1</td>
+      <td>2.5</td>
+      <td>emu</td>
+      <td>DSP emulated C64 6581/8580 chip + SID player (TTP)
+          (developed under <a href="https://github.com/AnimaInCorpore/F030SID/blob/master/docs/performance.md">accuracy-patched</a>
+	  Hatari with AI, verified on real HW)</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>

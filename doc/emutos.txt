@@ -1306,7 +1306,7 @@ Color games:
 - H Mec 2 (line-A bitblit)
 - Invasion of the Emerald Saucers
 - Koules (DMA sound, Atari port by Neil Rackett)
-- MegaLemmings STE (AGT + AI, unstable)
+- MegaLemmings STE* (AGT + AI)
 - Metal Slug STE (mission 1)
 - Micromachines preview (by .tSCc)
 - Mr Boomer (line-A bitblit)
@@ -1747,6 +1747,7 @@ Games working under EmuTOS >= v1.0:
   - Requires joypad, not joystick
 - Madtris
 - Mad TV (AI DOS/Amiga port)
+  - Falcon version uses more colors than ST/STe version
 - Masters of Chaos (multiplayer "dungeon master")
 - Nibe
 - Offworld Security
