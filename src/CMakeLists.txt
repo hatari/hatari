@@ -26,7 +26,7 @@ set(SOURCES
 	floppies/stx.c
 	floppies/scp.c
 	gemdos.c
-	hdc.c
+	hdc.c daynaport.c
 	ide.c
 	ikbd.c
 	inffile.c

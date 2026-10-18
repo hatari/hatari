@@ -96,7 +96,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		if (changed->Scsi[i].bUseDevice != current->Scsi[i].bUseDevice
+		    || changed->Scsi[i].nDeviceType != current->Scsi[i].nDeviceType
 		    || (strcmp(changed->Scsi[i].sDeviceFile, current->Scsi[i].sDeviceFile)
+		        && changed->Scsi[i].bUseDevice)
+		    || (strcmp(changed->Scsi[i].sNetworkIf, current->Scsi[i].sNetworkIf)
 		        && changed->Scsi[i].bUseDevice))
 			return true;
 	}
@@ -320,7 +323,10 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
 		if (changed->Scsi[i].bUseDevice != current->Scsi[i].bUseDevice
+		    || changed->Scsi[i].nDeviceType != current->Scsi[i].nDeviceType
 		    || (strcmp(changed->Scsi[i].sDeviceFile, current->Scsi[i].sDeviceFile)
+		        && changed->Scsi[i].bUseDevice)
+		    || (strcmp(changed->Scsi[i].sNetworkIf, current->Scsi[i].sNetworkIf)
 		        && changed->Scsi[i].bUseDevice))
 		{
 			Dprintf("- SCSI image %i>\n", i);

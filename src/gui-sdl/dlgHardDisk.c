@@ -131,7 +131,15 @@ static void DlgHardDisk_PrepAcsi(int id)
 
 static void DlgHardDisk_PrepScsi(int id)
 {
-	if (ConfigureParams.Scsi[id].bUseDevice)
+	if (ConfigureParams.Scsi[id].bUseDevice
+	    && ConfigureParams.Scsi[id].nDeviceType == SCSI_DEVTYPE_NETWORK)
+	{
+		char net[sizeof(ConfigureParams.Scsi[id].sNetworkIf) + 16];
+
+		snprintf(net, sizeof(net), "DaynaPORT: %s", ConfigureParams.Scsi[id].sNetworkIf);
+		File_ShrinkName(dlgname_scsi, net, diskdlg[DISKDLG_SCSINAME].w);
+	}
+	else if (ConfigureParams.Scsi[id].bUseDevice)
 	{
 		File_ShrinkName(dlgname_scsi, ConfigureParams.Scsi[id].sDeviceFile,
 		                diskdlg[DISKDLG_SCSINAME].w);
@@ -280,7 +288,10 @@ void DlgHardDisk_Main(void)
 			if (SDLGui_FileConfSelect("SCSI HD image:", dlgname_scsi,
 			                          ConfigureParams.Scsi[s_id].sDeviceFile,
 			                          diskdlg[DISKDLG_SCSINAME].w, false))
+			{
 				ConfigureParams.Scsi[s_id].bUseDevice = true;
+				ConfigureParams.Scsi[s_id].nDeviceType = SCSI_DEVTYPE_DISK;
+			}
 			break;
 
 		 case DISKDLG_IDEPREVID:
