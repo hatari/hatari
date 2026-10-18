@@ -48,7 +48,6 @@ static uint32_t memdump_addr;    /* memdump address */
 /* memdump address space: physical memory, or a logical address read
  * through the MMU as supervisor / user data */
 enum { MEMDUMP_PHYSICAL, MEMDUMP_SUPER, MEMDUMP_USER };
-static int memdump_space;        /* address space of the last memdump */
 static uint32_t fake_regs[8];    /* virtual debugger "registers" */
 static bool bFakeRegsUsed;     /* whether to show virtual regs */
 
@@ -602,30 +601,27 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 	int arg = 1;
 	unsigned size = 1;
 	char mode = 0;
-	int space = memdump_space;
 	uint32_t memdump_upper = 0;
+
+	/* address space of the last memdump */
+	static int memdump_space = MEMDUMP_PHYSICAL;
+	int space = memdump_space;
+	bool space_arg;
 
 	/* without arguments, continue in the address space used last */
 	if (nArgc > arg)
-	{
-		space = MEMDUMP_PHYSICAL;
 		mode = mode_letter(psArgs[arg]);
-	}
-	if (mode == 's' || mode == 'u')
+
+	/* whether arg is physical or logical address
+	 * read through MMU as supervisor/user data
+	 */
+	space_arg = true;
+	switch (mode)
 	{
-		/* logical address, read through the MMU as supervisor/user data */
-		space = (mode == 's') ? MEMDUMP_SUPER : MEMDUMP_USER;
-		arg += 1;
-		mode = nArgc > arg ? mode_letter(psArgs[arg]) : 0;
-	}
-	if (mode)
-	{
-		if (!(size = get_type_width(mode)))
-		{
-			fprintf(stderr, "Invalid mode (not [s|u] [b|w|l])!\n");
-			return DEBUGGER_CMDDONE;
-		}
-		arg += 1;
+	case 'p': space = MEMDUMP_PHYSICAL; break;
+	case 's': space = MEMDUMP_SUPER; break;
+	case 'u': space = MEMDUMP_USER; break;
+	default:  space_arg = false;
 	}
 	if (space != MEMDUMP_PHYSICAL && !debug_mmu_translating())
 	{
@@ -635,6 +631,23 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 	}
 	memdump_space = space;
 
+	/* read width */
+	if (space_arg)
+	{
+		arg += 1;
+		mode = nArgc > arg ? mode_letter(psArgs[arg]) : 0;
+	}
+	if (mode)
+	{
+		if (!(size = get_type_width(mode)))
+		{
+			fprintf(stderr, "Invalid mode (not [p|s|u] [b|w|l])!\n");
+			return DEBUGGER_CMDDONE;
+		}
+		arg += 1;
+	}
+
+	/* get address range */
 	if (nArgc > arg)
 	{
 		switch (Eval_Range(psArgs[arg], &memdump_addr, &memdump_upper, false))
@@ -669,6 +682,7 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 		memdump_upper = memdump_addr + MEMDUMP_COLS * lines;
 	}
 
+	/* dump the memory contents */
 	while (memdump_addr < memdump_upper)
 	{
 		unsigned all, cols, align;
@@ -1562,15 +1576,15 @@ static const dbgcommand_t cpucommands[] =
 	{ DebugCpu_MemDump, Symbols_MatchCpuDataAddress,
 	  "memdump", "m",
 	  "dump memory",
-	  "[s|u] [b|w|l] [<start address>[-<end address>| <count>]]\n"
+	  "[p|s|u] [b|w|l] [<start address>[-<end address>| <count>]]\n"
 	  "\tdump memory at address or continue dump from previous address.\n"
 	  "\tBy default memory output is done as bytes, with 'w' or 'l'\n"
 	  "\toption, it will be done as words/longs instead.  With 's' or\n"
-	  "\t'u' the address is a logical one, read through the MMU as\n"
-	  "\tsupervisor or user data, and '--' marks what the MMU can't\n"
-	  "\ttranslate.  Without arguments, the dump continues from the\n"
-	  "\tprevious address in the same address space.  Output amount\n"
-	  "\tcan be given either as a count or an address range.",
+	  "\t'u' the address is a logical instead of physical ('p') one,\n"
+	  "\tread through the MMU as supervisor or user data, and '--' marks\n"
+	  "\twhat the MMU can't translate.  Without arguments, the dump\n"
+	  "\tcontinues from the previous address in the same address space.\n"
+	  "\tOutput amount can be given either as a count or an address range.",
 	  false },
 	{ DebugCpu_Struct, Symbols_MatchCpuDataAddress,
 	  "struct", "",
