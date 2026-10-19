@@ -315,7 +315,7 @@ void Blitter_Reset ( void )
  * Set or reset the Blitter's IRQ line
  * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
  *
- * The IRQ signal is connected to GPIP5 on the MFP on ST/STE
+ * The IRQ signal is connected to GPIP3 on the MFP on ST/STE
  * On Falcon the blitter is part of the Combel chip and there's no IRQ signal
  */
 static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit )
