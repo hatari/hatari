@@ -11,9 +11,17 @@
 #define BLITTER_H
 
 
+#define BLITTER_IRQ_ON				0	/* O/low sets IRQ line */
+#define BLITTER_IRQ_OFF				1	/* 1/high clears IRQ line */
+
+
 extern uint16_t	BlitterPhase;
 
-extern void Blitter_Reset ( void );
+
+
+extern void	Blitter_Reset ( void );
+extern uint8_t	Blitter_Get_Line_IRQ_MFP ( void );
+
 
 extern void	Blitter_StatsUpdateRate ( int period_cycles );
 extern int	Blitter_StatsGetRate ( void );

@@ -327,7 +327,7 @@ Input -----/             |         ------------------------              |      
       0 : parallel port, busy signal (0=not busy, 1=busy)
       1 : rs232 port, data carrier detect (DCD) signal
       2 : rs232 port, clear to send (CTS) signal
-      3 : STF/STE/TT : blitter, active low (0=IRQ set, 1=IRQ not set)
+      3 : STF/STE : blitter, active low (0=IRQ set, 1=IRQ not set)
           Falcon : DSP, active low (0=HREQ set, 1=HREQ not set)
       4 : ACIAs 6850 (ikbd and midi), active low (0=IRQ set for ACIA 1 and/or 2, 1=IRQ not set for neither ACIA 1 nor 2)
       5 : FDC/HD, active low (0=IRQ set, 1=IRQ not set)

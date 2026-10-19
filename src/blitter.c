@@ -210,6 +210,8 @@ typedef struct
 	uint16_t	CountBusBlitter;			/* To count bus accesses made by the blitter */
 	uint16_t	CountBusCpu;				/* To count bus accesses made by the CPU */
 	uint8_t		ContinueLater;				/* 0=false / 1=true */
+
+	uint8_t		IRQ_Line;				/* 0=IRQ set  1=IRQ cleared */
 } BLITTERSTATE;
 
 
@@ -304,6 +306,43 @@ void Blitter_Reset ( void )
 	BlitterState.have_dst = false;
 	BlitterState.bus_word = 0;
 	BlitterState.ContinueLater = 0 ;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the Blitter's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ *
+ * The IRQ signal is connected to GPIP5 on the MFP on ST/STE
+ */
+static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit )
+{
+	uint8_t		Line_State;
+
+	LOG_TRACE ( TRACE_BLITTER, "blitter set irq line val=%d (%s) VBL=%d HBL=%d\n" , bit , bit==BLITTER_IRQ_ON ? "on" : "off" , nVBLs , nHBL );
+
+	if ( bit == BLITTER_IRQ_ON )
+		Line_State = MFP_GPIP_STATE_LOW;
+	else
+		Line_State = MFP_GPIP_STATE_HIGH;
+
+	BlitterState.IRQ_Line = Line_State;
+
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , Line_State );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the Blitter's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+uint8_t	Blitter_Get_Line_IRQ_MFP ( void )
+{
+	return BlitterState.IRQ_Line;
 }
 
 
@@ -892,7 +931,7 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 	BlitterPhase = BLITTER_PHASE_RUN_TRANSFER;
 
 	/* Busy=1, set line to high/1 and clear interrupt */
-	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
+	Blitter_Set_Line_IRQ_MFP ( BLITTER_IRQ_OFF );
 
 	/* Now we enter the main blitting loop */
 	do
@@ -913,8 +952,7 @@ Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
-		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
-
+		Blitter_Set_Line_IRQ_MFP ( BLITTER_IRQ_ON );
 		BlitterPhase = BLITTER_PHASE_STOP;
 
 		if ( BLITTER_RUN_CE )
