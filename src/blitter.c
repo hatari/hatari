@@ -316,10 +316,14 @@ void Blitter_Reset ( void )
  * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
  *
  * The IRQ signal is connected to GPIP5 on the MFP on ST/STE
+ * On Falcon the blitter is part of the Combel chip and there's no IRQ signal
  */
 static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit )
 {
 	uint8_t		Line_State;
+
+	if ( Config_IsMachineFalcon() )
+		return;
 
 	LOG_TRACE ( TRACE_BLITTER, "blitter set irq line val=%d (%s) VBL=%d HBL=%d\n" , bit , bit==BLITTER_IRQ_ON ? "on" : "off" , nVBLs , nHBL );
 
