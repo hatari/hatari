@@ -231,7 +231,7 @@ ACIA_STRUCT		*pACIA_MIDI;
 
 static void		ACIA_Init_Pointers ( ACIA_STRUCT *pAllACIA );
 
-static void		ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , int bit );
+static void		ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , uint8_t bit );
 static uint8_t		ACIA_Get_Line_IRQ_MFP ( ACIA_STRUCT *pACIA );
 static uint8_t		ACIA_Get_Line_CTS_Dummy ( void );
 static uint8_t		ACIA_Get_Line_DCD_Dummy ( void );
@@ -369,23 +369,25 @@ void	ACIA_MemorySnapShot_Capture ( bool bSave )
  * In the ST, the 2 ACIA's IRQ pins are connected to the same MFP input,
  * so they share the same IRQ bit in GPIP4.
  */
-static void	ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , int bit )
+static void	ACIA_Set_Line_IRQ_MFP ( ACIA_STRUCT *pACIA , uint8_t bit )
 {
+	uint8_t		Line_State;
+
 	LOG_TRACE ( TRACE_ACIA, "acia %s set irq line val=%d VBL=%d HBL=%d\n" , pACIA->ACIA_Name , bit , nVBLs , nHBL );
 
-	pACIA->IRQ_Line = bit;
-	if ( bit == 0 )
-	{
-		/* There's a small delay on a real ST between the point in time
-		* the irq bit is set and the MFP interrupt is triggered - for example
-		* the "V8 music system" demo depends on this behaviour.
-		* This 4 cycle delay is handled in mfp.c */
-		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_LOW );
-	}
+	if ( bit == ACIA_IRQ_ON )
+		Line_State = MFP_GPIP_STATE_LOW;
 	else
-	{
-		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , MFP_GPIP_STATE_HIGH );
-	}
+		Line_State = MFP_GPIP_STATE_HIGH;
+
+	pACIA->IRQ_Line = Line_State;
+
+	/* Warning : there's a small delay on a real ST between the point in time
+	 * the irq bit is set and the MFP interrupt is triggered - for example
+	 * the "V8 music system" demo depends on this behaviour.
+	 * This 4 cycle delay is handled in mfp.c
+	 */
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_ACIA , Line_State );
 }
 
 
@@ -690,9 +692,9 @@ static uint8_t	ACIA_MasterReset ( ACIA_STRUCT *pACIA , uint8_t CR )
 	pACIA->RX_Size = 0;
 	pACIA->RX_Overrun = 0;
 
-	/* On Master Reset, IRQ line is high */
+	/* On Master Reset, IRQ line is high/off */
 	/* If it's the 1st reset, RTS should be high, else RTS depends on CR bit 5 and 6 */
-	pACIA->Set_Line_IRQ ( pACIA , 1 );				/* IRQ line goes high */
+	pACIA->Set_Line_IRQ ( pACIA , ACIA_IRQ_OFF );			/* IRQ line goes high */
 	if ( pACIA->FirstMasterReset == 1 )
 	{
 		pACIA->FirstMasterReset = 0;
@@ -737,12 +739,12 @@ static void	ACIA_UpdateIRQ ( ACIA_STRUCT *pACIA )
 		if ( irq_bit_new )
 		{
 			pACIA->SR |= ACIA_SR_BIT_IRQ;			/* Set IRQ bit */
-			pACIA->Set_Line_IRQ ( pACIA , 0 );		/* IRQ line goes low */
+			pACIA->Set_Line_IRQ ( pACIA , ACIA_IRQ_ON );	/* IRQ line goes low/on */
 		}
 		else
 		{
 			pACIA->SR &= ~ACIA_SR_BIT_IRQ;			/* Clear IRQ bit */
-			pACIA->Set_Line_IRQ ( pACIA , 1 );		/* IRQ line goes high */
+			pACIA->Set_Line_IRQ ( pACIA , ACIA_IRQ_OFF );	/* IRQ line goes high/off */
 		}
 	}
 }

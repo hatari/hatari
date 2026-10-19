@@ -43,7 +43,7 @@ typedef struct ACIA {
 	/* Callback functions */
 	uint8_t		(*Get_Line_RX) ( void );		/* Input  : RX */
 	void		(*Set_Line_TX) ( int val );		/* Output : TX */
-	void		(*Set_Line_IRQ) ( struct ACIA *pACIA , int val ); /* Output : IRQ */
+	void		(*Set_Line_IRQ) ( struct ACIA *pACIA , uint8_t bit ); /* Output : IRQ */
 	uint8_t		(*Get_Line_IRQ) ( struct ACIA *pACIA );	/* Output : IRQ */
 
 	void		(*Set_Timers) ( struct ACIA *pACIA );	/* Start timers to handle RX and TX bits at specified baud rate */
@@ -57,6 +57,9 @@ typedef struct ACIA {
 
 } ACIA_STRUCT;
 
+
+#define 	ACIA_IRQ_ON		0			/* O/low sets IRQ line */
+#define 	ACIA_IRQ_OFF		1			/* 1/high clears IRQ line */
 
 #define		ACIA_MAX_NB		2			/* 2 ACIAs in the ST */
 
