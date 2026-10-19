@@ -159,17 +159,17 @@ typedef struct
 	uint32_t	dst_addr;
 	uint32_t	x_count;
 	uint32_t	y_count;
-	short	src_x_incr;
-	short	src_y_incr;
-	short	dst_x_incr;
-	short	dst_y_incr;
+	short		src_x_incr;
+	short		src_y_incr;
+	short		dst_x_incr;
+	short		dst_y_incr;
 	uint16_t	end_mask_1;
 	uint16_t	end_mask_2;
 	uint16_t	end_mask_3;
-	uint8_t	hop;
-	uint8_t	lop;
-	uint8_t	ctrl;
-	uint8_t	skew;
+	uint8_t		hop;
+	uint8_t		lop;
+	uint8_t		ctrl;
+	uint8_t		skew;
 } BLITTERREGS;
 
 /* Blitter vars */
@@ -181,25 +181,25 @@ typedef struct
 
 	uint32_t	buffer;
 	uint32_t	x_count_reset;
-	uint8_t	hog;
-	uint8_t	smudge;
-	uint8_t	halftone_line;
-	uint8_t	fxsr;
-	uint8_t	nfsr;
-	uint8_t	skew;
+	uint8_t		hog;
+	uint8_t		smudge;
+	uint8_t		halftone_line;
+	uint8_t		fxsr;
+	uint8_t		nfsr;
+	uint8_t		skew;
 } BLITTERVARS;
 
 /* Blitter state */
 typedef struct
 {
-	uint8_t	fxsr;
-	uint8_t	nfsr;
-	uint8_t	have_fxsr;
-	uint8_t	need_src;
-	uint8_t	have_src;
-	uint8_t	fetch_src;
-	uint8_t	need_dst;
-	uint8_t	have_dst;
+	uint8_t		fxsr;
+	uint8_t		nfsr;
+	uint8_t		have_fxsr;
+	uint8_t		need_src;
+	uint8_t		have_src;
+	uint8_t		fetch_src;
+	uint8_t		need_dst;
+	uint8_t		have_dst;
 
 	uint16_t	src_word;
 	uint16_t	dst_word;
@@ -207,9 +207,9 @@ typedef struct
 
 	uint16_t	end_mask;
 
-	uint16_t	CountBusBlitter;				/* To count bus accesses made by the blitter */
-	uint16_t	CountBusCpu;					/* To count bus accesses made by the CPU */
-	uint8_t	ContinueLater;					/* 0=false / 1=true */
+	uint16_t	CountBusBlitter;			/* To count bus accesses made by the blitter */
+	uint16_t	CountBusCpu;				/* To count bus accesses made by the CPU */
+	uint8_t		ContinueLater;				/* 0=false / 1=true */
 } BLITTERSTATE;
 
 
@@ -235,7 +235,7 @@ static BLITTER_OP_FUNC	Blitter_ComputeLOP;
 #define	BLITTER_PHASE_IGNORE_LAST_CPU_CYCLES	16
 #define	BLITTER_PHASE_PAUSE			32		/* cpu owns the bus (COUNT_CPU_BUS) and stops the blitter */
 
-uint16_t		BlitterPhase = BLITTER_PHASE_STOP;		/* Internal state of the blitter */
+uint16_t	BlitterPhase = BLITTER_PHASE_STOP;		/* Internal state of the blitter */
 
 static uint16_t	Blitter_CyclesBeforeStart;			/* Number of cycles after setting busy bit before calling Blitter_Start */
 								/* (during this time, the CPU can still run and access the bus) */
