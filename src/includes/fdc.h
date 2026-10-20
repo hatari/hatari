@@ -61,6 +61,13 @@
 #define	FDC_DC_SIGNAL_INSERTED			1
 
 
+#define	FDC_IRQ_ON				0	/* O/low sets IRQ line */
+#define	FDC_IRQ_OFF				1	/* 1/high clears IRQ line */
+
+#define	HDC_IRQ_ON				0	/* O/low sets IRQ line */
+#define	HDC_IRQ_OFF				1	/* 1/high clears IRQ line */
+
+
 /* FDC emulation return codes for the commands' sub-states */
 #define	FDCEMU_RETURN_OK		0
 #define	FDCEMU_RETURN_NO_DRIVE_FLOPPY	(-1)
@@ -81,7 +88,10 @@ extern void	FDC_SetDMAStatus ( bool bError );
 
 extern void	FDC_SetIRQ ( uint8_t IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
-extern void	FDC_ClearHdcIRQ(void);
+extern void	HDC_Set_Line_IRQ_MFP ( uint8_t bit );
+extern uint8_t	HDC_Get_Line_IRQ_MFP ( void );
+
+
 extern void	FDC_InterruptHandler_Update ( void );
 
 extern void	FDC_Drive_Set_BusyLed ( uint8_t SR );

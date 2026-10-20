@@ -641,6 +641,9 @@ typedef struct {
 	int		DriveSelSignal;				/* 0 or 1 for drive A or B ; or -1 if no drive selected */
 	uint8_t		IRQ_Signal;				/* 0 if IRQ is not set, else value depends on the source of the IRQ */
 
+	uint8_t		IRQ_Line_FDC;				/* Connected to MFP GPIP5 */
+	uint8_t		IRQ_Line_HDC;				/* Connected to MFP GPIP5 */
+
 	uint16_t	DensityMode;				/* bits 0 and 1 of $ff860e */
 								/* 0x00 : FDC operates in DD mode */
 								/* 0x03 : FDC operates in HD mode */
@@ -2279,6 +2282,7 @@ void FDC_SetIRQ ( uint8_t IRQ_Source )
 	else
 	{
 		/* Acknowledge in MFP circuit, pass bit, enable, pending */
+		FDC.IRQ_Line_FDC = MFP_GPIP_STATE_LOW;
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0x%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
 	}
@@ -2315,6 +2319,7 @@ void FDC_ClearIRQ ( void )
 	if ( ( FDC.IRQ_Signal & FDC_IRQ_SOURCE_FORCED ) == 0 )
 	{
 		FDC.IRQ_Signal = 0;
+		FDC.IRQ_Line_FDC = MFP_GPIP_STATE_HIGH;
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		LOG_TRACE(TRACE_FDC, "fdc clear irq VBL=%d HBL=%d\n" , nVBLs , nHBL );
 	}
@@ -2326,14 +2331,42 @@ void FDC_ClearIRQ ( void )
 	}
 }
 
-void FDC_ClearHdcIRQ(void)
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the HDC / ACSI's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ *
+ * The FDC and HDC IRQ signals are or-connected to GPIP5 on the MFP
+ */
+void	HDC_Set_Line_IRQ_MFP ( uint8_t bit )
 {
-	FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_HDC;
-	if (FDC.IRQ_Signal == 0)
-	{
-		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
-	}
+	uint8_t		Line_State;
+
+	if ( bit == HDC_IRQ_ON )
+		Line_State = MFP_GPIP_STATE_LOW;
+	else
+		Line_State = MFP_GPIP_STATE_HIGH;
+
+	FDC.IRQ_Line_HDC = Line_State;
+
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , Line_State );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the HDC / ACSI's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+uint8_t	HDC_Get_Line_IRQ_MFP ( void )
+{
+	return FDC.IRQ_Line_HDC;
+}
+
 
 
 /*-----------------------------------------------------------------------*/
