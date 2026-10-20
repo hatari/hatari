@@ -702,6 +702,9 @@ typedef struct {
 	uint64_t	CommandComplete_ClockCounter;		/* Value of CyclesGlobalClockCounter when a command complete */
 
 	int		EmulationMode;				/* FDC_EMULATION_MODE_INTERNAL or FDC_EMULATION_MODE_IPF */
+
+	uint8_t		Drive_DC_Line;				/* Disk Change signal on GPIP4 on TT MFP */
+
 } FDC_STRUCT;
 
 
@@ -1637,7 +1640,7 @@ void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
  *  0 = drive is selected and a disk was ejected (ie drive is empty)
  *  1 = drive is not selected or a disk was inserted and a step pulse received
  *
- * DC signal was only available on the TT machines and in that case it's connected
+ * DC signal is only available on the TT machines and in that case it's connected
  * to the TT MFP on GPIP4 (the signal is inverted before going to GPIP4)
  */
 static void	FDC_Drive_Connect_DC_signal_GPIP ( int Drive )
@@ -1655,8 +1658,21 @@ static void	FDC_Drive_Connect_DC_signal_GPIP ( int Drive )
 	else
 		state = MFP_GPIP_STATE_HIGH;
 
+	FDC.Drive_DC_Line = state;
+
 	MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_DC , state );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the Disk Change (DC) signal on TT
+ */
+uint8_t	FDC_Drive_Get_DC_signal ( void )
+{
+	return FDC.Drive_DC_Line;
+}
+
 
 
 /*-----------------------------------------------------------------------*/
