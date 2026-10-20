@@ -795,7 +795,7 @@ static void ncr5380_set_irq(struct soft_scsi *scsi)
 #endif
 
 	if (Config_IsMachineFalcon())
-		FDC_SetIRQ(FDC_IRQ_SOURCE_HDC);
+		HDC_Set_Line_IRQ_MFP ( HDC_IRQ_ON );		/* Connected to MFP GPIP5 (with FDC) */
 	else if (Config_IsMachineTT())
 		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_SCSI_NCR , MFP_GPIP_STATE_HIGH );
 }
