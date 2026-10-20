@@ -2281,23 +2281,20 @@ void FDC_SetIRQ ( uint8_t IRQ_Source )
 
 	else
 	{
-		/* Acknowledge in MFP circuit, pass bit, enable, pending */
+		/* Set line to low/0 to request interrupt */
 		FDC.IRQ_Line_FDC = MFP_GPIP_STATE_LOW;
 		MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 		LOG_TRACE(TRACE_FDC, "fdc set irq 0x%x source 0x%x VBL=%d HBL=%d\n" , FDC.IRQ_Signal , IRQ_Source , nVBLs , nHBL );
 	}
 
-	/* If IRQ comes from HDC or other sources (IPF), we don't need */
+	/* If IRQ comes from other sources (IPF), we don't need */
 	/* to handle the forced IRQ case used in FDC */
-	if ( IRQ_Source == FDC_IRQ_SOURCE_HDC )
-		FDC.IRQ_Signal = FDC_IRQ_SOURCE_HDC;
-
-	else if ( IRQ_Source == FDC_IRQ_SOURCE_OTHER )
+	if ( IRQ_Source == FDC_IRQ_SOURCE_OTHER )
 		FDC.IRQ_Signal = FDC_IRQ_SOURCE_OTHER;
 
 	else								/* IRQ comes from FDC */
 	{
-		FDC.IRQ_Signal &= ~( FDC_IRQ_SOURCE_HDC | FDC_IRQ_SOURCE_OTHER );
+		FDC.IRQ_Signal &= ~FDC_IRQ_SOURCE_OTHER;
 		FDC.IRQ_Signal |= IRQ_Source;
 	}
 }
@@ -2305,7 +2302,7 @@ void FDC_SetIRQ ( uint8_t IRQ_Source )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset the IRQ signal ; in case the source of the interrupt is also
+ * Reset the FDC's IRQ signal ; in case the source of the interrupt is also
  * a "force interrupt immediate" command, the IRQ signal should not be cleared
  * (only command 0xD0 or any new command followed by a read of status reg
  * can clear the forced IRQ)
@@ -2331,6 +2328,18 @@ void FDC_ClearIRQ ( void )
 	}
 }
 
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the FDC's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+uint8_t	FDC_Get_Line_IRQ_MFP ( void )
+{
+	return FDC.IRQ_Line_FDC;
+}
 
 
 

@@ -41,7 +41,6 @@
 #define	FDC_IRQ_SOURCE_COMPLETE			(1<<0)		/* IRQ set after completing a command */
 #define	FDC_IRQ_SOURCE_INDEX			(1<<1)		/* IRQ set when COND_IP is set and index is reached */
 #define	FDC_IRQ_SOURCE_FORCED			(1<<2)		/* IRQ was forced by a previous Dx command with COND_IMMEDIATE */
-#define	FDC_IRQ_SOURCE_HDC			(1<<3)		/* IRQ set by HDC */
 #define	FDC_IRQ_SOURCE_OTHER			(1<<4)		/* IRQ set by other parts (IPF) */
 
 
@@ -88,6 +87,7 @@ extern void	FDC_SetDMAStatus ( bool bError );
 
 extern void	FDC_SetIRQ ( uint8_t IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
+extern uint8_t	FDC_Get_Line_IRQ_MFP ( void );
 extern void	HDC_Set_Line_IRQ_MFP ( uint8_t bit );
 extern uint8_t	HDC_Get_Line_IRQ_MFP ( void );
 
