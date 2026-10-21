@@ -38,6 +38,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "ikbd.h"
 #include "cycles.h"
 #include "cycInt.h"
+#include "hdc.h"
 #include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
@@ -373,6 +374,7 @@ void MemorySnapShot_Capture_Do(void)
 		SCC_MemorySnapShot_Capture(true);
 		SCU_MemorySnapShot_Capture(true);
 		MC146818_MemorySnapShot_Capture(true);
+		HDC_MemorySnapShot_Capture(true);
 
 		/* end marker */
 		MemorySnapShot_Store(&magic, sizeof(magic));
@@ -470,6 +472,7 @@ void MemorySnapShot_Restore_Do(void)
 		SCC_MemorySnapShot_Capture(false);
 		SCU_MemorySnapShot_Capture(false);
 		MC146818_MemorySnapShot_Capture(false);
+		HDC_MemorySnapShot_Capture(false);
 
 		/* version string check catches release-to-release
 		 * state changes, bCaptureError catches too short

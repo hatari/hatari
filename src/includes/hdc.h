@@ -97,8 +97,11 @@ extern bool bAcsiEmuOn;
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
 extern void HDC_Reset ( bool bCold );
+extern void HDC_MemorySnapShot_Capture(bool bSave);
+
 extern void HDC_Set_Line_IRQ_MFP ( uint8_t bit );
 extern uint8_t HDC_Get_Line_IRQ_MFP ( void );
+
 extern int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf);
 extern void HDC_UnInitDevice(SCSI_DEV *dev);
 extern void HDC_ResetCommandStatus(void);

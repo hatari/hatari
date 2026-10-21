@@ -1074,6 +1074,17 @@ void HDC_Reset ( bool bCold )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Save/Restore snapshot of local variables
+ */
+void    HDC_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&IRQ_Line_HDC, sizeof(IRQ_Line_HDC));
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set or reset the HDC / ACSI's IRQ line
  * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
  *
