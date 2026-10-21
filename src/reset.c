@@ -111,6 +111,7 @@ static int Reset_ST(bool bCold)
 	ACIA_Reset( ACIA_Array );     /* ACIA */
 	IKBD_Reset(bCold);            /* Keyboard (after ACIA) */
 	SCC_Reset();
+	HDC_Reset(bCold);
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else

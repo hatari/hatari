@@ -88,9 +88,6 @@ extern void	FDC_SetDMAStatus ( bool bError );
 extern void	FDC_SetIRQ ( uint8_t IRQ_Source );
 extern void	FDC_ClearIRQ ( void );
 extern uint8_t	FDC_Get_Line_IRQ_MFP ( void );
-extern void	HDC_Set_Line_IRQ_MFP ( uint8_t bit );
-extern uint8_t	HDC_Get_Line_IRQ_MFP ( void );
-
 
 extern void	FDC_InterruptHandler_Update ( void );
 

@@ -57,9 +57,12 @@ const char HDC_fileid[] = "Hatari hdc.c";
 #define HDC_ReadInt32(a, i) (((unsigned) a[i] << 24) | ((unsigned) a[i + 1] << 16) | ((unsigned) a[i + 2] << 8) | a[i + 3])
 
 /* HDC globals */
-static SCSI_CTRLR AcsiBus;
-int nAcsiPartitions;
-bool bAcsiEmuOn;
+static		SCSI_CTRLR AcsiBus;
+int		nAcsiPartitions;
+bool		bAcsiEmuOn;
+
+uint8_t		IRQ_Line_HDC;				/* Connected to MFP GPIP5 */
+
 
 /* Our dummy INQUIRY response data */
 static unsigned char inquiry_bytes[] =
@@ -1054,6 +1057,53 @@ void HDC_UnInit(void)
 	nAcsiPartitions = 0;
 	bAcsiEmuOn = false;
 }
+
+
+/*---------------------------------------------------------------------*/
+/**
+ * Reset the ACSI device
+ * In return, the device should clear IRQ line connected to MFP GPIP5 (set to high)
+ * We need to clear the IRQ on reset because it's and-connected with the FDC IRQ
+ */
+void HDC_Reset ( bool bCold )
+{
+	HDC_Set_Line_IRQ_MFP ( HDC_IRQ_OFF );
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set or reset the HDC / ACSI's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ *
+ * The FDC and HDC IRQ signals are and-connected to GPIP5 on the MFP
+ */
+void	HDC_Set_Line_IRQ_MFP ( uint8_t bit )
+{
+	uint8_t		Line_State;
+
+	if ( bit == HDC_IRQ_ON )
+		Line_State = MFP_GPIP_STATE_LOW;
+	else
+		Line_State = MFP_GPIP_STATE_HIGH;
+
+	IRQ_Line_HDC = Line_State;
+
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_FDC_HDC , Line_State );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the HDC / ACSI's IRQ line
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+uint8_t	HDC_Get_Line_IRQ_MFP ( void )
+{
+	return IRQ_Line_HDC;
+}
+
 
 
 /*---------------------------------------------------------------------*/

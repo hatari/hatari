@@ -150,6 +150,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "dmaSnd.h"
 #include "crossbar.h"
 #include "fdc.h"
+#include "hdc.h"
 #include "ikbd.h"
 #include "hatari-glue.h"
 #include "cycInt.h"
