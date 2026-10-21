@@ -417,7 +417,8 @@ static int	MFP_CheckPendingInterrupts ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , uint8_t GPIP_old , uint8_t GPIP_new , uint8_t AER_old , uint8_t AER_new , uint8_t DDR_old , uint8_t DDR_new );
 
 static uint8_t	MFP_Main_Compute_GPIP7 ( void );
-static uint8_t	MFP_Main_Compute_GPIP_LINE_ACIA ( void );
+static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void );
+static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -1191,10 +1192,15 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t LineNr , uint8_t Bit )
 	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE7 ) )
 		Bit = MFP_Main_Compute_GPIP7 ();
 
+	/* Special case when changing bit 5 of the main MFP : this line is connected */
+	/* to the FDC and HDC's IRQ lines at the same time */
+	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_FDC_HDC ) )
+		Bit = MFP_Main_Compute_GPIP5_FDC_HDC ();
+
 	/* Special case when changing bit 4 of the main MFP : this line is connected */
 	/* to the 2 ACIA's IRQ lines at the same time */
 	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_ACIA ) )
-		Bit = MFP_Main_Compute_GPIP_LINE_ACIA ();
+		Bit = MFP_Main_Compute_GPIP4_LINE_ACIA ();
 
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
@@ -1914,11 +1920,27 @@ uint8_t    MFP_Main_Compute_GPIP7 ( void )
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Compute value of GPIP bit 5 for main MFP.
+ * This bit is a AND between the FDC and HDC's IRQ (because input
+ * IRQ lines are active low, IRQ is set when line's value is 0)
+ */
+static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void )
+{
+	uint8_t	Bit;
+
+	/* Bit=O : IRQ ON      Bit=1 : IRQ OFF */
+	Bit = FDC_Get_Line_IRQ_MFP() & HDC_Get_Line_IRQ_MFP();
+
+	return Bit;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Compute value of GPIP bit 4 for main MFP.
  * This bit is a OR between the 2 ACIA's IRQ for IKBD and Midi
  * NOTE : signal is active low on ACIA, IRQ is set when line's value is 0
  */
-uint8_t    MFP_Main_Compute_GPIP_LINE_ACIA ( void )
+uint8_t    MFP_Main_Compute_GPIP4_LINE_ACIA ( void )
 {
 	uint8_t	Bit;
 
@@ -1975,8 +1997,14 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 	else
 		gpip_new &= ~0x80;		/* clear bit 7 */
 
+	/* Bit 5 */
+	if ( MFP_Main_Compute_GPIP5_FDC_HDC() )
+		gpip_new |= 0x20;		/* set bit 5 */
+	else
+		gpip_new &= ~0x20;		/* clear bit 5 */
+
 	/* Bit 4 */
-	if ( MFP_Main_Compute_GPIP_LINE_ACIA() )
+	if ( MFP_Main_Compute_GPIP4_LINE_ACIA() )
 		gpip_new |= 0x10;		/* set bit 4 */
 	else
 		gpip_new &= ~0x10;		/* clear bit 4 */
