@@ -1221,6 +1221,9 @@ void FDC_Reset ( bool bCold )
 	FDC.IRQ_Signal = 0;
 	FDC_ClearIRQ();					/* Propagate IRQ signal to MFP GPIP5 */
 
+	// TEMP : this should be moved in hdc.c but we do it here to be sure GPIP5 is set high/off after a reset
+	HDC_Set_Line_IRQ_MFP ( HDC_IRQ_OFF );
+
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )
 	{
