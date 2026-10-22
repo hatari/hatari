@@ -403,7 +403,7 @@ static ALWAYS_INLINE void mmu_put_long(uaecptr addr, uae_u32 val, bool data, int
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
@@ -429,7 +429,7 @@ static ALWAYS_INLINE void mmu_put_word(uaecptr addr, uae_u16 val, bool data, int
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
@@ -455,7 +455,7 @@ static ALWAYS_INLINE void mmu_put_byte(uaecptr addr, uae_u8 val, bool data, int 
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
@@ -565,7 +565,7 @@ static ALWAYS_INLINE void mmu_put_user_long(uaecptr addr, uae_u32 val, bool supe
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
@@ -593,7 +593,7 @@ static ALWAYS_INLINE void mmu_put_user_word(uaecptr addr, uae_u16 val, bool supe
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
@@ -621,7 +621,7 @@ static ALWAYS_INLINE void mmu_put_user_byte(uaecptr addr, uae_u8 val, bool super
 		uae_u32 idx2 = idx1 & (MMUFASTCACHE_ENTRIES - 1);
 		if (atc_data_cache_write[idx2].log == idx1) {
 			addr = atc_data_cache_write[idx2].phys | (addr & mmu_pagemask);
-			mmu_cache_state = atc_data_cache_read[idx2].cache_state;
+			mmu_cache_state = atc_data_cache_write[idx2].cache_state;
 #if CACHE_HIT_COUNT
 			mmu_data_write_hit++;
 #endif
