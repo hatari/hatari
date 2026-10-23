@@ -3923,13 +3923,14 @@ static void Video_CopyScreenLineColor(void)
 
 	//fprintf(stderr , "copy line %d start %d end %d 0x%x 0x%x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
 
-	/* If a line is left+2 / right-2 but the whole screen is in 60 Hz, then it's a normal 60 Hz line, */
-	/* not a 50 Hz line with different borders */
-	if ( ( nScreenRefreshRate == VIDEO_60HZ )
-	  && ( ( LineBorderMask & ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) ) == ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) ) )
+	/* If a line is left+2 / right-2, then it's a normal 60 Hz line of 160 bytes, even inside a 50 Hz screen. */
+	/* Copying the 2 left bytes into the left border would shift all the words of the line */
+	/* by one bitplane (eg color 1 would be displayed as color 8) */
+	if ( ( LineBorderMask & ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) ) == ( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 ) )
 	{
 		LineBorderMask &= ~( BORDERMASK_LEFT_PLUS_2 | BORDERMASK_RIGHT_MINUS_2 );
-		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 / right-2, normal 60Hz line on 60 Hz screen %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel left+2 / right-2, normal 60Hz line on %d Hz screen %d<->%d\n" ,
+			nScreenRefreshRate ,
 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle  , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 	}
 
