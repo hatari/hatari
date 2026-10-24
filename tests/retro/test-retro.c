@@ -7,6 +7,7 @@
 #include <libretro.h>
 #include <assert.h>
 #include <dlfcn.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,17 +53,46 @@ static void init_funcs(void *dlh)
 }
 
 
+static void logger_print(enum retro_log_level level, const char *fmt, ...)
+{
+#if 0
+	va_list argptr;
+
+	va_start(argptr, fmt);
+	vprintf(fmt, argptr);
+	va_end(argptr);
+#endif
+}
+
+
 static bool env_cb(unsigned cmd, void *data)
 {
 	switch (cmd)
 	{
+	 case RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY:
+		*(const char **)data = "/tmp/nonexistent";
+		return true;
+	 case RETRO_ENVIRONMENT_GET_LOG_INTERFACE:
+		((struct retro_log_callback *)data)->log = logger_print;
+		return true;
+	 case RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION:
+	 case RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION:
+	 case RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY:
+	 case RETRO_ENVIRONMENT_GET_VARIABLE:
+	 case RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE:
+		return false;
+	 case RETRO_ENVIRONMENT_SET_DISK_CONTROL_EXT_INTERFACE:
+	 case RETRO_ENVIRONMENT_SET_GEOMETRY:
+	 case RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK:
+	 case RETRO_ENVIRONMENT_SET_MESSAGE:
+	 case RETRO_ENVIRONMENT_SET_MESSAGE_EXT:
 	 case RETRO_ENVIRONMENT_SET_PIXEL_FORMAT:
 	 case RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME:
-	 case RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK:
-	 case RETRO_ENVIRONMENT_SET_GEOMETRY:
+	 case RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO:
+	 case RETRO_ENVIRONMENT_SET_VARIABLES:
 		return true;
 	 default:
-		fprintf(stderr, "Unexpected env setting 0x%x\n", cmd);
+		fprintf(stderr, "Unexpected env setting %d\n", cmd);
 		return false;
 	}
 }
