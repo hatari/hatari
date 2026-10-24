@@ -23,6 +23,7 @@
 #include "tos.h"
 #include "vdi.h"
 #include "version.h"
+#include "video.h"
 
 bool has_cpu_config_changed = true;
 const char *retro_save_directory;
@@ -171,7 +172,7 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info *info)
 	info->geometry.max_width = MAX_VDI_WIDTH;
 	info->geometry.max_height = MAX_VDI_HEIGHT;
 	info->geometry.aspect_ratio = (float)width / (float)height;
-	info->timing.fps = 50.0f;
+	info->timing.fps = (float)nScreenRefreshRate;   /* 50 / 60 / 71 */
 
 	info->timing.sample_rate = nAudioFrequency;
 }
@@ -181,8 +182,22 @@ RETRO_API void retro_reset(void)
 	Reset_Warm();
 }
 
+static void Core_RefreshRateChanged(void)
+{
+	struct retro_system_av_info av_info;
+
+	if (!environment_cb)
+		return;
+
+	retro_get_system_av_info(&av_info);
+	environment_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &av_info);
+
+	Log_Printf(LOG_INFO, "Screen refresh updated to: %dHz\n", nScreenRefreshRate);
+}
+
 RETRO_API void retro_run(void)
 {
+	static int prev_refreshrate;
 	bool options_updated = false;
 
 	if (environment_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &options_updated) &&
@@ -190,6 +205,12 @@ RETRO_API void retro_run(void)
 	{
 		/* re-apply updatable options */
 		Core_ApplyRuntimeOptions();
+	}
+
+	if (prev_refreshrate != nScreenRefreshRate)
+	{
+		Core_RefreshRateChanged();
+		prev_refreshrate = nScreenRefreshRate;
 	}
 
 	M68000_UnsetSpecial(SPCFLAG_BRK);
