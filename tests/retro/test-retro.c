@@ -154,7 +154,6 @@ int main(int argc, char *argv[])
 	lr_set_input_state(input_state_cb);
 	puts("OK");
 
-#if 0	/* This only works if we can be sure that Hatari can load a tos.img */
 	printf("Initializing core...\n");
 	lr_init();
 
@@ -172,7 +171,6 @@ int main(int argc, char *argv[])
 	printf("Testing retro_deinit:\t\t\t");
 	lr_deinit();
 	puts("OK");
-#endif
 
 	dlclose(dlh);
 
