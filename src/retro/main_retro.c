@@ -227,11 +227,7 @@ RETRO_API void retro_run(void)
 		m68k_run();
 	}
 
-	int width, height, pitch;
-	uint32_t *pixels;
-
-	Screen_GetDimension(&pixels, &width, &height, &pitch);
-	video_refresh_cb(pixels, width, height, pitch);
+	/* Note: video_refresh_cb is called in Screen_Draw() already! */
 }
 
 RETRO_API void retro_set_controller_port_device(unsigned port, unsigned device)
