@@ -7,6 +7,7 @@
 #ifndef HATARI_LOG_H
 #define HATARI_LOG_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 
