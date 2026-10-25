@@ -65,6 +65,37 @@ static void Retro_SetInputDescriptors(void)
 	environment_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 }
 
+static void Retro_LogFrontend(const char *msg, int level)
+{
+	unsigned msg_interface_version = 0;
+	environment_cb(RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION,
+				   &msg_interface_version);
+
+	if (msg_interface_version >= 1)
+	{
+		struct retro_message_ext message = {
+			msg,
+			10000,
+			3,
+			level,
+			RETRO_MESSAGE_TARGET_ALL,
+			RETRO_MESSAGE_TYPE_NOTIFICATION,
+			-1
+		};
+
+		environment_cb(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, &message);
+	}
+	else
+	{
+		struct retro_message message = {
+			msg,
+			180
+		};
+
+		environment_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &message);
+	}
+}
+
 RETRO_API void retro_set_environment(retro_environment_t cb)
 {
 	static enum retro_pixel_format pixelformat = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -127,11 +158,21 @@ RETRO_API void retro_init(void)
 		snprintf(tos_path, sizeof(tos_path), "%s%c%s",
 		         system_dir, PATHSEP, "tos.img");
 
-		argv[1] = tos_arg;
-		argv[2] = tos_path;
-		argv[3] = NULL;
-
-		Main_Init(3, argv);
+		if (File_Exists(tos_path))
+		{
+			argv[1] = tos_arg;
+			argv[2] = tos_path;
+			argv[3] = NULL;
+			Main_Init(3, argv);
+		}
+		else
+		{
+			Retro_LogFrontend("System BIOS (tos.img) is missing from your system folder.",
+			                  RETRO_LOG_ERROR);
+			bUseTos = false;
+			argv[1] = NULL;
+			Main_Init(1, (char **)argv);
+		}
 	}
 	else
 	{
