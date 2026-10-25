@@ -171,6 +171,9 @@ static flagname_t TraceFlags[] = {
 uint64_t LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
+/* We are using a function pointer for the printing code so that the
+ * libretro code can replace this with a libretro-specific handler. */
+void (*log_print)(LOGTYPE nType, const char *psFormat, va_list args);
 
 /* SDL GUI Alerts can show 4*50 chars at max.  Use that also
  * as initial message buffer size (must be longer than log prefixes)
@@ -198,7 +201,9 @@ static FILE *hLogFile = NULL;
 static LOGTYPE TextLogLevel;
 static LOGTYPE AlertDlgLogLevel;
 
-/*-----------------------------------------------------------------------*/
+static void Log_VPrintf(LOGTYPE nType, const char *psFormat, va_list args);
+
+
 /**
  * Set default files to stderr (used at the very start, before parsing options)
  */
@@ -235,6 +240,9 @@ void Log_SetLevels(void)
  */
 int Log_Init(void)
 {
+	if (!log_print)
+		log_print = Log_VPrintf;
+
 	Log_SetLevels();
 
 	/* Flush pending msg & drop cached prev msg FILE pointer
@@ -274,7 +282,19 @@ void Log_UnInit(void)
 
 	hLogFile = File_Close(hLogFile);
 	TraceFile = File_Close(TraceFile);
+
+	log_print = NULL;
 }
+
+
+/**
+ * Set alternative logger printing function
+ */
+void Log_SetPrintFunction(void (*func)(LOGTYPE nType, const char *psFormat, va_list args))
+{
+	log_print = func;
+}
+
 
 /*-----------------------------------------------------------------------
  * log/trace message repeat suppression handling
@@ -482,7 +502,10 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	va_list argptr;
 
 	va_start(argptr, psFormat);
-	Log_VPrintf(nType, psFormat, argptr);
+	if (log_print)
+		log_print(nType, psFormat, argptr);
+	else
+		Log_VPrintf(nType, psFormat, argptr);
 	va_end(argptr);
 }
 
@@ -499,7 +522,10 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	if (hLogFile && nType <= TextLogLevel)
 	{
 		va_start(argptr, psFormat);
-		Log_VPrintf(nType, psFormat, argptr);
+		if (log_print)
+			log_print(nType, psFormat, argptr);
+		else
+			Log_VPrintf(nType, psFormat, argptr);
 		va_end(argptr);
 	}
 

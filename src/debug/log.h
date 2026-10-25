@@ -77,6 +77,7 @@ extern void Log_SetLevels(void);
 extern int Log_Init(void);
 extern int Log_SetAlertLevel(int level);
 extern void Log_UnInit(void);
+void Log_SetPrintFunction(void (*func)(LOGTYPE nType, const char *psFormat, va_list args));
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)

@@ -14,6 +14,7 @@
 #include "file.h"
 #include "floppy.h"
 #include "harddisk.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "m68000.h"
 #include "options.h"
@@ -33,6 +34,7 @@ retro_environment_t environment_cb;
 retro_video_refresh_t video_refresh_cb;
 retro_input_poll_t input_poll_cb;
 retro_input_state_t input_state_cb;
+static retro_log_printf_t log_cb = NULL;
 
 #define SAVESTATE_TMP_NAME "hatari_savestate.tmp"
 static char scratch_path[FILENAME_MAX];
@@ -96,6 +98,34 @@ static void Retro_LogFrontend(const char *msg, int level)
 	}
 }
 
+static void Retro_Log(LOGTYPE nType, const char *psFormat, va_list args)
+{
+	char logbuf[512];
+	unsigned int len;
+	int rlevel;
+
+	if (!log_cb)
+		return;
+
+	switch (nType)
+	{
+		case LOG_DEBUG: rlevel = RETRO_LOG_DEBUG; break;
+		case LOG_WARN: rlevel = RETRO_LOG_WARN; break;
+		case LOG_ERROR: rlevel = RETRO_LOG_ERROR; break;
+		default: rlevel = RETRO_LOG_INFO;
+	}
+
+	len = vsnprintf(logbuf, sizeof(logbuf), psFormat, args);
+	if (len > 0 && len < sizeof(logbuf) - 1 && logbuf[len - 1] != '\n')
+	{
+		/* Log message might not end with \n, so add one here */
+		logbuf[len] = '\n';
+		logbuf[len + 1] = 0;
+	}
+	log_cb(rlevel, "%s", logbuf);
+}
+
+
 RETRO_API void retro_set_environment(retro_environment_t cb)
 {
 	static enum retro_pixel_format pixelformat = RETRO_PIXEL_FORMAT_XRGB8888;
@@ -142,6 +172,14 @@ RETRO_API void retro_init(void)
 	char *argv[4];
 	const char *save_dir = NULL;
 	const char *system_dir = NULL;
+	struct retro_log_callback logging;
+
+	/* Register log call back */
+	if (environment_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+	{
+		log_cb = logging.log;
+		Log_SetPrintFunction(Retro_Log);
+	}
 
 	/* Register disk control  */
 	DiskControl_Init();
