@@ -344,7 +344,7 @@ static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit )
 
 	BlitterState.IRQ_Line = Line_State;
 
-	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_GPU_DONE , Line_State );
+	MFP_GPIP_Set_Line_Input ( pMFP_Main , MFP_GPIP_LINE_BLITTER_DSP , Line_State );
 }
 
 

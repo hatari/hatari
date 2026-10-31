@@ -172,6 +172,7 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "acia.h"
 #include "utils.h"
 #include "scc.h"
+#include "blitter.h"
 
 
 /*
@@ -420,6 +421,7 @@ static void	MFP_GPIP_Update_Interrupt ( MFP_STRUCT *pMFP , uint8_t GPIP_old , ui
 static uint8_t	MFP_Main_Compute_GPIP7 ( void );
 static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void );
 static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
+static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -1203,6 +1205,11 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t LineNr , uint8_t Bit )
 	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_ACIA ) )
 		Bit = MFP_Main_Compute_GPIP4_LINE_ACIA ();
 
+	/* Special case when changing bit 3 of the main MFP : this line is connected */
+	/* to the Blitter's IRQ line or to the DSP's IRQ line */
+	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_BLITTER_DSP ) )
+		Bit = MFP_Main_Compute_GPIP3_Blitter_DSP ();
+
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
 	if ( ( ( pMFP->DDR & Mask ) == 0 )
@@ -1935,6 +1942,7 @@ static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void )
 	return Bit;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * Compute value of GPIP bit 4 for main MFP.
@@ -1953,6 +1961,32 @@ uint8_t    MFP_Main_Compute_GPIP4_LINE_ACIA ( void )
 	/* If both ACIA have IRQ clear */
 	else
 		Bit = 1;			/* IRQ OFF */
+
+	return Bit;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute value of GPIP bit 3 for main MFP.
+ *  - on ST/STE this is connected to the Blitter's IRQ
+ *  - on Falcon this is connected to the DSP's IRQ (Blitter's IRQ is not connected)
+ *  - on TT this is connected to CLKDIR (not used in Hatari)
+ *
+ * Blitter's IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void )
+{
+	uint8_t	Bit;
+
+	if ( Blitter_IsAvailable() && ! Config_IsMachineFalcon() )
+		Bit = Blitter_Get_Line_IRQ_MFP();
+
+	else if ( Config_IsMachineFalcon() )
+		Bit = 1;			/* TODO : use the DSP's IRQ */
+
+	else
+		Bit = 1;			/* not used */
 
 	return Bit;
 }
@@ -2009,6 +2043,12 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 		gpip_new |= 0x10;		/* set bit 4 */
 	else
 		gpip_new &= ~0x10;		/* clear bit 4 */
+
+	/* Bit 3 */
+	if ( MFP_Main_Compute_GPIP3_Blitter_DSP() )
+		gpip_new |= 0x08;		/* set bit 3 */
+	else
+		gpip_new &= ~0x08;		/* clear bit 3 */
 
 	/* Bit 2 : CTS (inverted, 0=ON) */
 	if ( !cts )
