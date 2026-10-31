@@ -1190,44 +1190,51 @@ void	MFP_GPIP_Set_Line_Input ( MFP_STRUCT *pMFP , uint8_t LineNr , uint8_t Bit )
 
 //fprintf ( stderr , "gpip set0 mask=%x bit=%d ddr=%x gpip=%x\n", Mask, Bit, pMFP->DDR, pMFP->GPIP );
 
-	/* Special case when changing bit 7 of the main MFP : depending on the machine type, */
-	/* this can be a combination of several signals. So we override Bit with its new value */
-	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE7 ) )
-		Bit = MFP_Main_Compute_GPIP7 ();
-
-	/* Special case when changing bit 5 of the main MFP : this line is connected */
-	/* to the FDC and HDC's IRQ lines at the same time */
-	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_FDC_HDC ) )
-		Bit = MFP_Main_Compute_GPIP5_FDC_HDC ();
-
-	/* Special case when changing bit 4 of the main MFP : this line is connected */
-	/* to the 2 ACIA's IRQ lines at the same time */
-	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_ACIA ) )
-		Bit = MFP_Main_Compute_GPIP4_LINE_ACIA ();
-
-	/* Special case when changing bit 3 of the main MFP : this line is connected */
-	/* to the Blitter's IRQ line or to the DSP's IRQ line */
-	if ( ( pMFP == pMFP_Main ) && ( LineNr == MFP_GPIP_LINE_BLITTER_DSP ) )
-		Bit = MFP_Main_Compute_GPIP3_Blitter_DSP ();
-
 	/* Check that corresponding line is defined as input in DDR (0=input 1=output) */
 	/* and that the bit is changing */
-	if ( ( ( pMFP->DDR & Mask ) == 0 )
-	  && ( ( pMFP->GPIP & Mask ) != ( Bit << LineNr ) ) )
+	if ( ( pMFP->DDR & Mask ) == 0 )
 	{
-		GPIP_old = pMFP->GPIP;
-
-		if ( Bit )
+		/* Special cases for the main MFP, we override Bit with its new value */
+		if ( pMFP == pMFP_Main )
 		{
-			pMFP->GPIP |= Mask;
-		}
-		else
-		{
-			pMFP->GPIP &= ~Mask;
+			/* bit 7 of the main MFP : depending on the machine type, */
+			/* this can be a combination of several signals  */
+			if ( LineNr == MFP_GPIP_LINE7 )
+				Bit = MFP_Main_Compute_GPIP7 ();
+
+			/* bit 5 of the main MFP : this line is connected */
+			/* to the FDC and HDC's IRQ lines at the same time */
+			if ( LineNr == MFP_GPIP_LINE_FDC_HDC )
+				Bit = MFP_Main_Compute_GPIP5_FDC_HDC ();
+
+			/* bit 4 of the main MFP : this line is connected */
+			/* to the 2 ACIA's IRQ lines at the same time */
+			if ( LineNr == MFP_GPIP_LINE_ACIA )
+				Bit = MFP_Main_Compute_GPIP4_LINE_ACIA ();
+
+			/* bit 3 of the main MFP : this line is connected */
+			/* to the Blitter's IRQ line or to the DSP's IRQ line */
+			if ( LineNr == MFP_GPIP_LINE_BLITTER_DSP )
+				Bit = MFP_Main_Compute_GPIP3_Blitter_DSP ();
 		}
 
-		/* Update possible interrupts after changing GPIP */
-		MFP_GPIP_Update_Interrupt ( pMFP , GPIP_old , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
+		/* GPIP bit is changing ? */
+		if ( ( pMFP->GPIP & Mask ) != ( Bit << LineNr ) )
+		{
+			GPIP_old = pMFP->GPIP;
+
+			if ( Bit )
+			{
+				pMFP->GPIP |= Mask;
+			}
+			else
+			{
+				pMFP->GPIP &= ~Mask;
+			}
+
+			/* Update possible interrupts after changing GPIP */
+			MFP_GPIP_Update_Interrupt ( pMFP , GPIP_old , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
+		}
 	}
 //fprintf ( stderr , "gpip set gpip_old=%x gpip_new=%x\n" , GPIP_old , pMFP->GPIP );
 }
