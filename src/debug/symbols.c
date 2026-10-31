@@ -44,6 +44,7 @@ const char Symbols_fileid[] = "Hatari symbols.c";
 #include "configuration.h"
 #include "a.out.h"
 #include "maccess.h"
+#include "str.h"
 
 #include "symbols-common.c"
 
@@ -996,21 +997,25 @@ void Symbols_ShowCurrentProgramPath(FILE *fp)
 static symbol_list_t *loadSymFile(const char *path, const uint32_t *offsets,
 				  uint32_t maxaddr, symtype_t symtype)
 {
-	char symfile[PATH_MAX];
+	char *symfile;
 	size_t len = strlen(path);
+	symbol_list_t *ret = NULL;
 
-	if (len <= 3 || path[len-4] != '.' || len >= sizeof(symfile)) {
+	if (len <= 3 || path[len-4] != '.')
+	{
 		return NULL;
 	}
-	strcpy(symfile, path);
+	symfile = Str_Dup(path);
 	strcpy(symfile + len - 3, "sym");
 
-	if (!File_Exists(symfile)) {
-		return NULL;
+	if (File_Exists(symfile))
+	{
+		fprintf(stderr, "Loading sym file: %s\n", symfile);
+		ret = Symbols_Load(symfile, offsets, maxaddr, symtype);
 	}
 
-	fprintf(stderr, "Loading sym file: %s\n", symfile);
-	return Symbols_Load(symfile, offsets, maxaddr, symtype);
+	free(symfile);
+	return ret;
 }
 
 /**
