@@ -21,6 +21,7 @@ extern uint16_t	BlitterPhase;
 
 extern void	Blitter_Reset ( void );
 extern uint8_t	Blitter_Get_Line_IRQ_MFP ( void );
+extern bool	Blitter_IsAvailable ( void );
 
 
 extern void	Blitter_StatsUpdateRate ( int period_cycles );

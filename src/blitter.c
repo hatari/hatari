@@ -265,6 +265,13 @@ static uint16_t	Blitter_HOG_CPU_IgnoreMaxCpuCycles;		/* Max number of blitter cy
 static int	BlitterStatsRate;
 
 
+/*--------------------------------------------------------------*/
+/* Local functions prototypes					*/
+/*--------------------------------------------------------------*/
+
+static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit );
+
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -306,13 +313,16 @@ void Blitter_Reset ( void )
 	BlitterState.have_dst = false;
 	BlitterState.bus_word = 0;
 	BlitterState.ContinueLater = 0 ;
+
+	/* Reset IRQ */
+	Blitter_Set_Line_IRQ_MFP ( BLITTER_IRQ_OFF );
 }
 
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set or reset the Blitter's IRQ line
+ * Set or reset the Blitter's IRQ line (as seen on MFP GPIP3)
  * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
  *
  * The IRQ signal is connected to GPIP3 on the MFP on ST/STE
@@ -341,12 +351,30 @@ static void	Blitter_Set_Line_IRQ_MFP ( uint8_t bit )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the value of the Blitter's IRQ line
+ * Return the value of the Blitter's IRQ line (as seen on MFP GPIP3)
  * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
  */
 uint8_t	Blitter_Get_Line_IRQ_MFP ( void )
 {
 	return BlitterState.IRQ_Line;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return true if the emulated machine has a blitter (STE, Falcon and ST with blitter),
+ * else return false
+ */
+
+bool	Blitter_IsAvailable ( void )
+{
+	if ( Config_IsMachineSTE() || Config_IsMachineFalcon()
+	  || ( Config_IsMachineST() && ConfigureParams.System.bBlitter ) )
+		return true;
+
+	else
+		return false;				/* TT or ST without blitter */
 }
 
 
