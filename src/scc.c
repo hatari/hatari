@@ -1013,9 +1013,9 @@ static int SCC_Get_TRxC_Freq ( int chn )
 /*
  * Return the generated baud rate depending on the value of WR4, WR11, WR12, WR13 and WR14
  *
- * The baud rate can use RtxC or TRxC clocks (which depend on the machine type) with
- * an additional clock multipier.
- * Or the baud rate can use the baud rate generator and its time constant.
+ * - the baud rate can use RtxC or TRxC clocks (which depends on the machine type) with
+ *   an additional clock multiplier.
+ * - or the baud rate can use the baud rate generator and its time constant.
  *
  * The SCC doc gives the formula to compute time constant from a baud rate in the BRG :
  *	TimeConstant = ( ClockFreq / ( 2 * BaudRate * ClockMult ) ) - 2

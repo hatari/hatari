@@ -323,33 +323,35 @@ Input -----/             |         ------------------------              |      
     In that case, the TT's specific MFP (accessible between $FFFA81 and $FFFAAF) has the highest priority
     and the "normal" MFP (accessible between $FFFA01 and $FFFA2F) has the lowest priority
 
-  - Each MFP has 8 GPIP bits used to connect signals from external devices/ports :
+  - Each MFP has 8 GPIP bits used to connect signals from external devices/ports.
+    GPIP bits can set as input (I) or output (O) using the DDR register
+    The (I) or (O) after each bit describes the typical usage in Atari machines
 
     Main MFP :
-      0 : parallel port, busy signal (0=not busy, 1=busy)
-      1 : rs232 port, data carrier detect (DCD) signal
-      2 : rs232 port, clear to send (CTS) signal
-      3 : STF/STE : blitter, active low (0=IRQ set, 1=IRQ not set)
-          Falcon : DSP, active low (0=HREQ set, 1=HREQ not set)
-      4 : ACIAs 6850 (ikbd and midi), active low (0=IRQ set for ACIA 1 and/or 2, 1=IRQ not set for neither ACIA 1 nor 2)
-      5 : FDC/HD, active low (0=IRQ set, 1=IRQ not set)
-          STF/STE/megaSTE/TT : FDC/ACSI (0=IRQ set for FDC and/or ACSI, 1=IRQ not set for FDC nor ACSI)
-          Falcon : FDC/IDE/SCSI (0=IRQ set for FDC and/or IDE and/or SCSI, 1=IRQ not set for FDC nor IDE nor SCSI)
-      6 : rs232 port, ring indicator (RI) signal
-      7 : monochrome monitor detect (0=monochrome, 1=color) and/or dma sound (0=idle, 1=play)
-          STF : monochrome monitor detect (0=monochrome, 1=color)
-          STE/TT : monochrome monitor detect XOR dma sound play
-          Falcon : dma sound play/record (0=idle, 1=play/record)
+      0 (I)   : parallel port, busy signal (0=not busy, 1=busy)
+      1 (I)   : rs232 port, data carrier detect (DCD) signal
+      2 (I)   : rs232 port, clear to send (CTS) signal
+      3 (I)   : STF/STE : blitter, active low (0=IRQ set, 1=IRQ not set)
+                Falcon : DSP, active low (0=HREQ set, 1=HREQ not set)
+      4 (I)   : ACIAs 6850 (ikbd and midi), active low (0=IRQ set for ACIA 1 and/or 2, 1=IRQ not set for neither ACIA 1 nor 2)
+      5 (I)   : FDC/HD, active low (0=IRQ set, 1=IRQ not set)
+                STF/STE/megaSTE/TT : FDC/ACSI (0=IRQ set for FDC and/or ACSI, 1=IRQ not set for FDC nor ACSI)
+                Falcon : FDC/IDE/SCSI (0=IRQ set for FDC and/or IDE and/or SCSI, 1=IRQ not set for FDC nor IDE nor SCSI)
+      6 (I)   : rs232 port, ring indicator (RI) signal
+      7 (I)   : monochrome monitor detect (0=monochrome, 1=color) and/or dma sound (0=idle, 1=play)
+                STF : monochrome monitor detect (0=monochrome, 1=color)
+                STE/TT : monochrome monitor detect XOR dma sound play
+                Falcon : dma sound play/record (0=idle, 1=play/record)
 
     TT MFP :
-      0 : connected to external I/O pin
-      1 : connected to external I/O pin
-      2 : SCC DMA controller, active low (0=IRQ set, 1=IRQ not set)
-      3 : SCC serial port B, ring indicator (RI) signal
-      4 : Internal floppy drive pin 34, NOT disk change (DC) signal (0=inserted 1=ejected)
-      5 : SCSI DMA controller, active low (0=IRQ set, 1=IRQ not set)
-      6 : RTC MC146818A, active low (0=IRQ set, 1=IRQ not set)
-      7 : SCSI NCR5380, active *high* (1=IRQ set, 0=IRQ not set)
+      0 (I/O) : connected to external I/O pin
+      1 (I/O) : connected to external I/O pin
+      2 (I)   : DMA controller, active low (0=IRQ set, 1=IRQ not set) (XDMAIRQ)
+      3 (I)   : SCC serial port B, ring indicator (RI) signal (XBRIRQ)
+      4 (I)   : Internal floppy drive pin 34, NOT disk change (DC) signal (0=inserted 1=ejected) (DCH)
+      5 (I)   : SCSI DMA controller, active low (0=IRQ set, 1=IRQ not set) (XSDMAIRQ)
+      6 (I)   : RTC MC146818A, active low (0=IRQ set, 1=IRQ not set) (XRTCIRQ)
+      7 (I)   : SCSI NCR5380, active *high* (1=IRQ set, 0=IRQ not set) (SCSIRQ)
 
 */
 
