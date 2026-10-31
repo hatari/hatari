@@ -237,6 +237,7 @@ static bool GemDOS_GetFileInformation(int Handle, DATETIME *DateTime)
  */
 static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 {
+#if HAVE_UTIME_H || HAVE_SYS_UTIME_H
 	const char *filename;
 	struct utimbuf timebuf;
 	struct stat filestat;
@@ -275,6 +276,8 @@ static bool GemDOS_SetFileInformation(int Handle, DATETIME *DateTime)
 	if (utime(filename, &timebuf) != 0)
 		return false;
 	// fprintf(stderr, "set date '%s' for %s\n", asctime(&timespec), name);
+#endif
+
 	return true;
 }
 
