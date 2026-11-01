@@ -9,7 +9,9 @@ if(ZLIB_FOUND)
 endif(ZLIB_FOUND)
 
 
-add_executable(test-file test-file.c ${CMAKE_SOURCE_DIR}/src/file.c)
+add_executable(test-file test-file.c
+               ${CMAKE_SOURCE_DIR}/src/file.c
+               ${CMAKE_SOURCE_DIR}/src/filename.c)
 if(ZLIB_FOUND)
 	target_link_libraries(test-file ${ZLIB_LIBRARY})
 endif(ZLIB_FOUND)

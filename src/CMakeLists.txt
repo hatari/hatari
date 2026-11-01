@@ -74,7 +74,15 @@ else()
 endif()
 
 # Some code is shared with the hmsa tool, so we list this separately:
-set(SOURCES_HMSA createBlankImage.c file.c file_archive.c floppies/dim.c floppies/msa.c floppies/st.c utils.c)
+set(SOURCES_HMSA
+	createBlankImage.c
+	file.c
+	file_archive.c
+	filename.c
+	floppies/dim.c
+	floppies/msa.c
+	floppies/st.c
+	utils.c)
 
 file(GLOB TOS_IMG_FILE tos.img LIST_DIRECTORIES false)
 
