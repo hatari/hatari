@@ -6,7 +6,7 @@ if(ENABLE_LIBRETRO AND HAVE_DLFCN_H)
 	add_subdirectory(retro)
 endif()
 
-if(UNIX)
+if(UNIX AND ENABLE_HATARI)
 	add_test(NAME command-fifo COMMAND
 	         ${CMAKE_CURRENT_SOURCE_DIR}/cmdfifo.sh $<TARGET_FILE:${APP_NAME}>)
 	add_test(NAME config-file COMMAND
@@ -23,4 +23,4 @@ if(UNIX)
 	add_subdirectory(screen)
 	add_subdirectory(serial)
 	add_subdirectory(xbios)
-endif(UNIX)
+endif(UNIX AND ENABLE_HATARI)

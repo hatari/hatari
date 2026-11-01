@@ -152,10 +152,12 @@ endif(ENABLE_LIBRETRO)
 add_subdirectory(cpu)
 add_subdirectory(debug)
 add_subdirectory(falcon)
-add_subdirectory(gui-sdl)
-add_subdirectory(sdl)
 
-set(APP_TARGET_OBJECTS
+if(ENABLE_HATARI)
+	add_subdirectory(gui-sdl)
+	add_subdirectory(sdl)
+
+	set(APP_TARGET_OBJECTS
 		$<TARGET_OBJECTS:Core>
 		$<TARGET_OBJECTS:CoreHmsa>
 		$<TARGET_OBJECTS:Falcon>
@@ -163,9 +165,12 @@ set(APP_TARGET_OBJECTS
 		$<TARGET_OBJECTS:GuiSdl>
 		$<TARGET_OBJECTS:Debug>
 		$<TARGET_OBJECTS:Ui>)
+endif(ENABLE_HATARI)
 
-# When building for macOS, add specific sources
-if(ENABLE_OSX_BUNDLE)
+if(NOT ENABLE_HATARI)
+	# When not building the main executable, then skip the following steps
+elseif(ENABLE_OSX_BUNDLE)
+	# When building for macOS, add specific sources
 	add_executable(${APP_NAME} MACOSX_BUNDLE ${GUIOSX_RSRCS} ${GUIOSX_DOCS}
 	               ${APP_TARGET_OBJECTS} ${GUIOSX_SOURCES})
 	target_compile_definitions(${APP_NAME} PRIVATE SDL_ENABLE_OLD_NAMES)
@@ -291,12 +296,7 @@ elseif(EMSCRIPTEN)
 # Other targets, use default sources
 else()
 	add_executable(${APP_NAME} ${APP_TARGET_OBJECTS})
-endif(ENABLE_OSX_BUNDLE)
-
-if(SDL2_OTHER_CFLAGS)
-	target_compile_definitions(${APP_NAME} PRIVATE ${SDL2_OTHER_CFLAGS})
-	# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
-endif(SDL2_OTHER_CFLAGS)
+endif()
 
 if(ENABLE_LIBRETRO)
 	add_library(retro-hatari MODULE
@@ -308,91 +308,117 @@ if(ENABLE_LIBRETRO)
 			$<TARGET_OBJECTS:UiRetro>)
 endif(ENABLE_LIBRETRO)
 
-target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
+if(ENABLE_HATARI)
+	if(SDL2_OTHER_CFLAGS)
+		target_compile_definitions(${APP_NAME} PRIVATE ${SDL2_OTHER_CFLAGS})
+		# message(STATUS "Additional CFLAGS of SDL: ${SDL2_OTHER_CFLAGS}")
+	endif(SDL2_OTHER_CFLAGS)
 
-if(Math_FOUND AND NOT APPLE)
-	target_link_libraries(${APP_NAME} ${MATH_LIBRARY})
-endif()
+	target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
+
+	if(Math_FOUND AND NOT APPLE)
+		target_link_libraries(${APP_NAME} ${MATH_LIBRARY})
+	endif()
+
+	if(X11_FOUND)
+		target_link_libraries(${APP_NAME} ${X11_LIBRARIES})
+	endif(X11_FOUND)
+
+	if(WIN32)
+		# Needed for socket() on Windows
+		target_link_libraries(${APP_NAME} ws2_32)
+	endif(WIN32)
+endif(ENABLE_HATARI)
 
 if(Readline_FOUND)
-	target_link_libraries(${APP_NAME} ${READLINE_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${READLINE_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${READLINE_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(Readline_FOUND)
 
 if(ZLIB_FOUND)
-	target_link_libraries(${APP_NAME} ${ZLIB_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${ZLIB_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${ZLIB_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(ZLIB_FOUND)
 
 if(LibArchive_FOUND)
-	target_link_libraries(${APP_NAME} ${LibArchive_LIBRARIES})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${LibArchive_LIBRARIES})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${LibArchive_LIBRARIES})
 	endif(ENABLE_LIBRETRO)
 endif(LibArchive_FOUND)
 
 if(PNG_FOUND)
-	target_link_libraries(${APP_NAME} ${PNG_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${PNG_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${PNG_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(PNG_FOUND)
 
-if(X11_FOUND)
-	target_link_libraries(${APP_NAME} ${X11_LIBRARIES})
-endif(X11_FOUND)
-
 if(PortMidi_FOUND)
-	target_link_libraries(${APP_NAME} ${PORTMIDI_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${PORTMIDI_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${PORTMIDI_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(PortMidi_FOUND)
 
 if(CapsImage_FOUND)
-	target_link_libraries(${APP_NAME} ${CAPSIMAGE_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${CAPSIMAGE_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${CAPSIMAGE_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(CapsImage_FOUND)
 
 if(Udev_FOUND)
-	target_link_libraries(${APP_NAME} ${UDEV_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${UDEV_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${UDEV_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(Udev_FOUND)
 
 if(Capstone_FOUND)
-	target_link_libraries(${APP_NAME} ${CAPSTONE_LIBRARY})
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} ${CAPSTONE_LIBRARY})
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari ${CAPSTONE_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(Capstone_FOUND)
 
 if(APPLE)
-	target_link_libraries(${APP_NAME} "-framework Cocoa")
+	if(ENABLE_HATARI)
+		target_link_libraries(${APP_NAME} "-framework Cocoa")
+	endif(ENABLE_HATARI)
 	if(ENABLE_LIBRETRO)
 		target_link_libraries(retro-hatari "-framework Cocoa")
 	endif(ENABLE_LIBRETRO)
 endif()
 
-if(WIN32)
-	# Needed for socket() on Windows
-	target_link_libraries(${APP_NAME} ws2_32)
-endif(WIN32)
-
-
-if(ENABLE_OSX_BUNDLE)
-	install(TARGETS ${APP_NAME} BUNDLE DESTINATION /Applications)
-else()
-	install(TARGETS ${APP_NAME} RUNTIME DESTINATION ${BINDIR})
-	install(FILES hatari-icon.bmp DESTINATION ${DATADIR})
-	if(TOS_IMG_FILE)
-		install(FILES ${TOS_IMG_FILE} DESTINATION ${DATADIR})
-	endif(TOS_IMG_FILE)
-endif(ENABLE_OSX_BUNDLE)
+if(ENABLE_HATARI)
+	if(ENABLE_OSX_BUNDLE)
+		install(TARGETS ${APP_NAME} BUNDLE DESTINATION /Applications)
+	else()
+		install(TARGETS ${APP_NAME} RUNTIME DESTINATION ${BINDIR})
+		install(FILES hatari-icon.bmp DESTINATION ${DATADIR})
+		if(TOS_IMG_FILE)
+			install(FILES ${TOS_IMG_FILE} DESTINATION ${DATADIR})
+		endif(TOS_IMG_FILE)
+	endif(ENABLE_OSX_BUNDLE)
+endif(ENABLE_HATARI)

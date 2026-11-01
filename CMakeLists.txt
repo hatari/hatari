@@ -52,6 +52,7 @@ endfunction (check_large_file)
 # Conditional build features
 # ##########################
 
+option(ENABLE_HATARI "Build the main Hatari executable" ON)
 option(ENABLE_DSP_EMU "Enable DSP 56k emulator for Falcon mode" ON)
 option(ENABLE_TRACING "Enable tracing messages for debugging" ON)
 option(ENABLE_TOOLS "Build the Hatari tools" ON)
@@ -110,7 +111,7 @@ endif(ENABLE_OSX_BUNDLE)
 # Check for libraries:
 # ####################
 
-if(NOT DEFINED ENABLE_SDL3 OR ENABLE_SDL3)
+if(ENABLE_HATARI AND NOT DEFINED ENABLE_SDL3 OR ENABLE_SDL3)
 	find_package(SDL3 QUIET)
 endif()
 if(SDL3_FOUND)
@@ -119,7 +120,7 @@ if(SDL3_FOUND)
 	set(SDL2_LIBRARIES ${SDL3_LIBRARIES})
 	set(SDL2_LIBDIR $<TARGET_FILE_DIR:SDL3::SDL3-shared>)
 	set(ENABLE_SDL3 1 CACHE BOOL "Use SDL3 instead of SDL2")
-else()
+elseif(ENABLE_HATARI)
 	find_package(SDL2)
 	if(NOT SDL2_FOUND)
 		message(FATAL_ERROR "SDL library not found!")
@@ -457,7 +458,9 @@ Libraries summary :
 -------------------
 ")
 
-if(SDL3_FOUND)
+if(NOT ENABLE_HATARI)
+	message("  - sdl :\tnot building the main Hatari executable")
+elseif(SDL3_FOUND)
 	message("  - sdl :\tusing SDL3 ${SDL3_VERSION}")
 else()
 	message("  - sdl :\tusing SDL2 ${SDL2_VERSION}")
