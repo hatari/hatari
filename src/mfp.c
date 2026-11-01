@@ -424,6 +424,7 @@ static uint8_t	MFP_Main_Compute_GPIP7 ( void );
 static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void );
 static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
 static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void );
+static uint8_t	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -2005,6 +2006,10 @@ static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void )
 /**
  * Handle read from main MFP GPIP pins register (0xfffa01).
  *
+ * Get the current value of GPIP and only update the bits where the corresponding
+ * bit in DDR is 0 (=input)
+ * Leave all others bits (=output) untouched and keep their current value
+ *
  * - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
  *   is connected or on BUSY. Therefore we should assume it to be 0 in Hatari
  *   when a printer is emulated.
@@ -2016,82 +2021,124 @@ static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void )
  * - Bit 6 is used for RS232: RI (inverted, O=RI ON)
  * - Bit 7 is monochrome monitor detection signal and/or dma sound. On STE and TT it is
  *   also XORed with the DMA sound play bit. On Falcon it is only the DMA sound play bit
- *
- * When reading GPIP, output lines (DDR=1) should return the last value that was written,
- * only input lines (DDR=0) should be updated.
  */
-void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
+
+static uint8_t	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP )
 {
 	uint8_t		gpip_new;
 	uint8_t		dcd,cts;
 
+	/* Get current value to keep bits where DDR=1 (output) */
+	gpip_new = pMFP->GPIP;
+
+	/* Get value of DCD/CTS signals in case RS232 emulation is enabled */
+	RS232_Get_DCD_CTS ( &dcd , &cts );
+
+	/* Bit 7 */
+	if ( ( pMFP->DDR & 0x80 ) == 0 )
+	{
+		if ( MFP_Main_Compute_GPIP7() )
+			gpip_new |= 0x80;		/* set bit 7 */
+		else
+			gpip_new &= ~0x80;		/* clear bit 7 */
+	}
+
+	/* Bit 6 */
+	if ( ( pMFP->DDR & 0x40 ) == 0 )
+	{
+		// not emulated, keep value
+	}
+
+	/* Bit 5 */
+	if ( ( pMFP->DDR & 0x20 ) == 0 )
+	{
+		if ( MFP_Main_Compute_GPIP5_FDC_HDC() )
+			gpip_new |= 0x20;		/* set bit 5 */
+		else
+			gpip_new &= ~0x20;		/* clear bit 5 */
+	}
+
+	/* Bit 4 */
+	if ( ( pMFP->DDR & 0x10 ) == 0 )
+	{
+		if ( MFP_Main_Compute_GPIP4_LINE_ACIA() )
+			gpip_new |= 0x10;		/* set bit 4 */
+		else
+			gpip_new &= ~0x10;		/* clear bit 4 */
+	}
+
+	/* Bit 3 */
+	if ( ( pMFP->DDR & 0x08 ) == 0 )
+	{
+		if ( MFP_Main_Compute_GPIP3_Blitter_DSP() )
+			gpip_new |= 0x08;		/* set bit 3 */
+		else
+			gpip_new &= ~0x08;		/* clear bit 3 */
+	}
+
+	/* Bit 2 : CTS (inverted, 0=ON) */
+	if ( ( pMFP->DDR & 0x04 ) == 0 )
+	{
+		if ( !cts )
+			gpip_new |= 0x04;		/* set bit 2 */
+		else
+			gpip_new &= ~0x04;		/* clear bit 2 */
+	}
+
+	/* Bit 1 : DCD (inverted, 0=ON) */
+	if ( ( pMFP->DDR & 0x02 ) == 0 )
+	{
+		if ( !dcd )
+			gpip_new |= 0x02;		/* set bit 1 */
+		else
+			gpip_new &= ~0x02;		/* clear bit 1 */
+	}
+
+	/* Bit 0 */
+	if ( ( pMFP->DDR & 0x01 ) == 0 )
+		{
+		if (ConfigureParams.Printer.bEnablePrinting)
+		{
+			/* Signal that printer is not busy */
+			gpip_new &= ~1;
+		}
+		else
+		{
+			gpip_new |= 1;
+
+			/* Printer BUSY bit is also used by parallel port joystick adapters as fire button */
+			if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
+			{
+				/* Fire pressed? */
+				if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
+					gpip_new &= ~1;
+			}
+		}
+	}
+
+	return gpip_new;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle read from main MFP GPIP pins register (0xfffa01).
+ *
+ * The value of GPIP is first updated with MPF_GPIP_Update_Main()
+ *
+ * When reading GPIP, output lines (DDR=1) should return the last value that was written,
+ * only input lines (DDR=0) should be updated.
+ */
+
+void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
+{
 	M68000_WaitState(4);
 
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
-	/* Get value of DCD/CTS signals in case RS232 emulation is enabled */
-	RS232_Get_DCD_CTS ( &dcd , &cts );
-
-	gpip_new = pMFP->GPIP;
-
-	/* Bit 7 */
-	if ( MFP_Main_Compute_GPIP7() )
-		gpip_new |= 0x80;		/* set bit 7 */
-	else
-		gpip_new &= ~0x80;		/* clear bit 7 */
-
-	/* Bit 5 */
-	if ( MFP_Main_Compute_GPIP5_FDC_HDC() )
-		gpip_new |= 0x20;		/* set bit 5 */
-	else
-		gpip_new &= ~0x20;		/* clear bit 5 */
-
-	/* Bit 4 */
-	if ( MFP_Main_Compute_GPIP4_LINE_ACIA() )
-		gpip_new |= 0x10;		/* set bit 4 */
-	else
-		gpip_new &= ~0x10;		/* clear bit 4 */
-
-	/* Bit 3 */
-	if ( MFP_Main_Compute_GPIP3_Blitter_DSP() )
-		gpip_new |= 0x08;		/* set bit 3 */
-	else
-		gpip_new &= ~0x08;		/* clear bit 3 */
-
-	/* Bit 2 : CTS (inverted, 0=ON) */
-	if ( !cts )
-		gpip_new |= 0x04;		/* set bit 2 */
-	else
-		gpip_new &= ~0x04;		/* clear bit 2 */
-
-	/* Bit 1 : DCD (inverted, 0=ON) */
-	if ( !dcd )
-		gpip_new |= 0x02;		/* set bit 1 */
-	else
-		gpip_new &= ~0x02;		/* clear bit 1 */
-
-	/* Bit 0 */
-	if (ConfigureParams.Printer.bEnablePrinting)
-	{
-		/* Signal that printer is not busy */
-		gpip_new &= ~1;
-	}
-	else
-	{
-		gpip_new |= 1;
-
-		/* Printer BUSY bit is also used by parallel port joystick adapters as fire button */
-		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
-		{
-			/* Fire pressed? */
-			if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
-				gpip_new &= ~1;
-		}
-	}
-
-	gpip_new &= ~pMFP->DDR;					/* New input bits */
-	pMFP->GPIP = ( pMFP->GPIP & pMFP->DDR ) | gpip_new; 	/* Keep output bits unchanged and update input bits */
+	pMFP->GPIP = MPF_GPIP_Update_Main ( pMFP );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->GPIP;
 
