@@ -54,6 +54,7 @@ endfunction (check_large_file)
 
 option(ENABLE_DSP_EMU "Enable DSP 56k emulator for Falcon mode" ON)
 option(ENABLE_TRACING "Enable tracing messages for debugging" ON)
+option(ENABLE_TOOLS "Build the Hatari tools" ON)
 
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
@@ -409,7 +410,9 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/config-cmake.h
 
 add_subdirectory(src)
 add_subdirectory(doc)
-add_subdirectory(tools)
+if(ENABLE_TOOLS)
+	add_subdirectory(tools)
+endif(ENABLE_TOOLS)
 
 if(NOT CMAKE_CROSSCOMPILING)
 	add_subdirectory(tests)
