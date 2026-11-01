@@ -7,6 +7,7 @@
 
 #include <libretro.h>
 
+#include "config.h"
 #include "main_retro.h"
 #include "vfs.h"
 #include "log.h"
@@ -149,10 +150,10 @@ int64_t VFS_fseek(VFS_FILE stream, int64_t offset, int whence)
 		return vfs_iface->seek((struct retro_vfs_file_handle *)stream, offset, position);
 	}
 
-#if VFS_ANDROID_32BIT
-	return fseek((FILE *)stream, (long)offset, whence);
-#else
+#if HAVE_FSEEKO
 	return fseeko((FILE *)stream, (off_t)offset, whence);
+#else
+	return fseek((FILE *)stream, (long)offset, whence);
 #endif
 }
 
@@ -164,10 +165,10 @@ int64_t VFS_ftell(VFS_FILE stream)
 	if (VFS_IsActive())
 		return vfs_iface->tell((struct retro_vfs_file_handle *)stream);
 
-#if VFS_ANDROID_32BIT
-	return ftell((FILE *)stream);
-#else
+#if HAVE_FTELLO
 	return ftello((FILE *)stream);
+#else
+	return ftell((FILE *)stream);
 #endif
 }
 
@@ -177,28 +178,12 @@ int64_t VFS_fsize(VFS_FILE stream)
 		return -1;
 
 	if (VFS_IsActive() && vfs_iface->size)
-		return vfs_iface->size((struct retro_vfs_file_handle *)stream);
-
-	// fallback
 	{
-#if VFS_ANDROID_32BIT
-		long current;
-		long size;
-
-		current = ftell((FILE *)stream);
-		if (current < 0)
-			return -1;
-
-		if (fseek((FILE *)stream, 0, SEEK_END) != 0)
-			return -1;
-
-		size = ftell((FILE *)stream);
-
-		if (fseek((FILE *)stream, current, SEEK_SET) != 0)
-			return -1;
-
-		return (int64_t)size;
-#else
+		return vfs_iface->size((struct retro_vfs_file_handle *)stream);
+	}
+	else	// fallback
+	{
+#if defined(HAVE_FTELLO) && defined(HAVE_FSEEKO)
 		off_t current;
 		off_t size;
 
@@ -212,6 +197,23 @@ int64_t VFS_fsize(VFS_FILE stream)
 		size = ftello((FILE *)stream);
 
 		if (fseeko((FILE *)stream, current, SEEK_SET) != 0)
+			return -1;
+
+		return (int64_t)size;
+#else
+		long current;
+		long size;
+
+		current = ftell((FILE *)stream);
+		if (current < 0)
+			return -1;
+
+		if (fseek((FILE *)stream, 0, SEEK_END) != 0)
+			return -1;
+
+		size = ftell((FILE *)stream);
+
+		if (fseek((FILE *)stream, current, SEEK_SET) != 0)
 			return -1;
 
 		return (int64_t)size;

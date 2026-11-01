@@ -14,12 +14,6 @@
 
 #define VFS_REQUIRED_VERSION 4
 
-#if defined(__ANDROID__) && (defined(__arm__) || defined(__i386__))
-#define VFS_ANDROID_32BIT 1
-#else
-#define VFS_ANDROID_32BIT 0
-#endif
-
 void VFS_Init(void);
 bool VFS_IsActive(void);
 
