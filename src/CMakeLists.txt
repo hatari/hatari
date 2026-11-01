@@ -140,18 +140,23 @@ if(Capstone_FOUND)
 	include_directories(${CAPSTONE_INCLUDE_DIR})
 endif(Capstone_FOUND)
 
-add_library(Core OBJECT ${SOURCES})
 add_library(CoreHmsa OBJECT ${SOURCES_HMSA})
 
+add_subdirectory(debug)
+
+if(ENABLE_HATARI OR ENABLE_LIBRETRO)
+	add_subdirectory(cpu)
+	add_subdirectory(falcon)
+
+	add_library(Core OBJECT ${SOURCES})
+endif()
+
 if(ENABLE_LIBRETRO)
+	add_subdirectory(retro)
+
 	set_target_properties(Core PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 	set_target_properties(CoreHmsa PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
-	add_subdirectory(retro)
 endif(ENABLE_LIBRETRO)
-
-add_subdirectory(cpu)
-add_subdirectory(debug)
-add_subdirectory(falcon)
 
 if(ENABLE_HATARI)
 	add_subdirectory(gui-sdl)
