@@ -2,7 +2,6 @@
 # all C-sources from this directory except for:
 # - SOURCES_HMSA: sources "hatari" shares with "hmsa"
 # - SOURCES_FILE: file access functions that are only linked into the main exe
-# - unzip.c: added separately if ZLIB_FOUND
 set(SOURCES
 	acia.c
 	avi_record.c
@@ -125,7 +124,6 @@ include_directories(includes debug falcon cpu ${CMAKE_BINARY_DIR})
 
 if(ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIR})
-	set(SOURCES_HMSA ${SOURCES_HMSA} unzip.c)
 endif(ZLIB_FOUND)
 
 if(LibArchive_FOUND)

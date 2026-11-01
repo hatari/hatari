@@ -220,10 +220,6 @@ projects which we would like to acknowledge here:
   and DSP emulation) has been adapted from the sources of the emulator
   Aranym. (http://aranym.atari.org/)
 
-- The code for decompressing ZIP files (unzip.c) has been taken from
-  Gilles Vollant's miniunzip program.
-  (http://www.winimage.com/zLibDll/unzip.html)
-
 - The routines for saving and loading the ASCII configuration file
   (cfgopts.c) have originally been written by Jeffry J. Brickley.
 
