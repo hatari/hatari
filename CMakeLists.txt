@@ -52,10 +52,8 @@ endfunction (check_large_file)
 # Conditional build features
 # ##########################
 
-set(ENABLE_DSP_EMU 1
-    CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
-set(ENABLE_TRACING 1
-    CACHE BOOL "Enable tracing messages for debugging")
+option(ENABLE_DSP_EMU "Enable DSP 56k emulator for Falcon mode" ON)
+option(ENABLE_TRACING "Enable tracing messages for debugging" ON)
 
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
