@@ -527,9 +527,7 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 {
 	int	i;
 
-	pMFP->GPIP = 0;
 	pMFP->AER = 0;
-	pMFP->DDR = 0;
 	pMFP->IERA = 0;
 	pMFP->IERB = 0;
 	pMFP->IPRA = 0;
@@ -565,7 +563,22 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->TAI = 0;
 	pMFP->TBI = 0;
 
-	/* Clear IRQ */
+	/* On reset, DDR is set to 0 which means all GPIP bits are set to 'input'
+	 * So we must re-evaluate the value of each 8 GPIP bits
+	 * No need to call MFP_GPIP_Update_Interrupt() in that case, because IERx
+	 * were cleared above, GPIP bits can't trigger the MFP IRQ at this point
+	 */
+	pMFP->GPIP = 0;
+	pMFP->DDR = 0;
+	if ( pMFP == pMFP_Main )
+		MPF_GPIP_Update_Main ( pMFP );
+	else
+		{ /* TODO for TT MFP */ }
+	/* Update possible interrupts after changing GPIP */
+	MFP_GPIP_Update_Interrupt ( pMFP , pMFP->GPIP , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
+
+
+	/* Clear MFP IRQ */
 	pMFP->Current_Interrupt = -1;
 	pMFP->IRQ = 0;
 	pMFP->IRQ_CPU = 0;
