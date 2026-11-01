@@ -4,7 +4,8 @@ include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/includes
 
 set(HMSA_SOURCES hmsa.c floppy.c)
 
-add_executable(hmsa ${HMSA_SOURCES} $<TARGET_OBJECTS:CoreHmsa>)
+add_executable(hmsa ${HMSA_SOURCES}
+               $<TARGET_OBJECTS:CoreFile> $<TARGET_OBJECTS:CoreHmsa>)
 
 if(Math_FOUND)
 	target_link_libraries(hmsa ${MATH_LIBRARY})

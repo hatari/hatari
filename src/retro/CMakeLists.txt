@@ -4,6 +4,7 @@ include_directories(. ../.. ../includes ../debug ../falcon)
 add_library(UiRetro OBJECT
 		audio.c
 		disk_control.c
+		file_retro.c
 		harddisk.c
 		joy_ui.c
 		gui_event.c

@@ -1,6 +1,7 @@
 
 # all C-sources from this directory except for:
 # - SOURCES_HMSA: sources "hatari" shares with "hmsa"
+# - SOURCES_FILE: file access functions that are only linked into the main exe
 # - unzip.c: added separately if ZLIB_FOUND
 set(SOURCES
 	acia.c
@@ -76,13 +77,16 @@ endif()
 # Some code is shared with the hmsa tool, so we list this separately:
 set(SOURCES_HMSA
 	createBlankImage.c
-	file.c
-	file_archive.c
 	filename.c
 	floppies/dim.c
 	floppies/msa.c
 	floppies/st.c
 	utils.c)
+
+# File access functions for the main executable - not used on libretro:
+set(SOURCES_FILE
+	file.c
+	file_archive.c)
 
 file(GLOB TOS_IMG_FILE tos.img LIST_DIRECTORIES false)
 
@@ -152,6 +156,10 @@ add_library(CoreHmsa OBJECT ${SOURCES_HMSA})
 
 add_subdirectory(debug)
 
+if(ENABLE_HATARI OR ENABLE_TOOLS)
+	add_library(CoreFile OBJECT ${SOURCES_FILE})
+endif()
+
 if(ENABLE_HATARI OR ENABLE_LIBRETRO)
 	add_subdirectory(cpu)
 	add_subdirectory(falcon)
@@ -172,6 +180,7 @@ if(ENABLE_HATARI)
 
 	set(APP_TARGET_OBJECTS
 		$<TARGET_OBJECTS:Core>
+		$<TARGET_OBJECTS:CoreFile>
 		$<TARGET_OBJECTS:CoreHmsa>
 		$<TARGET_OBJECTS:Falcon>
 		$<TARGET_OBJECTS:UaeCpu>
@@ -331,6 +340,10 @@ if(ENABLE_HATARI)
 
 	target_link_libraries(${APP_NAME} ${SDL2_LIBRARIES})
 
+	if(LibArchive_FOUND)
+		target_link_libraries(${APP_NAME} ${LibArchive_LIBRARIES})
+	endif(LibArchive_FOUND)
+
 	if(Math_FOUND AND NOT APPLE)
 		target_link_libraries(${APP_NAME} ${MATH_LIBRARY})
 	endif()
@@ -362,15 +375,6 @@ if(ZLIB_FOUND)
 		target_link_libraries(retro-hatari ${ZLIB_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(ZLIB_FOUND)
-
-if(LibArchive_FOUND)
-	if(ENABLE_HATARI)
-		target_link_libraries(${APP_NAME} ${LibArchive_LIBRARIES})
-	endif(ENABLE_HATARI)
-	if(ENABLE_LIBRETRO)
-		target_link_libraries(retro-hatari ${LibArchive_LIBRARIES})
-	endif(ENABLE_LIBRETRO)
-endif(LibArchive_FOUND)
 
 if(PNG_FOUND)
 	if(ENABLE_HATARI)
