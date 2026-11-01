@@ -6,13 +6,7 @@ include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR}/src/includes
 		    ${CMAKE_SOURCE_DIR}/src/cpu)
 
 add_library(DebuggerTestLib test-dummies.c  ${CMAKE_SOURCE_DIR}/src/str.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/breakcond.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/debugcpu.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/history.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/evaluate.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/symbols.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/stacktrace.c
-	    ${CMAKE_SOURCE_DIR}/src/debug/vars.c)
+	    $<TARGET_OBJECTS:DebugUT>)
 
 add_executable(test-breakcond test-breakcond.c)
 target_link_libraries(test-breakcond DebuggerTestLib)
