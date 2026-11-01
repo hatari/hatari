@@ -21,8 +21,9 @@ include(CheckFunctionExists)
 include(CheckStructHasMember)
 include(CheckSymbolExists)
 include(CheckCCompilerFlag)
-include(DistClean)
 include(CheckTypeSize)
+include(CMakeDependentOption)
+include(DistClean)
 
 # set(CMAKE_VERBOSE_MAKEFILE 1)
 
@@ -58,14 +59,8 @@ set(ENABLE_TRACING 1
 
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
-
-if (LIBRETRO_INCLUDE_DIR)
-	set(ENABLE_LIBRETRO 1
-	    CACHE BOOL "Build a core for libretro (experimental)")
-else()
-	set(ENABLE_LIBRETRO 0
-	    CACHE BOOL "Build a core for libretro (experimental)")
-endif(LIBRETRO_INCLUDE_DIR)
+cmake_dependent_option(ENABLE_LIBRETRO "Build a core for libretro"
+                       ON LIBRETRO_INCLUDE_DIR OFF)
 
 # Configure Hatari with AddressSanitizer:
 #   cd build; make clean; cmake -D ENABLE_ASAN:BOOL=1 -D ..
@@ -81,47 +76,33 @@ endif(LIBRETRO_INCLUDE_DIR)
 #   https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html
 #
 CHECK_C_COMPILER_FLAG("-fsanitize=address" ASAN_AVAILABLE)
-if(ASAN_AVAILABLE)
-	set(ENABLE_ASAN 0
-	    CACHE BOOL "Enable GCC/LLVM run-time address debugging (~2x slowdown)")
-endif(ASAN_AVAILABLE)
+cmake_dependent_option(ENABLE_ASAN "Enable GCC/LLVM run-time address debugging (~2x slowdown)"
+                       OFF ASAN_AVAILABLE OFF)
 
 CHECK_C_COMPILER_FLAG("-fsanitize=undefined" UBSAN_AVAILABLE)
-if(UBSAN_AVAILABLE)
-	set(ENABLE_UBSAN 0
-	    CACHE BOOL "Enable GCC/LLVM run-time undefined behavior debugging")
-endif(UBSAN_AVAILABLE)
+cmake_dependent_option(ENABLE_UBSAN "Enable GCC/LLVM run-time undefined behavior debugging"
+                       OFF UBSAN_AVAILABLE OFF)
 
 CHECK_C_COMPILER_FLAG("-fstack-protector-all -fsanitize=bounds-strict" SSP_AVAILABLE)
-if(SSP_AVAILABLE)
-	set(ENABLE_SSP 0
-	    CACHE BOOL "Enable GCC/LLVM run-time stack protection")
-endif(SSP_AVAILABLE)
+cmake_dependent_option(ENABLE_SSP "Enable GCC/LLVM run-time stack protection"
+                       OFF SSP_AVAILABLE OFF)
 
 CHECK_C_COMPILER_FLAG("-fhardened" HARDENED_AVAILABLE)
-if(HARDENED_AVAILABLE)
-	set(ENABLE_HARDENED 0
-	    CACHE BOOL "Enable GCC/LLVM run-time hardening options (for production / distros not enabling them by default)")
-endif(HARDENED_AVAILABLE)
+cmake_dependent_option(ENABLE_HARDENED "Enable GCC/LLVM run-time hardening options"
+                       OFF HARDENED_AVAILABLE OFF)
 
-find_program(GZIP gzip)
-if(UNIX AND GZIP)
-	set(ENABLE_MAN_PAGES 1 CACHE BOOL "Built and install man pages")
-else()
-	set(ENABLE_MAN_PAGES 0 CACHE BOOL "Built and install man pages")
+if(UNIX)
+	find_program(GZIP gzip)
 endif()
+cmake_dependent_option(ENABLE_MAN_PAGES "Built and install man pages"
+                       ON GZIP OFF)
 
-if(APPLE)
-	set(ENABLE_OSX_BUNDLE 1
-	    CACHE BOOL "Built Hatari as macOS application bundle")
-	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
-else()
-	set(ENABLE_OSX_BUNDLE 0
-	    CACHE BOOL "Built Hatari as macOS application bundle")
-endif(APPLE)
+cmake_dependent_option(ENABLE_OSX_BUNDLE "Built Hatari as macOS application bundle"
+                       ON APPLE OFF)
 
 if(ENABLE_OSX_BUNDLE)
 	set(APP_NAME "Hatari")
+	set(CMAKE_XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@loader_path/../Frameworks")
 else()
 	set(APP_NAME "hatari")
 endif(ENABLE_OSX_BUNDLE)
