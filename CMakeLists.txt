@@ -260,6 +260,12 @@ check_symbol_exists(ftello "stdio.h" HAVE_FTELLO)
 check_symbol_exists(flock "sys/file.h" HAVE_FLOCK)
 check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 
+if(ENABLE_LIBRETRO)
+	check_struct_has_member("struct retro_vfs_interface" stat_64
+	                        "${LIBRETRO_INCLUDE_DIR}/libretro.h"
+	                        HAVE_RETRO_VFS_STAT_64_T)
+endif(ENABLE_LIBRETRO)
+
 # #############
 # Other CFLAGS:
 # #############

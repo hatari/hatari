@@ -223,29 +223,34 @@ int64_t VFS_fsize(VFS_FILE stream)
 
 bool VFS_FileExists(const char *path)
 {
+	struct stat st;
+
+#if HAVE_RETRO_VFS_STAT_64_T
 	if (VFS_IsActive() && vfs_iface->stat_64)
 	{
 		int64_t size = 0;
 		int flags = vfs_iface->stat_64(path, &size);
 		return (flags & RETRO_VFS_STAT_IS_VALID) && !(flags & RETRO_VFS_STAT_IS_DIRECTORY);
 	}
+#endif
 
 	// fallback
-	{
-		struct stat st;
-		return (stat(path, &st) == 0 &&
-		        (st.st_mode & (S_IRUSR|S_IWUSR)) && !S_ISDIR(st.st_mode));
-	}
+	return (stat(path, &st) == 0 &&
+	        (st.st_mode & (S_IRUSR|S_IWUSR)) && !S_ISDIR(st.st_mode));
 }
 
 bool VFS_DirExists(const char *path)
 {
+	struct stat st;
+
+#if HAVE_RETRO_VFS_STAT_64_T
 	if (VFS_IsActive() && vfs_iface->stat_64)
 	{
 		int64_t size = 0;
 		int flags = vfs_iface->stat_64(path, &size);
 		return (flags & RETRO_VFS_STAT_IS_VALID) && (flags & RETRO_VFS_STAT_IS_DIRECTORY);
 	}
+#endif
 
 	if (VFS_IsActive() && vfs_iface->opendir && vfs_iface->closedir)
 	{
@@ -257,26 +262,25 @@ bool VFS_DirExists(const char *path)
 	}
 
 	// fallback
-	{
-		struct stat st;
-		return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
-	}
+	return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
 }
 
 int64_t VFS_FileLength(const char *path)
 {
+	struct stat st;
+
+#if HAVE_RETRO_VFS_STAT_64_T
 	if (VFS_IsActive() && vfs_iface->stat_64)
 	{
 		int64_t size = 0;
 		int flags = vfs_iface->stat_64(path, &size);
 		return (flags & RETRO_VFS_STAT_IS_VALID) ? (int64_t)size : -1;
 	}
+#endif
 
 	// fallback
-	{
-		struct stat st;
-		if (stat(path, &st) == 0)
-			return (int64_t)st.st_size;
-		return -1;
-	}
+	if (stat(path, &st) == 0)
+		return (int64_t)st.st_size;
+
+	return -1;
 }

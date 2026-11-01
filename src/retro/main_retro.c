@@ -145,7 +145,7 @@ RETRO_API void retro_set_environment(retro_environment_t cb)
 	libretro_set_core_options(cb, &categories_supported);
 
 	/* Retrieve VFS interface v4 or fall back if not available */
-	//VFS_Init();
+	VFS_Init();
 }
 
 RETRO_API void retro_set_video_refresh(retro_video_refresh_t cb)
