@@ -313,25 +313,41 @@ static void NvRam_SetChecksum ( void )
  */
 static void     MC146818_Set_Line_IRQ ( uint8_t bit )
 {
-        LOG_TRACE ( TRACE_NVRAM, "nvram set irq line val=%d %s VBL=%d HBL=%d\n" , bit , bit?"off":"on" , nVBLs , nHBL );
+	uint8_t		Line_State;
+
+	LOG_TRACE ( TRACE_NVRAM, "nvram set irq line val=%d %s VBL=%d HBL=%d\n" , bit , bit==MC146818_IRQ_ON ? "on" : "off" , nVBLs , nHBL );
 
 	if (!Config_IsMachineTT())
 		return;
 
-	MC146818_IRQ_Line = bit;
+	if ( bit == MC146818_IRQ_ON )
+		Line_State = MFP_GPIP_STATE_LOW;
+	else
+		Line_State = MFP_GPIP_STATE_HIGH;
 
-	if ( bit == MC146818_IRQ_ON )			// 0
-	{
-		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_RTC , MFP_GPIP_STATE_LOW );
-	}
-	else						// 1
-	{
-		MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_RTC , MFP_GPIP_STATE_HIGH );
-	}
+	MC146818_IRQ_Line = Line_State;
+
+	MFP_GPIP_Set_Line_Input ( pMFP_TT , MFP_TT_GPIP_LINE_RTC , Line_State );
 }
 
 
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Return the value of the MC146818's IRQ line (as seen on MFP GPIP6)
+ * IRQ signal is inverted (0/low irq set, 1/high irq cleared)
+ */
+uint8_t	MC146818_Get_Line_IRQ ( void )
+{
+	return MC146818_IRQ_Line;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update the IRQ value, depending on the 3 possible sources
+ */
 static void	MC146818_Update_IRQ ( void )
 {
 	uint8_t		interrupt_enable;
@@ -363,10 +379,10 @@ static void	MC146818_Update_IRQ ( void )
 
 
 
-/*
+/*-----------------------------------------------------------------------*/
+/**
  * Interrupt called each time the periodic timer expires
  */
-
 void	MC146818_InterruptHandler_PeriodicTimer ( void )
 {
 	int	PendingCyclesOver;

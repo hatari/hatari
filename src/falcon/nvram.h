@@ -43,6 +43,7 @@ extern void	NvRam_Init(void);
 extern void	NvRam_UnInit(void);
 extern void	MC146818_MemorySnapShot_Capture(bool bSave);
 
+extern uint8_t	MC146818_Get_Line_IRQ ( void );
 extern void	MC146818_InterruptHandler_PeriodicTimer ( void );
 
 extern void	NvRam_Clock_Update(void);
