@@ -406,7 +406,8 @@ int INF_ValidateAutoStart(const char **val, const char **err)
 		{
 			if (ConfigureParams.Acsi[i].bUseDevice && ConfigureParams.Acsi[i].sDeviceFile[0])
 				return 0;
-			if (ConfigureParams.Scsi[i].bUseDevice && ConfigureParams.Scsi[i].sDeviceFile[0])
+			if (ConfigureParams.Scsi[i].bUseDevice && ConfigureParams.Scsi[i].sDeviceFile[0]
+			    && ConfigureParams.Scsi[i].nDeviceType == SCSI_DEVTYPE_DISK)
 				return 0;
 		}
 	}
