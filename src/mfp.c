@@ -173,10 +173,11 @@ const char MFP_fileid[] = "Hatari mfp.c";
 #include "utils.h"
 #include "scc.h"
 #include "blitter.h"
+#include "falcon/nvram.h"
 
 
 /*
-  MC68901 MultiFuncion Peripheral (MFP)
+  MC68901 MultiFunction Peripheral (MFP)
 
   References :
    - MC68901 datasheet by Motorola
@@ -426,6 +427,7 @@ static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
 static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void );
 static void	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
+static void	MPF_GPIP_Update_TT ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
 
@@ -2170,25 +2172,102 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 /**
  * Handle read from TT MFP GPIP pins register (0xfffa81)
  *
+ * Get the current value of GPIP and only update the bits where the corresponding
+ * bit in DDR is 0 (=input)
+ * Leave all others bits (=output) untouched and keep their current value
+ *
+ * - Bit 0 : connected to external I/O pin
+ * - Bit 1 : connected to external I/O pin
+ * - Bit 2 : DMA controller, active low (0=IRQ set, 1=IRQ not set) (XDMAIRQ)
+ * - Bit 3 : SCC serial port B, ring indicator (RI) signal (XBRIRQ)
+ * - Bit 4 : Internal floppy drive pin 34, NOT disk change (DC) signal (0=inserted 1=ejected) (DCH)
+ * - Bit 5 : SCSI DMA controller, active low (0=IRQ set, 1=IRQ not set) (XSDMAIRQ)
+ * - Bit 6 : RTC MC146818A, active low (0=IRQ set, 1=IRQ not set) (XRTCIRQ)
+ * - Bit 7 : SCSI NCR5380, active *high* (1=IRQ set, 0=IRQ not set) (SCSIRQ)
+ */
+
+static void	MPF_GPIP_Update_TT ( MFP_STRUCT *pMFP )
+{
+	uint8_t		gpip_new;
+
+	/* Get current value to keep bits where DDR=1 (output) */
+	gpip_new = pMFP->GPIP;
+
+	/* Bit 7 : SCSI NCR5380 */
+	if ( ( pMFP->DDR & 0x80 ) == 0 )
+	{
+		if ( Ncr5380_Get_Line_IRQ_MFP() )
+			gpip_new |= 0x80;		/* set bit 7 */
+		else
+			gpip_new &= ~0x80;		/* clear bit 7 */
+
+	}
+
+	/* Bit 6 : RTC MC146818A */
+	if ( ( pMFP->DDR & 0x40 ) == 0 )
+	{
+		if ( MC146818_Get_Line_IRQ() )
+			gpip_new |= 0x40;		/* set bit 6 */
+		else
+			gpip_new &= ~0x40;		/* clear bit 6 */
+	}
+
+	/* Bit 5 : SCSI DMA controller */
+	if ( ( pMFP->DDR & 0x20 ) == 0 )
+	{
+		/* not emulated yet */
+		gpip_new |= 0x20;			/* set bit 5 */
+	}
+
+	/* Bit 4 : Disk change */
+	if ( ( pMFP->DDR & 0x10 ) == 0 )
+	{
+		if ( FDC_Drive_Get_DC_signal() )
+			gpip_new |= 0x10;		/* set bit 4 */
+		else
+			gpip_new &= ~0x10;		/* clear bit 4 */
+	}
+
+	/* Bit 3 : SCC serial port B, ring indicator */
+	if ( ( pMFP->DDR & 0x08 ) == 0 )
+	{
+		/* not emulated yet */
+		gpip_new |= 0x08;			/* set bit 3 */
+	}
+
+	/* Bit 2 : DMA controller */
+	if ( ( pMFP->DDR & 0x04 ) == 0 )
+	{
+		/* not emulated yet */
+		gpip_new |= 0x04;			/* set bit 2 */
+	}
+
+	/* Bits 0 and 1 : connected to external I/O pins, not emulated */
+
+	/* Store new value */
+	pMFP->GPIP = gpip_new;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle read from TT MFP GPIP pins register (0xfffa81)
+ *
+ * The value of GPIP is first updated with MPF_GPIP_Update_TT()
  *
  * When reading GPIP, output lines (DDR=1) should return the last value that was written,
  * only input lines (DDR=0) should be updated.
  */
+
 void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 {
-	uint8_t	gpip_new;
-
 	M68000_WaitState(4);
 
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
-	/* TODO : handle all bits, bit 7 is scsi, bit 4 is DC signal, other bits default to 1 for now */
-	gpip_new = pMFP->GPIP;
-	gpip_new |= 0x6f;					/* force bits 0-3 and 5-6 to 1 */
-
-	gpip_new &= ~pMFP->DDR;					/* New input bits */
-	pMFP->GPIP = ( pMFP->GPIP & pMFP->DDR ) | gpip_new; 	/* Keep output bits unchanged and update input bits */
+	MPF_GPIP_Update_TT ( pMFP );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->GPIP;
 
