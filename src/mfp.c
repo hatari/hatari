@@ -424,7 +424,7 @@ static uint8_t	MFP_Main_Compute_GPIP7 ( void );
 static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void );
 static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
 static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void );
-static uint8_t	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP );
+static void	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
@@ -2036,7 +2036,7 @@ static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void )
  *   also XORed with the DMA sound play bit. On Falcon it is only the DMA sound play bit
  */
 
-static uint8_t	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP )
+static void	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP )
 {
 	uint8_t		gpip_new;
 	uint8_t		dcd,cts;
@@ -2129,7 +2129,8 @@ static uint8_t	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP )
 		}
 	}
 
-	return gpip_new;
+	/* Store new value */
+	pMFP->GPIP = gpip_new;
 }
 
 
@@ -2151,7 +2152,7 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
-	pMFP->GPIP = MPF_GPIP_Update_Main ( pMFP );
+	MPF_GPIP_Update_Main ( pMFP );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->GPIP;
 
