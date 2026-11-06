@@ -575,10 +575,7 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	if ( pMFP == pMFP_Main )
 		MPF_GPIP_Update_Main ( pMFP );
 	else
-		{ /* TODO for TT MFP */ }
-	/* Update possible interrupts after changing GPIP */
-	MFP_GPIP_Update_Interrupt ( pMFP , pMFP->GPIP , pMFP->GPIP , pMFP->AER , pMFP->AER , pMFP->DDR , pMFP->DDR );
-
+		MPF_GPIP_Update_TT ( pMFP );
 
 	/* Clear MFP IRQ */
 	pMFP->Current_Interrupt = -1;
