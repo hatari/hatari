@@ -20,5 +20,6 @@ void Ncr5380_DmaTransfer_Falcon(void);
 void Ncr5380_IoMemTT_WriteByte(void);
 void Ncr5380_IoMemTT_ReadByte(void);
 void Ncr5380_TT_DMA_Ctrl_WriteWord(void);
+uint8_t Ncr5380_Get_Line_IRQ_MFP ( void );
 
 #endif
