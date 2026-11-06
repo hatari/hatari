@@ -425,9 +425,9 @@ static uint8_t	MFP_Main_Compute_GPIP7 ( void );
 static uint8_t	MFP_Main_Compute_GPIP5_FDC_HDC ( void );
 static uint8_t	MFP_Main_Compute_GPIP4_LINE_ACIA ( void );
 static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void );
-static void	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP );
+static void	MFP_GPIP_Update_Main ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP );
-static void	MPF_GPIP_Update_TT ( MFP_STRUCT *pMFP );
+static void	MFP_GPIP_Update_TT ( MFP_STRUCT *pMFP );
 static void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP );
 
 
@@ -573,9 +573,9 @@ static void	MFP_Reset ( MFP_STRUCT *pMFP )
 	pMFP->GPIP = 0;
 	pMFP->DDR = 0;
 	if ( pMFP == pMFP_Main )
-		MPF_GPIP_Update_Main ( pMFP );
+		MFP_GPIP_Update_Main ( pMFP );
 	else
-		MPF_GPIP_Update_TT ( pMFP );
+		MFP_GPIP_Update_TT ( pMFP );
 
 	/* Clear MFP IRQ */
 	pMFP->Current_Interrupt = -1;
@@ -2035,7 +2035,7 @@ static uint8_t	MFP_Main_Compute_GPIP3_Blitter_DSP ( void )
  *   also XORed with the DMA sound play bit. On Falcon it is only the DMA sound play bit
  */
 
-static void	MPF_GPIP_Update_Main ( MFP_STRUCT *pMFP )
+static void	MFP_GPIP_Update_Main ( MFP_STRUCT *pMFP )
 {
 	uint8_t		gpip_new;
 	uint8_t		dcd,cts;
@@ -2151,7 +2151,7 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
-	MPF_GPIP_Update_Main ( pMFP );
+	MFP_GPIP_Update_Main ( pMFP );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->GPIP;
 
@@ -2183,7 +2183,7 @@ void	MFP_GPIP_ReadByte_Main ( MFP_STRUCT *pMFP )
  * - Bit 7 : SCSI NCR5380, active *high* (1=IRQ set, 0=IRQ not set) (SCSIRQ)
  */
 
-static void	MPF_GPIP_Update_TT ( MFP_STRUCT *pMFP )
+static void	MFP_GPIP_Update_TT ( MFP_STRUCT *pMFP )
 {
 	uint8_t		gpip_new;
 
@@ -2264,7 +2264,7 @@ void	MFP_GPIP_ReadByte_TT ( MFP_STRUCT *pMFP )
 	/* Update timers' state before reading the register */
 	MFP_UpdateTimers ( pMFP , Cycles_GetClockCounterImmediate() );
 
-	MPF_GPIP_Update_TT ( pMFP );
+	MFP_GPIP_Update_TT ( pMFP );
 
 	IoMem[IoAccessCurrentAddress] = pMFP->GPIP;
 
