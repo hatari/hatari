@@ -533,7 +533,8 @@ bool DlgAlert_Notice(const char *text)
 
 void Dialog_HaltDlg(void)
 {
-	Retro_LogFrontend("Detected double bus/address error => CPU halted!");
+	Retro_LogFrontend("Detected double bus/address error => CPU halted!",
+	                  RETRO_LOG_INFO);
 }
 
 int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
