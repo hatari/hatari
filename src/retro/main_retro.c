@@ -12,6 +12,7 @@
 #include "dialog.h"
 #include "disk_control.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "harddisk.h"
 #include "log.h"
@@ -399,23 +400,23 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game)
 	{
 		const char *path = game->path;
 
-		if (File_DoesFileExtensionMatch(path, ".m3u"))
+		if (FileName_DoesExtensionMatch(path, ".m3u"))
 		{
 			DiskControl_NewGameM3U(path);
 		}
-		else if (File_DoesFileExtensionMatch(path, ".ide"))
+		else if (FileName_DoesExtensionMatch(path, ".ide"))
 		{
 			Floppy_SetDiskFileNameNone(0);
 			DiskControl_NewGame(NULL);
 			HardDisk_InsertIde(path);
 		}
-		else if (File_DoesFileExtensionMatch(path, ".vhd"))
+		else if (FileName_DoesExtensionMatch(path, ".vhd"))
 		{
 			Floppy_SetDiskFileNameNone(0);
 			DiskControl_NewGame(NULL);
 			HardDisk_InsertAcsi(path);
 		}
-		else if (File_DoesFileExtensionMatch(path, ".gem"))
+		else if (FileName_DoesExtensionMatch(path, ".gem"))
 		{
 			DiskControl_NewGame(NULL);
 			HardDisk_SetGemdosDrive(path);
@@ -423,7 +424,7 @@ RETRO_API bool retro_load_game(const struct retro_game_info *game)
 		else
 		{
 #ifndef HAVE_CAPSIMAGE
-			if (File_DoesFileExtensionMatch(path, ".ipf"))
+			if (FileName_DoesExtensionMatch(path, ".ipf"))
 			{
 				Log_Printf(LOG_WARN, "IPF image '%s' requested, but this build "
 				           "was compiled without CAPSImage support.\n",

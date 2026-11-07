@@ -47,6 +47,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c";
 #include "configuration.h"
 #include "event.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "ide.h"
 #include "inffile.h"
@@ -591,7 +592,7 @@ static void GemDOS_InitCurPaths(void)
 			{
 				/* Initialize current directory to the root of the drive */
 				strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
-				File_AddSlashToEndFileName(emudrives[i]->fs_currpath);
+				FileName_AddSlashToEnd(emudrives[i]->fs_currpath);
 			}
 		}
 	}
@@ -784,7 +785,7 @@ void GemDOS_InitDrives(void)
 		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 
 		/* remove trailing slash, if any in the directory name */
-		File_CleanFileName(emudrives[i]->hd_emulation_dir);
+		FileName_RemoveSlashes(emudrives[i]->hd_emulation_dir);
 
 		/* Add requisite folder ID */
 		if (bMultiPartitions)
@@ -1506,7 +1507,7 @@ void GemDOS_CreateHardDriveFileName(const int Drive, const char *pszFileName,
 	}
 
 	/* "../" handling breaks if there are extra slashes */
-	File_CleanFileName(pszDestName);
+	FileName_RemoveSlashes(pszDestName);
 	
 	/* go through path directory components, advancing 'filename'
 	 * pointer while parsing them.
@@ -1959,7 +1960,7 @@ static bool GemDOS_ChDir(uint32_t Params)
 	GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
 
 	/* Remove trailing slashes (stat on Windows does not like that) */
-	File_CleanFileName(psTempDirPath);
+	FileName_RemoveSlashes(psTempDirPath);
 
 	if (access(psTempDirPath, F_OK) != 0)
 	{
@@ -1969,8 +1970,8 @@ static bool GemDOS_ChDir(uint32_t Params)
 		return true;
 	}
 
-	File_AddSlashToEndFileName(psTempDirPath);
-	File_MakeAbsoluteName(psTempDirPath);
+	FileName_AddSlashToEnd(psTempDirPath);
+	FileName_MakeAbsolute(psTempDirPath);
 
 	/* Prevent '..' commands moving BELOW the root HDD folder */
 	/* by double checking if path is valid */
@@ -2503,7 +2504,7 @@ static bool GemDOS_Write(uint32_t Params)
 	if (fh_idx >= 0 && FileHandles[fh_idx].bReadOnly)
 	{
 		Log_Printf(LOG_WARN, "GEMDOS Fwrite() to a read-only file '%s'\n",
-			   File_Basename(FileHandles[fh_idx].szActualName));
+			   FileName_Basename(FileHandles[fh_idx].szActualName));
 	}
 
 	return true;
@@ -2829,7 +2830,7 @@ static bool GemDOS_GetDir(uint32_t Params)
 		         sizeof(path));
 
 		// convert it to ST path (DOS)
-		File_CleanFileName(path);
+		FileName_RemoveSlashes(path);
 		if (path[0] == PATHSEP && path[1] == '\0')
 		{
 			/* Root directory is represented by empty string */
@@ -3170,7 +3171,7 @@ static bool GemDOS_SFirst(uint32_t Params)
 	}
 
 	InternalDTAs[useidx].centry = 0;          /* current entry is 0 */
-	dirmask = File_Basename(szActualFileName);/* directory mask part */
+	dirmask = FileName_Basename(szActualFileName);/* directory mask part */
 	InternalDTAs[useidx].found = files;       /* get files */
 
 	/* count & copy the entries that match our mask and discard the rest */

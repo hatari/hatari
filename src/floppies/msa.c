@@ -10,6 +10,7 @@ const char MSA_fileid[] = "Hatari msa.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/msa.h"
 
@@ -100,18 +101,16 @@ typedef struct
 #define MSA_WORKSPACE_SIZE  (1024*1024)  /* Size of workspace to use when saving MSA files */
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .MSA extension? If so, return true
  */
 bool MSA_FileNameIsMSA(const char *pszFileName, bool bAllowGZ)
 {
-	return(File_DoesFileExtensionMatch(pszFileName,".msa")
-	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".msa.gz")));
+	return FileName_DoesExtensionMatch(pszFileName, ".msa")
+	       || (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".msa.gz"));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Uncompress .MSA data into a new buffer.
  */

@@ -18,6 +18,7 @@ const char Configuration_fileid[] = "Hatari configuration.c";
 #include "audio.h"
 #include "sound.h"
 #include "file.h"
+#include "filename.h"
 #include "joy_ui.h"
 #include "keymap.h"
 #include "lilo.h"
@@ -647,7 +648,7 @@ void Configuration_SetDefault(void)
 		ConfigureParams.DiskImage.szDiskFileName[i][0] = '\0';
 	}
 	strcpy(ConfigureParams.DiskImage.szDiskImageDirectory, psWorkingDir);
-	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
+	FileName_AddSlashToEnd(ConfigureParams.DiskImage.szDiskImageDirectory);
 
 	/* Set defaults for hard disks */
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
@@ -660,7 +661,7 @@ void Configuration_SetDefault(void)
 	for (i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
-		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
+		FileName_RemoveSlashes(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
 
 	/* ACSI */
@@ -725,18 +726,18 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Memory.STRamSize_KB = 1024;	/* 1 MiB */
 	ConfigureParams.Memory.TTRamSize_KB = 0;	/* disabled */
 	ConfigureParams.Memory.bAutoSave = false;
-	File_MakePathBuf(ConfigureParams.Memory.szMemoryCaptureFileName,
-	                 sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
-	                 psHomeDir, "hatari", "sav");
-	File_MakePathBuf(ConfigureParams.Memory.szAutoSaveFileName,
-	                 sizeof(ConfigureParams.Memory.szAutoSaveFileName),
-	                 psHomeDir, "auto", "sav");
+	FileName_MakePathBuf(ConfigureParams.Memory.szMemoryCaptureFileName,
+	                     sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+	                     psHomeDir, "hatari", "sav");
+	FileName_MakePathBuf(ConfigureParams.Memory.szAutoSaveFileName,
+	                     sizeof(ConfigureParams.Memory.szAutoSaveFileName),
+	                     psHomeDir, "auto", "sav");
 
 	/* Set defaults for Printer */
 	ConfigureParams.Printer.bEnablePrinting = false;
-	File_MakePathBuf(ConfigureParams.Printer.szPrintToFileName,
-	                 sizeof(ConfigureParams.Printer.szPrintToFileName),
-	                 psHomeDir, "hatari", "prn");
+	FileName_MakePathBuf(ConfigureParams.Printer.szPrintToFileName,
+	                     sizeof(ConfigureParams.Printer.szPrintToFileName),
+	                     psHomeDir, "hatari", "prn");
 
 	/* Set defaults for MFP RS232 (ST/MegaST/STE/MegaSTE/TT) */
 	ConfigureParams.RS232.bEnableRS232 = false;
@@ -800,28 +801,28 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Sound.bEnableSound = true;
 	ConfigureParams.Sound.bEnableSoundSync = false;
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
-	File_MakePathBuf(ConfigureParams.Sound.szYMCaptureFileName,
-	                 sizeof(ConfigureParams.Sound.szYMCaptureFileName),
-	                 psWorkingDir, "hatari", "wav");
+	FileName_MakePathBuf(ConfigureParams.Sound.szYMCaptureFileName,
+	                     sizeof(ConfigureParams.Sound.szYMCaptureFileName),
+	                     psWorkingDir, "hatari", "wav");
 	ConfigureParams.Sound.SdlAudioBufferSize = 0;
 	ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 
 	/* Set defaults for Rom */
-	File_MakePathBuf(ConfigureParams.Rom.szTosImageFileName,
-	                 sizeof(ConfigureParams.Rom.szTosImageFileName),
-	                 Paths_GetDataDir(), "tos", "img");
+	FileName_MakePathBuf(ConfigureParams.Rom.szTosImageFileName,
+	                     sizeof(ConfigureParams.Rom.szTosImageFileName),
+	                     Paths_GetDataDir(), "tos", "img");
 	ConfigureParams.Rom.bPatchTos = true;
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for Lilo */
 	strcpy(ConfigureParams.Lilo.szCommandLine,
 	       "root=/dev/ram video=atafb:vga16 load_ramdisk=1");
-	File_MakePathBuf(ConfigureParams.Lilo.szKernelFileName,
-	                 sizeof(ConfigureParams.Lilo.szKernelFileName),
-	                 Paths_GetDataDir(), "vmlinuz", NULL);
-	File_MakePathBuf(ConfigureParams.Lilo.szRamdiskFileName,
-	                 sizeof(ConfigureParams.Lilo.szRamdiskFileName),
-	                 Paths_GetDataDir(), "initrd", NULL);
+	FileName_MakePathBuf(ConfigureParams.Lilo.szKernelFileName,
+	                     sizeof(ConfigureParams.Lilo.szKernelFileName),
+	                     Paths_GetDataDir(), "vmlinuz", NULL);
+	FileName_MakePathBuf(ConfigureParams.Lilo.szRamdiskFileName,
+	                     sizeof(ConfigureParams.Lilo.szRamdiskFileName),
+	                     Paths_GetDataDir(), "initrd", NULL);
 	ConfigureParams.Lilo.szKernelSymbols[0] = '\0';
 	ConfigureParams.Lilo.bRamdiskToFastRam = true;
 	ConfigureParams.Lilo.bKernelToFastRam = true;
@@ -854,14 +855,14 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_BMP;
 #endif
 	ConfigureParams.Video.AviRecordFps = 0;			/* automatic FPS */
-	File_MakePathBuf(ConfigureParams.Video.AviRecordFile,
-	                 sizeof(ConfigureParams.Video.AviRecordFile),
-	                 Configuration_GetScreenShotDir(),
-			 "hatari", "avi");
+	FileName_MakePathBuf(ConfigureParams.Video.AviRecordFile,
+	                     sizeof(ConfigureParams.Video.AviRecordFile),
+	                     Configuration_GetScreenShotDir(),
+	                      "hatari", "avi");
 
 	/* Initialize the configuration file name */
-	if (File_MakePathBuf(sConfigFileName, sizeof(sConfigFileName),
-	                     psHomeDir, "hatari", "cfg"))
+	if (FileName_MakePathBuf(sConfigFileName, sizeof(sConfigFileName),
+	                         psHomeDir, "hatari", "cfg"))
 	{
 		strcpy(sConfigFileName, "hatari.cfg");
 	}
@@ -967,54 +968,54 @@ void Configuration_Apply(bool bReset)
 	}
 
 	/* Clean file and directory names */
-	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
+	FileName_MakeAbsolute(ConfigureParams.Rom.szTosImageFileName);
 	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
-		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
+		FileName_MakeAbsolute(ConfigureParams.Rom.szCartridgeImageFileName);
 	if (strlen(ConfigureParams.Lilo.szKernelFileName) > 0)
-		File_MakeAbsoluteName(ConfigureParams.Lilo.szKernelFileName);
+		FileName_MakeAbsolute(ConfigureParams.Lilo.szKernelFileName);
 	if (strlen(ConfigureParams.Lilo.szKernelSymbols) > 0)
-		File_MakeAbsoluteName(ConfigureParams.Lilo.szKernelSymbols);
+		FileName_MakeAbsolute(ConfigureParams.Lilo.szKernelSymbols);
 	if (strlen(ConfigureParams.Lilo.szRamdiskFileName) > 0)
-		File_MakeAbsoluteName(ConfigureParams.Lilo.szRamdiskFileName);
-	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
-	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
-	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
+		FileName_MakeAbsolute(ConfigureParams.Lilo.szRamdiskFileName);
+	FileName_RemoveSlashes(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	FileName_MakeAbsolute(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	FileName_MakeAbsolute(ConfigureParams.Memory.szMemoryCaptureFileName);
 	if (strlen(ConfigureParams.Screen.szScreenShotDir) > 0)
 	{
-		File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
-		File_MakeAbsoluteName(ConfigureParams.Screen.szScreenShotDir);
+		FileName_RemoveSlashes(ConfigureParams.Screen.szScreenShotDir);
+		FileName_MakeAbsolute(ConfigureParams.Screen.szScreenShotDir);
 	}
-	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
+	FileName_MakeAbsolute(ConfigureParams.Sound.szYMCaptureFileName);
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
-		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
-	File_MakeAbsoluteName(ConfigureParams.Video.AviRecordFile);
+		FileName_MakeAbsolute(ConfigureParams.Keyboard.szMappingFileName);
+	FileName_MakeAbsolute(ConfigureParams.Video.AviRecordFile);
 	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
-		File_MakeAbsoluteName(ConfigureParams.Acsi[i].sDeviceFile);
+		FileName_MakeAbsolute(ConfigureParams.Acsi[i].sDeviceFile);
 	}
 	for (i = 0; i < MAX_SCSI_DEVS; i++)
 	{
-		File_MakeAbsoluteName(ConfigureParams.Scsi[i].sDeviceFile);
+		FileName_MakeAbsolute(ConfigureParams.Scsi[i].sDeviceFile);
 	}
 	for (i = 0; i < MAX_IDE_DEVS; i++)
 	{
-		File_MakeAbsoluteName(ConfigureParams.Ide[i].sDeviceFile);
+		FileName_MakeAbsolute(ConfigureParams.Ide[i].sDeviceFile);
 	}
 
 	/* make path names absolute, but handle special file names */
-	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]);
-	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.Log.sLogFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.Log.sTraceFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.szInFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.szOutFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_SERIAL]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_SERIAL]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_A_LAN]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_A_LAN]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccInFileName[CNF_SCC_CHANNELS_B]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.Midi.sMidiInFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.Midi.sMidiOutFileName);
+	FileName_MakeAbsoluteSpecial(ConfigureParams.Printer.szPrintToFileName);
 
 	/* Enable/disable floppy drives */
 	FDC_Drive_Set_Enable ( 0 , ConfigureParams.DiskImage.EnableDriveA );

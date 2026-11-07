@@ -12,6 +12,7 @@ const char DlgNewDisk_fileid[] = "Hatari dlgNewDisk.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "filename.h"
 #include "log.h"
 
 #define DLGNEWDISK_DECTRACK   3
@@ -115,7 +116,7 @@ char *DlgNewDisk_Main(void)
  	SDLGui_CenterDlg(newdiskdlg);
 
 	/* Initialize disk image name: */
-	szNewDiskName = File_MakePath(ConfigureParams.DiskImage.szDiskImageDirectory, "new_disk.st", NULL);
+	szNewDiskName = FileName_MakePath(ConfigureParams.DiskImage.szDiskImageDirectory, "new_disk.st", NULL);
 	if (!szNewDiskName)
 		return NULL;
 

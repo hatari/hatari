@@ -21,6 +21,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "audio.h"
 #include "joy_ui.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/ipf.h"
 #include "floppies/stx.h"
@@ -247,7 +248,6 @@ static void Main_UnInitSubsystems(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Load initial configuration files. The global config file is skipped in
  * test mode (i.e. if the HATARI_TEST environment variable has been set),
@@ -263,8 +263,8 @@ static void Main_LoadInitialConfig(void)
 		psGlobalConfig = malloc(FILENAME_MAX);
 	if (psGlobalConfig)
 	{
-		File_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
-		                 "hatari", "cfg");
+		FileName_MakePathBuf(psGlobalConfig, FILENAME_MAX, CONFDIR,
+		                     "hatari", "cfg");
 		/* Try to load the global configuration file */
 		Configuration_Load(psGlobalConfig);
 

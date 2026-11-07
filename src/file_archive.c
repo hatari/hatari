@@ -22,6 +22,7 @@ const char File_Archive_fileid[] = "Hatari file_archive.c";
 #endif
 
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/dim.h"
 #include "floppies/ipf.h"
@@ -291,7 +292,7 @@ static char *Archive_FirstFile(const char *filename, const char * const ppsExts[
 		{
 			for (j = 0; ppsExts[j] != NULL; j++)
 			{
-				if (File_DoesFileExtensionMatch(files->names[i], ppsExts[j])
+				if (FileName_DoesExtensionMatch(files->names[i], ppsExts[j])
 				    && strlen(files->names[i]) < FILE_ARCHIVE_PATH_MAX - 1)
 				{
 					strcpy(name, files->names[i]);
@@ -334,7 +335,7 @@ bool Archive_FileNameIsSupported ( const char *FileName )
 
 	for ( i = 0; ArchiveExts[i] != NULL; i++ )
 	{
-		if ( File_DoesFileExtensionMatch ( FileName , ArchiveExts[i] ) )
+		if ( FileName_DoesExtensionMatch ( FileName , ArchiveExts[i] ) )
 		{
 			return true;
 		}
@@ -399,7 +400,7 @@ archive_dir	*Archive_GetFiles ( const char *FileName )
 		/* Some archive format (eg RAR) don't add a trailing '/' to the directoty name */
 		/* We add it if needed as this is required for our functions accessing files */
 		if ( archive_entry_filetype(entry) == AE_IFDIR )
-			File_AddSlashToEndFileName ( filelist[ nfiles ] );
+			FileName_AddSlashToEnd ( filelist[ nfiles ] );
 
 DEBUGPRINT (( stderr, "arc new : nfiles=%d path=%s size=%ld type=0x%x\n" , nfiles , filelist[ nfiles ] ,archive_entry_size(entry),archive_entry_filetype(entry)  ));
 		nfiles++;

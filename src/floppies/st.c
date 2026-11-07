@@ -25,6 +25,7 @@ const char ST_fileid[] = "Hatari st.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/st.h"
 
@@ -39,18 +40,16 @@ int __feature_imagefs_is_file = 1;
 #endif
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .ST extension? If so, return true.
  */
 bool ST_FileNameIsST(const char *pszFileName, bool bAllowGZ)
 {
-	return(File_DoesFileExtensionMatch(pszFileName,".st")
-	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".st.gz")));
+	return FileName_DoesExtensionMatch(pszFileName, ".st")
+	       || (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".st.gz"));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Load .ST file into memory, set number of bytes loaded and return a pointer
  * to the buffer.

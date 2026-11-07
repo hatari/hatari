@@ -18,6 +18,7 @@ const char floppy_stx_fileid[] = "Hatari floppy_stx.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/stx.h"
 #include "fdc.h"
@@ -289,18 +290,16 @@ void STX_MemorySnapShot_Capture(bool bSave)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .STX extension? If so, return true.
  */
 bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
 {
-	return(File_DoesFileExtensionMatch(pszFileName,".stx")
-	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".stx.gz")));
+	return FileName_DoesExtensionMatch(pszFileName, ".stx")
+	       || (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".stx.gz"));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Create a filename to save modifications made to an STX file
  * We replace the ".stx" or ".stx.gz" extension with ".wd1772"
@@ -308,10 +307,10 @@ bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
  */
 bool	STX_FileNameToSave ( const char *FilenameSTX , char *FilenameSave )
 {
-	if ( File_ChangeFileExtension ( FilenameSTX , ".stx.gz" , FilenameSave , WD1772_SAVE_FILE_EXT ) )
+	if ( FileName_ChangeExtension ( FilenameSTX , ".stx.gz" , FilenameSave , WD1772_SAVE_FILE_EXT ) )
 		return true;
 	
-	else if ( File_ChangeFileExtension ( FilenameSTX , ".stx" , FilenameSave , WD1772_SAVE_FILE_EXT ) )
+	else if ( FileName_ChangeExtension ( FilenameSTX , ".stx" , FilenameSave , WD1772_SAVE_FILE_EXT ) )
 		return true;
 
 	return false;

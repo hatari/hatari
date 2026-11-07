@@ -13,13 +13,14 @@ const char FileName_fileid[] = "Hatari filename.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "str.h"
 
 
 /**
  * Remove any '/'s from end of filenames, but keeps / intact
  */
-void File_CleanFileName(char *pszFileName)
+void FileName_RemoveSlashes(char *pszFileName)
 {
 	int len;
 
@@ -34,7 +35,7 @@ void File_CleanFileName(char *pszFileName)
 /**
  * Add '/' to end of filename
  */
-void File_AddSlashToEndFileName(char *pszFileName)
+void FileName_AddSlashToEnd(char *pszFileName)
 {
 	int len;
 
@@ -55,7 +56,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
 /**
  * Does filename's extension match? If so, return TRUE
  */
-bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
+bool FileName_DoesExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
 	if (strlen(pszFileName) < strlen(pszExtension))
 		return false;
@@ -73,7 +74,7 @@ bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
  * copy the result in the new filename.
  * Return TRUE if OK
  */
-bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new)
+bool FileName_ChangeExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new)
 {
 	if ( strlen ( Filename_old ) >= FILENAME_MAX - strlen ( Extension_new ) )
 		return false;					/* file name is already too long */
@@ -97,7 +98,7 @@ bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_ol
  *
  * Return TRUE if filename is '/', else give FALSE
  */
-static bool File_IsRootFileName(const char *pszFileName)
+static bool FileName_IsRoot(const char *pszFileName)
 {
 	if (pszFileName[0] == '\0')     /* If NULL string return! */
 		return false;
@@ -126,7 +127,7 @@ static bool File_IsRootFileName(const char *pszFileName)
 /**
  * Return string, to remove 'C:' part of filename
  */
-const char *File_RemoveFileNameDrive(const char *pszFileName)
+const char *FileName_RemoveDrive(const char *pszFileName)
 {
 	if ( (pszFileName[0] != '\0') && (pszFileName[1] == ':') )
 		return &pszFileName[2];
@@ -140,7 +141,7 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
  *
  * Return TRUE if filename ends with '/'
  */
-bool File_DoesFileNameEndWithSlash(char *pszFileName)
+bool FileName_DoesEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
 		return false;
@@ -158,7 +159,7 @@ bool File_DoesFileNameEndWithSlash(char *pszFileName)
  * - if so, return allocated string which caller should free,
  *   otherwise return NULL
  */
-char * File_FindPossibleExtFileName(const char *pszFileName, const char * const ppszExts[])
+char * FileName_FindPossibleExt(const char *pszFileName, const char * const ppszExts[])
 {
 	char *szSrcDir, *szSrcName, *szSrcExt;
 	int i;
@@ -167,14 +168,14 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	szSrcDir = malloc(3 * FILENAME_MAX);
 	if (!szSrcDir)
 	{
-		perror("File_FindPossibleExtFileName");
+		perror("FileName_FindPossibleExt");
 		return NULL;
 	}
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;
 
 	/* Split filename into parts */
-	File_SplitPath(pszFileName, szSrcDir, szSrcName, szSrcExt);
+	FileName_SplitPath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
 	/* Scan possible extensions */
 	for (i = 0; ppszExts[i]; i++)
@@ -182,7 +183,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 		char *szTempFileName;
 
 		/* Re-build with new file extension */
-		szTempFileName = File_MakePath(szSrcDir, szSrcName, ppszExts[i]);
+		szTempFileName = FileName_MakePath(szSrcDir, szSrcName, ppszExts[i]);
 		if (szTempFileName)
 		{
 			/* Does this file exist? */
@@ -203,7 +204,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 /**
  * Return basename of given path (pointer to file name part of same string)
  */
-const char *File_Basename(const char *path)
+const char *FileName_Basename(const char *path)
 {
 	const char *basename;
 	if ((basename = strrchr(path, PATHSEP)))
@@ -217,7 +218,7 @@ const char *File_Basename(const char *path)
  * If pExt is NULL, don't split the extension from the file name!
  * It's safe for pSrcFileName and pDir to be the same string.
  */
-void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
+void FileName_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
 	char *ptr1, *ptr2;
 
@@ -256,7 +257,7 @@ void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
  * Return the constructed filename.
  * pExt can also be NULL.
  */
-char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
+char * FileName_MakePath(const char *pDir, const char *pName, const char *pExt)
 {
 	char *filepath;
 	int len;
@@ -266,7 +267,7 @@ char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 	filepath = malloc(len);
 	if (!filepath)
 	{
-		perror("File_MakePath");
+		perror("FileName_MakePath");
 		return NULL;
 	}
 	if (!pDir[0])
@@ -296,18 +297,18 @@ char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 }
 
 /**
- * Like File_MakePath(), but puts the string into a pre-allocated buffer
+ * Like FileName_MakePath(), but puts the string into a pre-allocated buffer
  * instead of returning a freshly allocated memory buffer.
  */
-int File_MakePathBuf(char *buf, size_t buflen, const char *pDir,
-                     const char *pName, const char *pExt)
+int FileName_MakePathBuf(char *buf, size_t buflen, const char *pDir,
+                         const char *pName, const char *pExt)
 {
 	char *tmp;
 
 	if (!buflen)
 		return -EINVAL;
 
-	tmp = File_MakePath(pDir, pName, pExt);
+	tmp = FileName_MakePath(pDir, pName, pExt);
 	if (!tmp)
 	{
 		buf[0] = '\0';
@@ -333,7 +334,7 @@ int File_MakePathBuf(char *buf, size_t buflen, const char *pDir,
  * including the final '\0' byte! So the destination buffer has to be
  * at least one byte bigger than maxlen.
  */
-void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen)
+void FileName_Shrink(char *pDestFileName, const char *pSrcFileName, int maxlen)
 {
 	int srclen = strlen(pSrcFileName);
 	if (srclen < maxlen)
@@ -353,18 +354,18 @@ void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen)
 
 
 /**
- * Wrapper for File_MakeAbsoluteName() which special-cases stdin/out/err
+ * Wrapper for FileName_MakeAbsolute() which special-cases stdin/out/err
  * named files and empty file name.  The given buffer should be opened
  * with File_Open() and closed with File_Close() if this function is used!
  * (On Linux one can use /dev/stdout etc, this is intended for other OSes)
  */
-void File_MakeAbsoluteSpecialName(char *path)
+void FileName_MakeAbsoluteSpecial(char *path)
 {
 	if (path[0] &&
 	    strcmp(path, "stdin")  != 0 &&
 	    strcmp(path, "stdout") != 0 &&
 	    strcmp(path, "stderr") != 0)
-		File_MakeAbsoluteName(path);
+		FileName_MakeAbsolute(path);
 }
 
 
@@ -373,7 +374,7 @@ void File_MakeAbsoluteSpecialName(char *path)
  * I.e. filter out all occurancies of "./" and "../".
  * pFileName needs to point to a buffer of at least FILENAME_MAX bytes.
  */
-void File_MakeAbsoluteName(char *pFileName)
+void FileName_MakeAbsolute(char *pFileName)
 {
 	char *pTempName;
 	int inpos, outpos;
@@ -387,12 +388,12 @@ void File_MakeAbsoluteName(char *pFileName)
 	pTempName = malloc(FILENAME_MAX);
 	if (!pTempName)
 	{
-		perror("File_MakeAbsoluteName - malloc");
+		perror("FileName_MakeAbsolute - malloc");
 		return;
 	}
 
 	/* Is it already an absolute name? */
-	if (File_IsRootFileName(pFileName))
+	if (FileName_IsRoot(pFileName))
 	{
 		outpos = 0;
 	}
@@ -400,11 +401,11 @@ void File_MakeAbsoluteName(char *pFileName)
 	{
 		if (!File_GetCWD(pTempName, FILENAME_MAX))
 		{
-			perror("File_MakeAbsoluteName - getcwd");
+			perror("FileName_MakeAbsolute - getcwd");
 			free(pTempName);
 			return;
 		}
-		File_AddSlashToEndFileName(pTempName);
+		FileName_AddSlashToEnd(pTempName);
 		outpos = strlen(pTempName);
 	}
 
@@ -479,7 +480,7 @@ void File_MakeAbsoluteName(char *pFileName)
  * Leaves '/' at the end if path still has directories. Given path
  * may not be empty.
  */
-void File_PathShorten(char *path, int dirs)
+void FileName_ShortenPath(char *path, int dirs)
 {
 	int n = 0;
 	/* ignore last char, it may or may not be '/' */
@@ -515,7 +516,7 @@ void File_PathShorten(char *path, int dirs)
   also preceding dir (go one dir up).  Leave '/' at the end of
   the path.
 */
-void File_HandleDotDirs(char *path)
+void FileName_HandleDotDirs(char *path)
 {
 	int len = strlen(path);
 	if (len >= 2 &&

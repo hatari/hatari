@@ -14,6 +14,7 @@ const char Paths_fileid[] = "Hatari paths.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "paths.h"
 #include "str.h"
 
@@ -327,7 +328,7 @@ void Paths_Init(const char *argv0)
 	}
 
 	/* And finally make a proper absolute path out of datadir: */
-	File_MakeAbsoluteName(sDataDir);
+	FileName_MakeAbsolute(sDataDir);
 
 	free(psExecDir);
 

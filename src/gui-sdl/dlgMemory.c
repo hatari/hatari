@@ -10,7 +10,7 @@ const char DlgMemory_fileid[] = "Hatari dlgMemory.c";
 #include "dialog.h"
 #include "sdlgui.h"
 #include "memorySnapShot.h"
-#include "file.h"
+#include "filename.h"
 #include "options.h"
 
 
@@ -132,7 +132,7 @@ bool Dialog_MemDlg(void)
 	else if (memsize > DLG_TTRAM_MAX)
 		memsize = DLG_TTRAM_MAX;
 	sprintf(sTTRamSize, "%4i", memsize);
-	File_ShrinkName(dlgSnapShotName, ConfigureParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
+	FileName_Shrink(dlgSnapShotName, ConfigureParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
 
 
 	if (ConfigureParams.Memory.bAutoSave)

@@ -14,6 +14,7 @@ const char DIM_fileid[] = "Hatari dim.c";
 #endif
 
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/dim.h"
 
@@ -46,18 +47,16 @@ const char DIM_fileid[] = "Hatari dim.c";
 */
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .DIM extension? If so, return TRUE
  */
 bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
 {
-	return(File_DoesFileExtensionMatch(pszFileName,".dim")
-	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".dim.gz")));
+	return FileName_DoesExtensionMatch(pszFileName, ".dim")
+	       || (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".dim.gz"));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.

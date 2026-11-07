@@ -15,6 +15,7 @@ const char floppy_kfs_fileid[] = "Hatari floppy_kfs.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "fdc.h"
 #include "floppies/kfs.h"
@@ -141,22 +142,16 @@ void	KFS_MemorySnapShot_Capture(bool bSave)
 }
 
 
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .RAW extension ? (Kryoflux stream)
  */
 bool KFS_FileNameIsKFS ( const char *pszFileName, bool bAllowGZ )
 {
-	return ( File_DoesFileExtensionMatch(pszFileName,".raw" )
-		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".raw.gz") )
-		);
+	return FileName_DoesExtensionMatch(pszFileName, ".raw")
+		|| (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".raw.gz"));
 }
 
 
-
-/*-----------------------------------------------------------------------*/
 /**
  * Check if a .raw track file is a valid KFS track
  * There's no specific header in the file to check this, so we use some simple

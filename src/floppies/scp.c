@@ -17,6 +17,7 @@ const char floppy_scp_fileid[] = "Hatari floppy_scp.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "fdc.h"
 #include "floppies/scp.h"
@@ -114,19 +115,16 @@ void SCP_MemorySnapShot_Capture(bool bSave)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Does filename end with a .SCP extension ? If so, return true.
  */
 bool SCP_FileNameIsSCP(const char *pszFileName, bool bAllowGZ)
 {
-	return ( File_DoesFileExtensionMatch(pszFileName,".scp" )
-		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".scp.gz") )
-		);
+	return FileName_DoesExtensionMatch(pszFileName, ".scp")
+		|| (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".scp.gz"));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Load .SCP file into memory, set number of bytes loaded and return a pointer
  * to the buffer.

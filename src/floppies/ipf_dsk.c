@@ -14,6 +14,7 @@
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "fdc.h"
 #include "floppies/ipf.h"
@@ -1072,8 +1073,8 @@ static int ipf_next_flux (struct mfm_stream *s)
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
-	return File_DoesFileExtensionMatch(pszFileName,".ipf") ||
-	       (bAllowGZ && File_DoesFileExtensionMatch(pszFileName, ".ipf.gz"));
+	return FileName_DoesExtensionMatch(pszFileName,".ipf") ||
+	       (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".ipf.gz"));
 }
 
 bool IPF_Init(void)

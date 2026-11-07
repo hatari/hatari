@@ -27,6 +27,7 @@ const char Screen_fileid[] = "Hatari screen.c";
 #include "conv_st.h"
 #include "avi_record.h"
 #include "file.h"
+#include "filename.h"
 #include "log.h"
 #include "paths.h"
 #include "options.h"
@@ -709,8 +710,8 @@ void Screen_Init(void)
 	ConvST_ChangeResolution(false);
 
 	/* Load and set icon */
-	File_MakePathBuf(sIconFileName, sizeof(sIconFileName), Paths_GetDataDir(),
-	                 "hatari-icon", "bmp");
+	FileName_MakePathBuf(sIconFileName, sizeof(sIconFileName), Paths_GetDataDir(),
+	                    "hatari-icon", "bmp");
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{

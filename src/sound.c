@@ -137,6 +137,7 @@ const char Sound_fileid[] = "Hatari sound.c";
 #include "dmaSnd.h"
 #include "crossbar.h"
 #include "file.h"
+#include "filename.h"
 #include "cycInt.h"
 #include "log.h"
 #include "memorySnapShot.h"
@@ -1862,9 +1863,9 @@ bool Sound_BeginRecording(char *pszCaptureFileName)
 	}
 
 	/* Did specify .YM or .WAV? If neither report error */
-	if (File_DoesFileExtensionMatch(pszCaptureFileName,".ym"))
+	if (FileName_DoesExtensionMatch(pszCaptureFileName,".ym"))
 		bRet = YMFormat_BeginRecording(pszCaptureFileName);
-	else if (File_DoesFileExtensionMatch(pszCaptureFileName,".wav"))
+	else if (FileName_DoesExtensionMatch(pszCaptureFileName,".wav"))
 		bRet = WAVFormat_OpenFile(pszCaptureFileName);
 	else
 	{

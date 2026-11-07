@@ -15,6 +15,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c";
 #include "conv_gen.h"
 #include "conv_st.h"
 #include "file.h"
+#include "filename.h"
 #include "log.h"
 #include "screen.h"
 #include "screenSnapShot.h"
@@ -596,21 +597,21 @@ void ScreenSnapShot_SaveToFile(const char *szFileName)
 		return;
 	}
 #if HAVE_LIBPNG
-	if (File_DoesFileExtensionMatch(szFileName, ".png"))
+	if (FileName_DoesExtensionMatch(szFileName, ".png"))
 	{
 		ret = ScreenSnapShot_SavePNG(szFileName);
 	}
 	else
 #endif
-	if (File_DoesFileExtensionMatch(szFileName, ".bmp"))
+	if (FileName_DoesExtensionMatch(szFileName, ".bmp"))
 	{
 		ret = Screen_SaveBMP(szFileName);
 	}
-	else if (File_DoesFileExtensionMatch(szFileName, ".neo"))
+	else if (FileName_DoesExtensionMatch(szFileName, ".neo"))
 	{
 		ret = ScreenSnapShot_SaveNEO(szFileName);
 	}
-	else if (File_DoesFileExtensionMatch(szFileName, ".ximg") || File_DoesFileExtensionMatch(szFileName, ".img"))
+	else if (FileName_DoesExtensionMatch(szFileName, ".ximg") || FileName_DoesExtensionMatch(szFileName, ".img"))
 	{
 		ret = ScreenSnapShot_SaveXIMG(szFileName);
 	}

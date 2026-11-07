@@ -13,6 +13,7 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c";
 #include "screen_sdl.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 
 
@@ -112,7 +113,7 @@ static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	{
 		realname = Floppy_SetDiskFileName(drive, selname, zip_path);
 		if (realname)
-			File_ShrinkName(dlgname, realname, floppydlg[diskid].w);
+			FileName_Shrink(dlgname, realname, floppydlg[diskid].w);
 	}
 	else
 	{
@@ -152,7 +153,7 @@ static void DlgFloppy_QueryInsert(char *namea, int ida, char *nameb, int idb, co
 
 	realname = Floppy_SetDiskFileName(diskid, path, NULL);
 	if (realname)
-		File_ShrinkName(dlgname, realname, floppydlg[dlgid].w);
+		FileName_Shrink(dlgname, realname, floppydlg[dlgid].w);
 }
 
 
@@ -171,7 +172,7 @@ void DlgFloppy_Main(void)
 
 	/* Disk name A: */
 	if (EmulationDrives[0].bDiskInserted)
-		File_ShrinkName(dlgname[0], ConfigureParams.DiskImage.szDiskFileName[0],
+		FileName_Shrink(dlgname[0], ConfigureParams.DiskImage.szDiskFileName[0],
 		                floppydlg[FLOPPYDLG_DISKA].w);
 	else
 		dlgname[0][0] = '\0';
@@ -179,14 +180,14 @@ void DlgFloppy_Main(void)
 
 	/* Disk name B: */
 	if (EmulationDrives[1].bDiskInserted)
-		File_ShrinkName(dlgname[1], ConfigureParams.DiskImage.szDiskFileName[1],
+		FileName_Shrink(dlgname[1], ConfigureParams.DiskImage.szDiskFileName[1],
 		                floppydlg[FLOPPYDLG_DISKB].w);
 	else
 		dlgname[1][0] = '\0';
 	floppydlg[FLOPPYDLG_DISKB].txt = dlgname[1];
 
 	/* Default image directory: */
-	File_ShrinkName(dlgdiskdir, ConfigureParams.DiskImage.szDiskImageDirectory,
+	FileName_Shrink(dlgdiskdir, ConfigureParams.DiskImage.szDiskImageDirectory,
 	                floppydlg[FLOPPYDLG_IMGDIR].w);
 	floppydlg[FLOPPYDLG_IMGDIR].txt = dlgdiskdir;
 

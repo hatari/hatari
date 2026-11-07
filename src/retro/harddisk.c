@@ -17,6 +17,7 @@
 #include "harddisk.h"
 #include "configuration.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
@@ -39,7 +40,7 @@ void HardDisk_InsertIde(const char *path)
 	strncpy(ConfigureParams.Ide[0].sDeviceFile, path,
 	        sizeof(ConfigureParams.Ide[0].sDeviceFile) - 1);
 	ConfigureParams.Ide[0].sDeviceFile[sizeof(ConfigureParams.Ide[0].sDeviceFile) - 1] = '\0';
-	File_MakeAbsoluteName(ConfigureParams.Ide[0].sDeviceFile);
+	FileName_MakeAbsolute(ConfigureParams.Ide[0].sDeviceFile);
 
 	Ide_Init();
 
@@ -62,7 +63,7 @@ void HardDisk_InsertAcsi(const char *path)
 	strncpy(ConfigureParams.Acsi[0].sDeviceFile, path,
 	        sizeof(ConfigureParams.Acsi[0].sDeviceFile) - 1);
 	ConfigureParams.Acsi[0].sDeviceFile[sizeof(ConfigureParams.Acsi[0].sDeviceFile) - 1] = '\0';
-	File_MakeAbsoluteName(ConfigureParams.Acsi[0].sDeviceFile);
+	FileName_MakeAbsolute(ConfigureParams.Acsi[0].sDeviceFile);
 
 	HDC_Init();
 	Ncr5380_Init();
@@ -92,8 +93,8 @@ void HardDisk_SetGemdosDrive(const char *path)
 	strncpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], dir,
 	        sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]) - 1);
 	ConfigureParams.HardDisk.szHardDiskDirectories[0][sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]) - 1] = '\0';
-	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
-	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	FileName_RemoveSlashes(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	FileName_MakeAbsolute(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = true;
 	ConfigureParams.HardDisk.bBootFromHardDisk = true;
 

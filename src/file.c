@@ -27,6 +27,7 @@ const char File_fileid[] = "Hatari file.c";
 
 #include "dialog.h"
 #include "file.h"
+#include "filename.h"
 #include "str.h"
 #include "file_archive.h"
 
@@ -138,14 +139,14 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 	if (!File_Exists(pszFileName) && ppszExts)
 	{
 		/* Try other extensions, if succeeds, returns correct one */
-		filepath = File_FindPossibleExtFileName(pszFileName, ppszExts);
+		filepath = FileName_FindPossibleExt(pszFileName, ppszExts);
 	}
 	if (!filepath)
 		filepath = strdup(pszFileName);
 
 #if HAVE_LIBZ
 	/* Is it a gzipped file? */
-	if (File_DoesFileExtensionMatch(filepath, ".gz"))
+	if (FileName_DoesExtensionMatch(filepath, ".gz"))
 	{
 		pFile = File_ZlibRead(filepath, &FileSize);
 	}
@@ -191,7 +192,7 @@ bool File_Save(const char *pszFileName, const uint8_t *pAddress, size_t Size, bo
 
 #if HAVE_LIBZ
 	/* Normal file or gzipped file? */
-	if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
+	if (FileName_DoesExtensionMatch(pszFileName, ".gz"))
 	{
 		gzFile hGzFile;
 		/* Create a gzipped file: */
@@ -513,7 +514,7 @@ void File_MakeValidPathName(char *pPathName)
 	while (pLastSlash);
 
 	/* Make sure that path name ends with a slash */
-	File_AddSlashToEndFileName(pPathName);
+	FileName_AddSlashToEnd(pPathName);
 }
 
 

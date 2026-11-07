@@ -14,6 +14,7 @@
 #include "main_retro.h"
 #include "disk_control.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "log.h"
 
@@ -67,7 +68,7 @@ static void DiskControl_UpdateLabel(unsigned int idx)
 		DiskImages[idx].label[0] = '\0';
 		return;
 	}
-	base = File_Basename(DiskImages[idx].path);
+	base = FileName_Basename(DiskImages[idx].path);
 	strncpy(DiskImages[idx].label, base, sizeof(DiskImages[idx].label) - 1);
 	DiskImages[idx].label[sizeof(DiskImages[idx].label) - 1] = '\0';
 }
@@ -118,7 +119,7 @@ static unsigned int DiskControl_ParseM3U(const char *m3u_path)
 	text[size] = '\0';
 	free(raw);
 
-	File_SplitPath(m3u_path, dir, name, ext);
+	FileName_SplitPath(m3u_path, dir, name, ext);
 
 	p = text;
 	while (*p)
@@ -155,7 +156,7 @@ static unsigned int DiskControl_ParseM3U(const char *m3u_path)
 		}
 		else
 		{
-			char *built = File_MakePath(dir, line, NULL);
+			char *built = FileName_MakePath(dir, line, NULL);
 			if (!built)
 				continue;
 			strncpy(full, built, sizeof(full) - 1);

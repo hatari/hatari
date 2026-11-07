@@ -11,7 +11,7 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c";
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "file.h"
+#include "filename.h"
 
 
 #define DISKDLG_ACSIPREVID         4
@@ -117,7 +117,7 @@ static void DlgHardDisk_PrepAcsi(int id)
 {
 	if (ConfigureParams.Acsi[id].bUseDevice)
 	{
-		File_ShrinkName(dlgname_acsi, ConfigureParams.Acsi[id].sDeviceFile,
+		FileName_Shrink(dlgname_acsi, ConfigureParams.Acsi[id].sDeviceFile,
 		                diskdlg[DISKDLG_ACSINAME].w);
 	}
 	else
@@ -133,7 +133,7 @@ static void DlgHardDisk_PrepScsi(int id)
 {
 	if (ConfigureParams.Scsi[id].bUseDevice)
 	{
-		File_ShrinkName(dlgname_scsi, ConfigureParams.Scsi[id].sDeviceFile,
+		FileName_Shrink(dlgname_scsi, ConfigureParams.Scsi[id].sDeviceFile,
 		                diskdlg[DISKDLG_SCSINAME].w);
 	}
 	else
@@ -151,7 +151,7 @@ static void DlgHardDisk_PrepIde(int id)
 
 	if (ConfigureParams.Ide[id].bUseDevice)
 	{
-		File_ShrinkName(dlgname_ide, ConfigureParams.Ide[id].sDeviceFile,
+		FileName_Shrink(dlgname_ide, ConfigureParams.Ide[id].sDeviceFile,
 		                diskdlg[DISKDLG_IDENAME].w);
 	}
 	else
@@ -206,7 +206,7 @@ void DlgHardDisk_Main(void)
 
 	/* GEMDOS hard disk directory: */
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
-		File_ShrinkName(dlgname_gdos, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+		FileName_Shrink(dlgname_gdos, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 		                diskdlg[DISKDLG_GEMDOSNAME].w);
 	else
 		dlgname_gdos[0] = '\0';

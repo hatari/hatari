@@ -15,6 +15,7 @@ const char HDC_fileid[] = "Hatari hdc.c";
 #include "debugui.h"
 #include "endianswap.h"
 #include "file.h"
+#include "filename.h"
 #include "fdc.h"
 #include "hdc.h"
 #include "cycles.h"
@@ -907,7 +908,7 @@ off_t HDC_CheckAndGetSize(const char *hdtype, const char *filename, unsigned lon
 	off_t filesize;
 	char shortname[48];
 
-	File_ShrinkName(shortname, filename, sizeof(shortname) - 1);
+	FileName_Shrink(shortname, filename, sizeof(shortname) - 1);
 
 	filesize = File_Length(filename);
 	if (filesize < 0)

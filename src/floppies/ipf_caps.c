@@ -162,10 +162,10 @@ void IPF_MemorySnapShot_Capture(bool bSave)
  */
 bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
 {
-	return ( File_DoesFileExtensionMatch(pszFileName,".ipf" )
-		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ipf.gz") )
-		|| File_DoesFileExtensionMatch(pszFileName,".ctr" )
-		|| ( bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".ctr.gz") )
+	return ( FileName_DoesExtensionMatch(pszFileName,".ipf" )
+		|| ( bAllowGZ && FileName_DoesExtensionMatch(pszFileName,".ipf.gz") )
+		|| FileName_DoesExtensionMatch(pszFileName,".ctr" )
+		|| ( bAllowGZ && FileName_DoesExtensionMatch(pszFileName,".ctr.gz") )
 		);
 }
 

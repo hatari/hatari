@@ -10,7 +10,7 @@ const char DlgRom_fileid[] = "Hatari dlgRom.c";
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "file.h"
+#include "filename.h"
 
 
 #define DLGROM_TOSBROWSE  4
@@ -55,10 +55,10 @@ void DlgRom_Main(void)
 
 	SDLGui_CenterDlg(romdlg);
 
-	File_ShrinkName(szDlgTosName, ConfigureParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+	FileName_Shrink(szDlgTosName, ConfigureParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
 	romdlg[DLGROM_TOSNAME].txt = szDlgTosName;
 
-	File_ShrinkName(szDlgCartName, ConfigureParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
+	FileName_Shrink(szDlgCartName, ConfigureParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
 	romdlg[DLGROM_CARTNAME].txt = szDlgCartName;
 
 	do

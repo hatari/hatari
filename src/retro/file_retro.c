@@ -13,6 +13,7 @@ const char File_fileid[] = "Hatari file_retro.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "file_archive.h"
 #include "vfs.h"
 
@@ -66,7 +67,7 @@ uint8_t *File_Read(const char *pszFileName, long *pFileSize, const char * const 
 	if (!File_Exists(pszFileName) && ppszExts)
 	{
 		/* Try other extensions, if succeeds, returns correct one */
-		filepath = File_FindPossibleExtFileName(pszFileName, ppszExts);
+		filepath = FileName_FindPossibleExt(pszFileName, ppszExts);
 	}
 	if (!filepath)
 		filepath = strdup(pszFileName);

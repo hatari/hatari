@@ -6,6 +6,7 @@
 #include <string.h>
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "dialog.h"
 #include "file_archive.h"
 
@@ -50,13 +51,13 @@ static int strcmp_path(const char *ref, const char *expected)
 	return strcmp(ref, exbuf);
 }
 
-static int Test_CleanFileName(const char *input, const char *expected)
+static int Test_RemoveSlashes(const char *input, const char *expected)
 {
 	char str[256];
 
-	printf("Testing File_CleanFileName(\"%s\")...\t", input);
+	printf("Testing FileName_RemoveSlashes(\"%s\")...\t", input);
 	strcpy_path(str, input, sizeof(str));
-	File_CleanFileName(str);
+	FileName_RemoveSlashes(str);
 	if (strcmp_path(str, expected) != 0)
 	{
 		puts("FAIL");
@@ -71,9 +72,9 @@ static int Test_AddSlashToEndFileName(const char *input, const char *expected)
 {
 	char str[256];
 
-	printf("Testing File_AddSlashToEndFileName(\"%s\")...\t", input);
+	printf("Testing FileName_AddSlashToEnd(\"%s\")...\t", input);
 	strcpy_path(str, input, sizeof(str));
-	File_AddSlashToEndFileName(str);
+	FileName_AddSlashToEnd(str);
 	if (strcmp_path(str, expected) != 0)
 	{
 		puts("FAIL");
@@ -87,9 +88,9 @@ static int Test_AddSlashToEndFileName(const char *input, const char *expected)
 static int Test_DoesFileExtensionMatch(const char *input, const char *ext,
                                        bool bShouldMatch)
 {
-	printf("Testing File_DoesFileExtensionMatch(\"%s\", \"%s\")...\t",
+	printf("Testing FileName_DoesExtensionMatch(\"%s\", \"%s\")...\t",
 	       input, ext);
-	if (File_DoesFileExtensionMatch(input, ext) != bShouldMatch)
+	if (FileName_DoesExtensionMatch(input, ext) != bShouldMatch)
 	{
 		puts("FAIL");
 		return 1;
@@ -120,10 +121,10 @@ int main(int argc, char *argv[])
 {
 	int ret = 0;
 
-	ret |= Test_CleanFileName("some-name/", "some-name");
-	ret |= Test_CleanFileName("/some-name", "/some-name");
-	ret |= Test_CleanFileName("/", "/");
-	ret |= Test_CleanFileName("", "");
+	ret |= Test_RemoveSlashes("some-name/", "some-name");
+	ret |= Test_RemoveSlashes("/some-name", "/some-name");
+	ret |= Test_RemoveSlashes("/", "/");
+	ret |= Test_RemoveSlashes("", "");
 
 	ret |= Test_AddSlashToEndFileName("some-dir-name", "some-dir-name/");
 	ret |= Test_AddSlashToEndFileName("some-dir-name/", "some-dir-name/");

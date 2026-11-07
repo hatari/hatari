@@ -12,6 +12,8 @@ const char DlgRecord_fileid[] = "Hatari dlgRecord.c";
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
+#include "file.h"
+#include "filename.h"
 #include "sdlgui.h"
 #include "screen.h"
 #include "screen_sdl.h"
@@ -20,7 +22,6 @@ const char DlgRecord_fileid[] = "Hatari dlgRecord.c";
 #include "avi_record.h"
 #include "sound.h"
 #include "str.h"
-#include "file.h"
 
 /* video object indexes */
 #define DLGRECORD_CAPTURE     3
@@ -105,8 +106,8 @@ static void DlgRecord_UpdateScreenShotDir(void)
 	if (ConfigureParams.Screen.szScreenShotDir[0])
 	{
 		File_MakeValidPathName(ConfigureParams.Screen.szScreenShotDir);
-		File_CleanFileName(ConfigureParams.Screen.szScreenShotDir);
-		File_ShrinkName(dlgShotDir, ConfigureParams.Screen.szScreenShotDir, sizeof(dlgShotDir)-1);
+		FileName_RemoveSlashes(ConfigureParams.Screen.szScreenShotDir);
+		FileName_Shrink(dlgShotDir, ConfigureParams.Screen.szScreenShotDir, sizeof(dlgShotDir)-1);
 	}
 	else
 	{
@@ -114,7 +115,7 @@ static void DlgRecord_UpdateScreenShotDir(void)
 		const int len = sizeof(base) - 1;
 		assert(len < sizeof(dlgShotDir));
 		Str_Copy(dlgShotDir, base, sizeof(dlgShotDir));
-		File_ShrinkName(dlgShotDir + len, Configuration_GetScreenShotDir(), sizeof(dlgShotDir)-len-1);
+		FileName_Shrink(dlgShotDir + len, Configuration_GetScreenShotDir(), sizeof(dlgShotDir)-len-1);
 	}
 }
 
@@ -157,7 +158,7 @@ void Dialog_RecordingDlg(void)
 		recorddlg[DLGRECORD_RECVIDEO].txt = VIDEO_START;
 
 	/* Initialize audio capture options: */
-	File_ShrinkName(dlgAudioName, ConfigureParams.Sound.szYMCaptureFileName, recorddlg[DLGRECORD_AUDIONAME].w);
+	FileName_Shrink(dlgAudioName, ConfigureParams.Sound.szYMCaptureFileName, recorddlg[DLGRECORD_AUDIONAME].w);
 
 	if (Sound_AreWeRecording())
 		recorddlg[DLGRECORD_RECAUDIO].txt = AUDIO_STOP;
@@ -200,7 +201,7 @@ void Dialog_RecordingDlg(void)
 			{
 				ConfigureParams.Screen.bCrop = (recorddlg[DLGRECORD_CROP].state & SG_SELECTED);
 				selname = SDLGui_FileSelect("Record to AVI file...", ConfigureParams.Video.AviRecordFile, NULL, true);
-				if (!selname || File_DoesFileNameEndWithSlash(selname))
+				if (!selname || FileName_DoesEndWithSlash(selname))
 					break;
 				if (!File_QueryOverwrite(selname))
 					break;

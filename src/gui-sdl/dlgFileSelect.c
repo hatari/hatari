@@ -28,6 +28,7 @@ const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c";
 #include "screen.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "filename.h"
 #include "paths.h"
 #include "str.h"
 #include "file_archive.h"
@@ -176,14 +177,14 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool 
 			/* Prepare entries: */
 			strcpy(tempstr, "  ");
 			strcat(tempstr, files[i+ypos]->d_name);
-			File_ShrinkName(dlgfilenames[i], tempstr, DLGFILENAMES_SIZE);
+			FileName_Shrink(dlgfilenames[i], tempstr, DLGFILENAMES_SIZE);
 			/* Mark folders: */
 			strcpy(tempstr, path);
 			strcat(tempstr, files[i+ypos]->d_name);
 
 			if (browsing_archive)
 			{
-				if (File_DoesFileNameEndWithSlash(tempstr))
+				if (FileName_DoesEndWithSlash(tempstr))
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
 			}
 			else
@@ -736,7 +737,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	}
 	if (!File_DirExists(path))
 	{
-		File_SplitPath(path, path, fname, NULL);
+		FileName_SplitPath(path, path, fname, NULL);
 		if (!(File_DirExists(path) || getcwd(path, FILENAME_MAX)))
 		{
 			perror("SDLGui_FileSelect: non-existing path and CWD failed");
@@ -744,10 +745,10 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 		}
 	}
 
-	File_MakeAbsoluteName(path);
+	FileName_MakeAbsolute(path);
 	File_MakeValidPathName(path);
-	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
-	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
+	FileName_Shrink(dlgpath, path, DLGPATH_SIZE);
+	FileName_Shrink(dlgfname, fname, DLGFNAME_SIZE);
 
 #if WIN32
 	refreshDrive(path[0]);
@@ -855,7 +856,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					goto clean_exit;
 				}
 				/* directory? */
-				if (File_DoesFileNameEndWithSlash(tempstr))
+				if (FileName_DoesEndWithSlash(tempstr))
 				{
 					/* handle the ../ directory */
 					if (strcmp(files[retbut-SGFSDLG_ENTRYFIRST+ypos]->d_name, "../") == 0)
@@ -867,22 +868,22 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 							Archive_FreeArcDir(archive_files);
 							archive_files = NULL;
 							/* Copy the path name to the dialog */
-							File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+							FileName_Shrink(dlgpath, path, DLGPATH_SIZE);
 							browsing_archive = false;
 						}
 						else
 						{
 							/* remove "../" and previous dir from path */
-							File_PathShorten(tempstr, 2);
+							FileName_ShortenPath(tempstr, 2);
 							correct_zip_root(tempstr);
 							strcpy(zipdir, tempstr);
-							File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
+							FileName_Shrink(dlgpath, zipdir, DLGPATH_SIZE);
 						}
 					}
 					else /* not the "../" directory */
 					{
 						strcpy(zipdir, tempstr);
-						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
+						FileName_Shrink(dlgpath, zipdir, DLGPATH_SIZE);
 					}
 					reloaddir = true;
 					/* Copy the path name to the dialog */
@@ -896,7 +897,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					/* not dir, select a file in the zip */
 					selection = retbut-SGFSDLG_ENTRYFIRST+ypos;
 					strcpy(zipfilename, files[selection]->d_name);
-					File_ShrinkName(dlgfname, zipfilename, DLGFNAME_SIZE);
+					FileName_Shrink(dlgfname, zipfilename, DLGFNAME_SIZE);
 				}
 
 			}
@@ -911,10 +912,10 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 				}
 				if (File_DirExists(tempstr))
 				{
-					File_HandleDotDirs(tempstr);
-					File_AddSlashToEndFileName(tempstr);
+					FileName_HandleDotDirs(tempstr);
+					FileName_AddSlashToEnd(tempstr);
 					/* Copy the path name to the dialog */
-					File_ShrinkName(dlgpath, tempstr, DLGPATH_SIZE);
+					FileName_Shrink(dlgpath, tempstr, DLGPATH_SIZE);
 					strcpy(path, tempstr);
 					reloaddir = true;
 					dlgfname[0] = 0;
@@ -929,10 +930,10 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					{
 						selection = retbut-SGFSDLG_ENTRYFIRST+ypos;
 						strcpy(fname, files[selection]->d_name);
-						File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
+						FileName_Shrink(dlgfname, fname, DLGFNAME_SIZE);
 						browsing_archive = true;
 						zipdir[0] = '\0'; /* zip root */
-						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
+						FileName_Shrink(dlgpath, zipdir, DLGPATH_SIZE);
 						reloaddir = true;
 						ypos = 0;
 						scrollbar_Ypos = 0.0;
@@ -944,7 +945,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					/* Select a file */
 					selection = retbut-SGFSDLG_ENTRYFIRST+ypos;
 					strcpy(fname, files[selection]->d_name);
-					File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
+					FileName_Shrink(dlgfname, fname, DLGFNAME_SIZE);
 				}
 
 			}	/* not browsing_archive */
@@ -965,21 +966,21 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 						Archive_FreeArcDir(archive_files);
 						browsing_archive = false;
 						archive_files = NULL;
-						File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+						FileName_Shrink(dlgpath, path, DLGPATH_SIZE);
 					}
 					else
 					{
 						/* remove last dir from zipdir path */
-						File_PathShorten(zipdir, 1);
+						FileName_ShortenPath(zipdir, 1);
 						correct_zip_root(zipdir);
-						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
+						FileName_Shrink(dlgpath, zipdir, DLGPATH_SIZE);
 						zipfilename[0] = '\0';
 					}
 				}  /* not a zip file: */
 				else
 				{
-					File_PathShorten(path, 1);
-					File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+					FileName_ShortenPath(path, 1);
+					FileName_Shrink(dlgpath, path, DLGPATH_SIZE);
 				}
 				reloaddir = true;
 				break;
@@ -1000,8 +1001,8 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 					browsing_archive = false;
 				}
 				strcpy(path, home);
-				File_AddSlashToEndFileName(path);
-				File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+				FileName_AddSlashToEnd(path);
+				FileName_Shrink(dlgpath, path, DLGPATH_SIZE);
 #if WIN32
 				refreshDrive(path[0]);
 #endif
@@ -1084,7 +1085,7 @@ char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip
 	{
 		if (zip_path)
 			*zip_path = zip_get_path(zipdir, zipfilename, browsing_archive);
-		retpath = File_MakePath(path, fname, NULL);
+		retpath = FileName_MakePath(path, fname, NULL);
 	}
 	else
 		retpath = NULL;
@@ -1123,11 +1124,11 @@ bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int
 	selname = SDLGui_FileSelect(title, confname, NULL, bAllowNew);
 	if (selname)
 	{
-		if (!File_DoesFileNameEndWithSlash(selname) &&
+		if (!FileName_DoesEndWithSlash(selname) &&
 		    (bAllowNew || File_Exists(selname)))
 		{
 			Str_Copy(confname, selname, FILENAME_MAX);
-			File_ShrinkName(dlgname, selname, maxlen);
+			FileName_Shrink(dlgname, selname, maxlen);
 			free(selname);
 			return true;
 		}
@@ -1155,7 +1156,7 @@ bool SDLGui_DirConfSelect(const char *title, char *dlgname, char *confname, int 
 	{
 		File_MakeValidPathName(selname);
 		Str_Copy(confname, selname, FILENAME_MAX);
-		File_ShrinkName(dlgname, selname, maxlen);
+		FileName_Shrink(dlgname, selname, maxlen);
 		free(selname);
 		return true;
 	}
