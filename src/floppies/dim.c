@@ -33,18 +33,53 @@ const char DIM_fileid[] = "Hatari dim.c";
   Offset  Size      Description
   ------  --------  -----------
   0x0000  Word      ID Header (0x4242('BB'))
-  0x0002  Byte      1 = disk configuration has been detected automatically
+  0x0002  Byte      1 = disk configuration has been detected automatically (from the BPB)
                     0 = the user specified the disk configuration
   0x0003  Byte      Image contains all sectors (0) or only used sectors (1)
+  0x0004  Word      Reserved, always zero
   0x0006  Byte      Sides (0 or 1; add 1 to this to get correct number of sides)
+  0x0007  Byte      Unused, always zero
   0x0008  Byte      Sectors per track
+  0x0009  Byte      Unused, always zero
   0x000A  Byte      Starting Track (0 based)
+  0x000B  Byte      Unused, always zero
   0x000C  Byte      Ending Track (0 based)
   0x000D  Byte      Double-Density(0) or High-Density (1)
   0x000E  18 Bytes  A copy of the Bios Parameter Block (BPB) of this disk.
 
+  The BPB is stored as nine 68000 words:
+
+  0X000E  recsiz    Bytes per sector
+  0X0010  clsiz     Sectors per cluster
+  0X0012  clsizb    Bytes per cluster
+  0X0014  rdlen     Root directory length in sectors
+  0X0016  fsiz      FAT size in sectors
+  0X0018  fatrec    First sector of the second FAT (the one TOS uses)
+  0X001A  datrec    First data sector
+  0X001C  numcl     Number of data clusters
+  0X001E  bflags    Bit 0 clear for a 12-bit FAT, set for a 16-bit FAT
+
+  FastCopy has three imaging modes, given by the flags at $02 and $03:
+
+  $02 $03
+   0   0   Geometry typed in by the user. Only tracks 'Starting track' to
+             'Ending track' are stored, so the image may be part of a disc. The
+              BPB is still filled in but cannot be relied on.
+   1   0   Geometry from the BPB. The whole disc is stored.
+   1   1   Geometry from the BPB and FAT. Only used clusters are stored.
+
+  Sector data follows the header, each track in turn with sides alternating as in
+  a '.ST' image, starting at 'Starting track'.
+
+  For a 'Get Sectors Used' image the boot sector, both FATs and the root directory
+  (sectors 0 to datrec-1) are stored in full. These are followed only by the
+  clusters marked as used in the FAT, in cluster order, each stored in full
+  (clsiz sectors). Clusters marked free($000) or bad($FF0-$FF7) are not stored.
+
+
   We take a copy of the header while reading the disk image, so we can
   preserve the unknown field when saving the disk image later.
+
 */
 #define DIM_HEADER_SIZE 32
 
