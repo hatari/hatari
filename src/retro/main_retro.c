@@ -527,12 +527,13 @@ bool DlgAlert_Query(const char *text)
 
 bool DlgAlert_Notice(const char *text)
 {
-	Log_Printf(LOG_DEBUG, "DlgAlert_Notice: %s\n", text);
+	Retro_LogFrontend(text, RETRO_LOG_INFO);
 	return false;
 }
 
 void Dialog_HaltDlg(void)
 {
+	Retro_LogFrontend("Detected double bus/address error => CPU halted!");
 }
 
 int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
