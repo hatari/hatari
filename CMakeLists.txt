@@ -130,26 +130,11 @@ endif()
 
 find_package(Math)
 
-find_package(Readline)
-if(Readline_FOUND)
-	set(HAVE_LIBREADLINE 1)
-endif(Readline_FOUND)
-
 find_package(ZLIB)
 if(ZLIB_FOUND)
 	set(HAVE_LIBZ 1)
 	set(HAVE_ZLIB_H 1)
 endif(ZLIB_FOUND)
-
-find_package(LibArchive)
-if(LibArchive_FOUND)
-	set(HAVE_LIBARCHIVE 1)
-endif(LibArchive_FOUND)
-
-find_package(PNG)
-if(PNG_FOUND)
-	set(HAVE_LIBPNG 1)
-endif(PNG_FOUND)
 
 if (NOT ENABLE_OSX_BUNDLE)
 	find_package(X11)
@@ -182,6 +167,25 @@ if(Capstone_FOUND)
 		unset(Capstone_FOUND)
 	endif()
 endif(Capstone_FOUND)
+
+if(ENABLE_HATARI)
+
+	find_package(LibArchive)
+	if(LibArchive_FOUND)
+		set(HAVE_LIBARCHIVE 1)
+	endif(LibArchive_FOUND)
+
+	find_package(PNG)
+	if(PNG_FOUND)
+		set(HAVE_LIBPNG 1)
+	endif(PNG_FOUND)
+
+	find_package(Readline)
+	if(Readline_FOUND)
+		set(HAVE_LIBREADLINE 1)
+	endif(Readline_FOUND)
+
+endif(ENABLE_HATARI)
 
 # Check if Large File Support is available with the standard POSIX flags
 set (HATARI_LFS_FLAGS "-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")
