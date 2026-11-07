@@ -16,6 +16,7 @@ const char floppy_ipf_fileid[] = "Hatari ipf_caps.c";
 
 #include "main.h"
 #include "file.h"
+#include "filename.h"
 #include "floppy.h"
 #include "floppies/ipf.h"
 #include "fdc.h"
