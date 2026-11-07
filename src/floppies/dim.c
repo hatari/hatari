@@ -8,11 +8,9 @@
 */
 const char DIM_fileid[] = "Hatari dim.c";
 
-#include "main.h"
-#if HAVE_ZLIB_H
-#include <zlib.h>
-#endif
+#include <assert.h>
 
+#include "main.h"
 #include "file.h"
 #include "filename.h"
 #include "floppy.h"
@@ -44,8 +42,18 @@ const char DIM_fileid[] = "Hatari dim.c";
   0x000C  Byte      Ending Track (0 based)
   0x000D  Byte      Double-Density(0) or High-Density (1)
   0x000E  18 Bytes  A copy of the Bios Parameter Block (BPB) of this disk.
-*/
 
+  We take a copy of the header while reading the disk image, so we can
+  preserve the unknown field when saving the disk image later.
+*/
+#define DIM_HEADER_SIZE 32
+
+#ifdef SAVE_TO_DIM_IMAGES
+static struct {
+	char filename[FILENAME_MAX];
+	uint8_t data[DIM_HEADER_SIZE];
+} headers[MAX_FLOPPYDRIVES];
+#endif
 
 /**
  * Does filename end with a .DIM extension? If so, return TRUE
@@ -61,17 +69,24 @@ bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
-uint8_t *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
+uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 	uint8_t *pDimFile;
 	uint8_t *pDiskBuffer = NULL;
+
+	assert(drive < MAX_FLOPPYDRIVES);
+
+#ifdef SAVE_TO_DIM_IMAGES
+	headers[drive].filename[0] = 0;		/* Invalidate header cache */
+#endif
 
 	/* Load file into buffer */
 	pDimFile = File_Read(pszFileName, pImageSize, NULL);
 	if (pDimFile)
 	{
 		/* Check header for valid image: */
-		if (pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 ||
+		if (*pImageSize < DIM_HEADER_SIZE + 512 ||
+		    pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 ||
 		    pDimFile[0x03] != 0 || pDimFile[0x0A] != 0)
 		{
 			fprintf(stderr, "This is not a valid DIM image!\n");
@@ -84,9 +99,18 @@ uint8_t *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int 
 		*pImageSize -= 32;
 		pDiskBuffer = malloc(*pImageSize);
 		if (pDiskBuffer)
-			memcpy(pDiskBuffer, pDimFile+32, *pImageSize);
+		{
+			memcpy(pDiskBuffer, pDimFile + DIM_HEADER_SIZE, *pImageSize);
+#ifdef SAVE_TO_DIM_IMAGES
+			memcpy(headers[drive].data, pDimFile, DIM_HEADER_SIZE);
+			strncpy(headers[drive].filename, pszFileName, FILENAME_MAX - 1);
+			headers[drive].filename[FILENAME_MAX - 1] = 0;
+#endif
+		}
 		else
+		{
 			perror("DIM_ReadDisk");
+		}
 
 		/* Free DIM file we loaded */
 		free(pDimFile);
@@ -107,7 +131,7 @@ uint8_t *DIM_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int 
 /**
  * Save .DIM file from memory buffer. Returns TRUE is all OK
  */
-bool DIM_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
+bool DIM_WriteDisk(int drive, const char *pszFileName, uint8_t *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
@@ -115,11 +139,8 @@ bool DIM_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int Ima
 	uint8_t *pDimFile;
 	int nTracks;
 	bool bRet;
-#if HAVE_LIBZ
-	gzFile hGzFile;
-#else
-	FILE *fhdl;
-#endif
+
+	assert(drive < MAX_FLOPPYDRIVES);
 
 	/* Allocate memory for the whole DIM image: */
 	pDimFile = malloc(ImageSize + 32);
@@ -129,23 +150,11 @@ bool DIM_WriteDisk(int Drive, const char *pszFileName, uint8_t *pBuffer, int Ima
 		return false;
 	}
 
-	memset(pDimFile, 0, 32);
-	/* Try to load the old header data to preserve the header fields that are unknown yet: */
-#if HAVE_LIBZ
-	hGzFile = gzopen(pszFileName, "rb");
-	if (hGzFile != NULL)
-	{
-		gzread(hGzFile, pDimFile, 32);
-		gzclose(hGzFile);
-	}
-#else
-	fhdl = fopen(pszFileName, "rb");
-	if (fhdl != NULL)
-	{
-		fread(pDimFile, 32, 1, fhdl);
-		fclose(fhdl);
-	}
-#endif
+	/* Try to preserve the old header data for fields that are unknown yet: */
+	if (strcmp(pszFileName, headers[drive].filename) == 0)
+		memcpy(pDimFile, headers[drive].data, DIM_HEADER_SIZE);
+	else
+		memset(pDimFile, 0, DIM_HEADER_SIZE);
 
 	/* Now fill in the new header information: */
 	Floppy_FindDiskDetails(pBuffer, ImageSize, &nSectorsPerTrack, &nSides);
