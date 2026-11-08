@@ -22,6 +22,8 @@ set(SOURCES
 	event.c
 	fdc.c
 	floppy.c
+	floppies/ipf_caps.c
+	floppies/ipf_dsk.c
 	floppies/kfs.c
 	floppies/stx.c
 	floppies/scp.c
@@ -66,12 +68,6 @@ set(SOURCES
 	wavFormat.c
 	xbios.c
 	ymFormat.c)
-
-if(CapsImage_FOUND)
-	set(SOURCES ${SOURCES} floppies/ipf_caps.c)
-else()
-	set(SOURCES ${SOURCES} floppies/ipf_dsk.c)
-endif()
 
 # Some code is shared with the hmsa tool, so we list this separately:
 set(SOURCES_HMSA

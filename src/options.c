@@ -30,6 +30,7 @@ const char Options_fileid[] = "Hatari options.c";
 #include "event.h"
 #include "file.h"
 #include "floppy.h"
+#include "floppies/ipf.h"
 #include "fdc.h"
 #include "screen.h"
 #include "statusbar.h"
@@ -161,6 +162,9 @@ typedef enum {
 	OPT_DISKB,
 	OPT_FASTFLOPPY,
 	OPT_WRITEPROT_FLOPPY,
+#ifdef HAVE_CAPSIMAGE
+	OPT_CAPSLIB,
+#endif
 
 	OPT_HARDDRIVE,		/* HD options */
 	OPT_WRITEPROT_HD,
@@ -423,6 +427,10 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Speed up floppy disk access emulation (can break some programs)" },
 	{ OPT_WRITEPROT_FLOPPY, NULL, "--protect-floppy",
 	  "<x>", "Write protect floppy image contents (on/off/auto)" },
+#ifdef HAVE_CAPSIMAGE
+	{ OPT_CAPSLIB, NULL, "--capslib",
+	  "<bool>", "Use the external CapsLib for decoding IPF images" },
+#endif
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Hard drive" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
@@ -1738,6 +1746,12 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			ConfigureParams.DiskImage.nWriteProtection = val;
 			break;
 		}
+
+#ifdef HAVE_CAPSIMAGE
+		case OPT_CAPSLIB:
+			ok = Opt_Bool(arg, OPT_CAPSLIB, &bUseCapsLib);
+			break;
+#endif
 
 		case OPT_WRITEPROT_HD:
 		{

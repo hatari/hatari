@@ -22,7 +22,6 @@
 #include "memorySnapShot.h"
 #include "utils.h"
 
-
 /* Magnetic cell encoding used while building a track (MAME flopimg levels) */
 #define MG_SHIFT	28
 #define MG_MASK		0xf0000000u
@@ -1068,17 +1067,11 @@ static int ipf_next_flux (struct mfm_stream *s)
 	return (int)val;
 }
 
-/**
- * Does filename end with a .IPF extension ? If so, return true.
- */
-bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
-{
-	return FileName_DoesExtensionMatch(pszFileName,".ipf") ||
-	       (bAllowGZ && FileName_DoesExtensionMatch(pszFileName, ".ipf.gz"));
-}
-
 bool IPF_Init(void)
 {
+	if (bUseCapsLib)
+		return IPF_Caps_Init();
+
 	memset(&IPF_State, 0, sizeof(IPF_State));
 	for (int i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
@@ -1091,6 +1084,12 @@ bool IPF_Init(void)
 
 void IPF_Exit(void)
 {
+	if (bUseCapsLib)
+	{
+		IPF_Caps_Exit();
+		return;
+	}
+
 	for (int i = 0; i < MAX_FLOPPYDRIVES; i++)
 		IPF_Eject(i);
 }
@@ -1115,6 +1114,9 @@ static void IPF_FreeImage(ipf_decode *dec)
 
 bool IPF_Eject(int Drive)
 {
+	if (bUseCapsLib)
+		return IPF_Caps_Eject(Drive);
+
 	Log_Printf(LOG_DEBUG, "IPF: IPF_Eject drive=%d\n", Drive);
 
 	if (IPF_State[Drive].decoder)
@@ -1237,6 +1239,9 @@ static bool IPF_Insert_internal(int Drive, uint8_t *pImageBuffer, long ImageSize
 
 bool IPF_Insert(int Drive, uint8_t *pImageBuffer, long ImageSize)
 {
+	if (bUseCapsLib)
+		return IPF_Caps_Insert(Drive, pImageBuffer, ImageSize);
+
 	return IPF_Insert_internal(Drive, pImageBuffer, ImageSize, false);
 }
 
@@ -1247,6 +1252,9 @@ bool IPF_Insert(int Drive, uint8_t *pImageBuffer, long ImageSize)
 uint8_t *IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
 	uint8_t *pIPFFile;
+
+	if (bUseCapsLib)
+		return IPF_Caps_ReadDisk(Drive, pszFileName, pImageSize, pImageType);
 
 	*pImageSize = 0;
 
@@ -1318,6 +1326,30 @@ static int ipf_memsnapshot_state(bool bSave, IPF_STRUCT *state)
  */
 void IPF_MemorySnapShot_Capture(bool bSave)
 {
+	bool bSavedUse = bUseCapsLib;
+
+	MemorySnapShot_Store(&bSavedUse, sizeof(bSavedUse));
+	if (!bSave && bSavedUse != bUseCapsLib)
+	{
+#ifdef HAVE_CAPSIMAGE
+		Log_Printf(LOG_WARN, "Snapshot was taken with different IPF mode, "
+		                     "thus toggling now the mode!");
+		IPF_Exit();
+		bUseCapsLib = bSavedUse;
+		IPF_Init();
+#else
+		Log_AlertDlg(LOG_ERROR, "Snapshot was taken with CapsLib enabled, "
+		             "but this has not been compiled into this binary!");
+		exit(1);
+#endif
+	}
+
+	if (bUseCapsLib)
+	{
+		IPF_Caps_MemorySnapShot_Capture(bSave);
+		return;
+	}
+
 	for (int drive = 0; drive < MAX_FLOPPYDRIVES; drive++)
 	{
 		IPF_Eject(drive);
@@ -1358,45 +1390,4 @@ uint32_t FDC_GetCyclesPerRev_FdcCycles_IPF(uint8_t Drive, uint8_t Track, uint8_t
 	int TrackSize = FDC_GetBytesPerTrack_IPF(Drive, Track, Side);
 
 	return TrackSize * 256 / FDC_GetFloppyDensity(Drive);
-}
-
-/*
- * Dummy wrappers, just needed for linking, they should never be called
- * for the internal IPF hanlding:
- */
-
-void IPF_Reset(bool bCold)
-{
-}
-
-void IPF_FDC_StatusBar(uint8_t *pCommand, uint8_t *pHead, uint8_t *pTrack,
-                       uint8_t *pSector, uint8_t *pSide)
-{
-	fprintf(stderr,"Error: internal IPF_FDC_StatusBar should never be called\n");
-	abort();
-}
-
-void IPF_Drive_Set_Enable(int Drive, bool value)
-{
-}
-
-void IPF_Drive_Set_DoubleSided(int Drive, bool value)
-{
-}
-
-void IPF_SetDriveSide(uint8_t io_porta_old, uint8_t io_porta_new)
-{
-}
-
-void IPF_FDC_WriteReg(uint8_t Reg, uint8_t Byte)
-{
-}
-
-uint8_t IPF_FDC_ReadReg(uint8_t Reg)
-{
-	return 0xff;
-}
-
-void IPF_Emulate(void)
-{
 }

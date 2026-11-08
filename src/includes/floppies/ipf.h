@@ -5,6 +5,8 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
+extern bool bUseCapsLib;
+
 extern void	IPF_MemorySnapShot_Capture(bool bSave);
 extern bool	IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);
 extern uint8_t	*IPF_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
@@ -25,3 +27,10 @@ extern void	IPF_FDC_StatusBar ( uint8_t *pCommand , uint8_t *pHead , uint8_t *pT
 extern void	IPF_Emulate ( void );
 extern int	FDC_GetBytesPerTrack_IPF ( uint8_t Drive , uint8_t Track , uint8_t Side );
 extern uint32_t FDC_GetCyclesPerRev_FdcCycles_IPF ( uint8_t Drive , uint8_t Track , uint8_t Side );
+
+bool IPF_Caps_Init(void);
+void IPF_Caps_Exit(void);
+bool IPF_Caps_Insert(int Drive, uint8_t *pImageBuffer, long ImageSize);
+bool IPF_Caps_Eject(int Drive);
+uint8_t *IPF_Caps_ReadDisk(int Drive, const char *pszFileName, long *pImageSize, int *pImageType);
+void IPF_Caps_MemorySnapShot_Capture(bool bSave);

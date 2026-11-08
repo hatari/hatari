@@ -1035,16 +1035,9 @@ bool Floppy_WriteSectors(int Drive, uint8_t *pBuffer, uint16_t Sector,
  */
 bool	Floppy_ImageIsMFM ( int ImageType )
 {
-	if ( ( ImageType == FLOPPY_IMAGE_TYPE_SCP )
-	  || ( ImageType == FLOPPY_IMAGE_TYPE_KFS ) )
-		return true;
-
-#ifndef HAVE_CAPSIMAGE
-	if (ImageType == FLOPPY_IMAGE_TYPE_IPF)
-		return true;
-#endif
-
-	return false;
+	return ImageType == FLOPPY_IMAGE_TYPE_SCP
+		|| ImageType == FLOPPY_IMAGE_TYPE_KFS
+		|| (ImageType == FLOPPY_IMAGE_TYPE_IPF && !bUseCapsLib);
 }
 
 /*
