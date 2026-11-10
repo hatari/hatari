@@ -966,7 +966,7 @@ int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen )
 	}
 	else							/* FDC_EMULATION_MODE_IPF */
 	{
-		IPF_FDC_StatusBar ( &Command , &Head , &Track , &Sector , &Side );
+		IPF_Caps_FDC_StatusBar(&Command, &Head, &Track, &Sector, &Side);
 	}
 
 	if      ( ( Command & 0xf0 ) == 0x00 )	strcpy ( CommandText , "RE" );		/* Restore */
@@ -1241,7 +1241,7 @@ void FDC_Reset ( bool bCold )
 	FDC.PLL_Type = FDC_PLL_TYPE_DIGITAL;
 
 	/* Also reset IPF emulation */
-	IPF_Reset( bCold );
+	IPF_Caps_Reset(bCold);
 }
 
 
@@ -1614,7 +1614,7 @@ void	FDC_Drive_Set_Enable ( int Drive , bool value )
 		FDC_DRIVES[ Drive ].Enabled = value;
 
 	/* Also forward change to IPF emulation */
-	IPF_Drive_Set_Enable ( Drive , value );
+	IPF_Caps_Drive_SetEnable(Drive, value);
 }
 
 
@@ -1631,7 +1631,7 @@ void	FDC_Drive_Set_NumberOfHeads ( int Drive , int NbrHeads )
 		FDC_DRIVES[ Drive ].NumberOfHeads = NbrHeads;
 
 	/* Also forward change to IPF emulation */
-	IPF_Drive_Set_DoubleSided ( Drive , NbrHeads==2 ? true : false );
+	IPF_Caps_Drive_SetDoubleSided(Drive, NbrHeads == 2 ? true : false);
 }
 
 
@@ -1805,7 +1805,7 @@ void	FDC_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new )
 		FDC_UpdateFloppyDensity ( Drive , FDC_DRIVES[ Drive ].HeadTrack , FDC.SideSignal );
 
 	/* Also forward change to IPF emulation */
-	IPF_SetDriveSide ( io_porta_old , io_porta_new );
+	IPF_Caps_SetDriveSide(io_porta_old, io_porta_new);
 }
 
 
@@ -4820,7 +4820,7 @@ void FDC_DiskController_WriteWord ( void )
 		}
 		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
 		{
-			IPF_FDC_WriteReg ( FDC_reg , IoMem_ReadByte(0xff8605) );
+			IPF_Caps_FDC_WriteReg(FDC_reg, IoMem_ReadByte(0xff8605));
 		}
 	}
 }
@@ -4954,7 +4954,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 		}
 		else if ( EmulationMode == FDC_EMULATION_MODE_IPF )
 		{
-			DiskControllerByte = IPF_FDC_ReadReg ( FDC_reg );
+			DiskControllerByte = IPF_Caps_FDC_ReadReg(FDC_reg);
 			if ( ( FDC_reg == 0x0 ) && ( FDC.DriveSelSignal >= 0 ) )	/* 0 0 - Status register */
 			{
 				/* Temporarily change the WPRT bit if we're in a transition phase */

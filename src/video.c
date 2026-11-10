@@ -3341,7 +3341,7 @@ if ( CycInt_From_Opcode )		/* TEMP : to update CYCLES_COUNTER_VIDEO during an op
 	DmaSnd_STE_HBL_Update();			/* Update STE/TT DMA sound if needed */
 
 	/* TEMP IPF */
-	IPF_Emulate();
+	IPF_Caps_Emulate();
 	/* TEMP IPF */
 
 	nHBL++;						/* Increase HBL count */

@@ -461,7 +461,7 @@ bool IPF_Caps_Eject(int Drive)
  *  - On warm reset, TR and DR value should be kept
  * Keeping TR and DR content is not supported in Caps library (bug), we handle it ourselves
  */
-void IPF_Reset ( bool bCold )
+void IPF_Caps_Reset(bool bCold)
 {
 #ifdef HAVE_CAPSIMAGE
 	CapsULong	TR , DR;
@@ -572,7 +572,7 @@ static void	IPF_CallBack_Drq ( struct CapsFdc *pc , CapsULong State )
  * NOTE : for now, IPF only supports changing drive 1, drive 0
  * is always ON.
  */
-void	IPF_Drive_Set_Enable ( int Drive , bool value )
+void IPF_Caps_Drive_SetEnable(int Drive, bool value)
 {
 #ifdef HAVE_CAPSIMAGE
 	IPF_State.DriveEnabled[ Drive ] = value;			/* Store the new state */
@@ -586,7 +586,7 @@ void	IPF_Drive_Set_Enable ( int Drive , bool value )
  * This function is used to configure a drive as single sided
  * or double sided when using the UI or command line parameters
  */
-void	IPF_Drive_Set_DoubleSided ( int Drive , bool value )
+void IPF_Caps_Drive_SetDoubleSided(int Drive, bool value)
 {
 #ifdef HAVE_CAPSIMAGE
 	IPF_State.DoubleSided[ Drive ] = value;				/* Store the new state */
@@ -627,7 +627,7 @@ static void	IPF_Drive_Update_Enable_Side ( void )
  * to take into account.
  * We report a side change only when a drive is selected.
  */
-void	IPF_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new )
+void IPF_Caps_SetDriveSide(uint8_t io_porta_old, uint8_t io_porta_new)
 {
 #ifdef HAVE_CAPSIMAGE
 	int	Side;
@@ -655,7 +655,7 @@ void	IPF_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new )
 		IPF_State.Fdc.drivenew = 0;		/* Select drive 0 (and un-select drive 1 if set above) */
 	}
 
-	IPF_Emulate();					/* Update emulation's state up to this point, then set new drive/side */
+	IPF_Caps_Emulate();		/* Update emulation's state up to this point, then set new drive/side */
 #endif
 }
 
@@ -666,7 +666,7 @@ void	IPF_SetDriveSide ( uint8_t io_porta_old , uint8_t io_porta_new )
  * Write a byte into one of the FDC registers
  * 0=command   1=track   2=sector   3=data
  */
-void	IPF_FDC_WriteReg ( uint8_t Reg , uint8_t Byte )
+void IPF_Caps_FDC_WriteReg(uint8_t Reg, uint8_t Byte)
 {
 #ifdef HAVE_CAPSIMAGE
 	if (!bUseCapsLib)
@@ -698,7 +698,7 @@ void	IPF_FDC_WriteReg ( uint8_t Reg , uint8_t Byte )
 		}
 	}
 
-	IPF_Emulate();					/* Update emulation's state up to this point */
+	IPF_Caps_Emulate();		/* Update emulation's state up to this point */
 
 	CAPSFdcWrite ( &IPF_State.Fdc , Reg , Byte );
 #endif
@@ -711,7 +711,7 @@ void	IPF_FDC_WriteReg ( uint8_t Reg , uint8_t Byte )
  * Read the content of one of the FDC registers
  * 0=status   1=track   2=sector   3=data
  */
-uint8_t	IPF_FDC_ReadReg ( uint8_t Reg )
+uint8_t IPF_Caps_FDC_ReadReg(uint8_t Reg)
 {
 #ifndef HAVE_CAPSIMAGE
 	return 0;					/* This should not be reached */
@@ -721,7 +721,7 @@ uint8_t	IPF_FDC_ReadReg ( uint8_t Reg )
 	if (!bUseCapsLib)
 		return 0;
 
-	IPF_Emulate();					/* Update emulation's state up to this point */
+	IPF_Caps_Emulate();				/* Update emulation's state up to this point */
 
 	Byte = CAPSFdcRead ( &IPF_State.Fdc , Reg );
 	LOG_TRACE(TRACE_FDC, "fdc ipf read reg=%d data=0x%x VBL=%d HBL=%d\n" , Reg , Byte , nVBLs , nHBL );
@@ -735,9 +735,11 @@ uint8_t	IPF_FDC_ReadReg ( uint8_t Reg )
 
 /*
  * Return the content of some registers to display them in the statusbar
- * We should not call IPF_Emulate() or similar, reading should not change emulation's state
+ * We should not call IPF_Caps_Emulate() or similar, reading should not
+ * change emulation's state
  */
-void	IPF_FDC_StatusBar ( uint8_t *pCommand , uint8_t *pHead , uint8_t *pTrack , uint8_t *pSector , uint8_t *pSide )
+void IPF_Caps_FDC_StatusBar(uint8_t *pCommand, uint8_t *pHead, uint8_t *pTrack,
+                            uint8_t *pSector , uint8_t *pSide)
 {
 #ifndef HAVE_CAPSIMAGE
 	abort();					/* This should not be reached */
@@ -860,7 +862,7 @@ static void	IPF_FDC_LogCommand ( uint8_t Command )
 /*
  * Run the FDC emulation during NbCycles cycles (relative to the 8MHz FDC's clock)
  */
-void	IPF_Emulate ( void )
+void IPF_Caps_Emulate(void)
 {
 #ifdef HAVE_CAPSIMAGE
 	int	NbCycles;
