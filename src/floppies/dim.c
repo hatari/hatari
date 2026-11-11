@@ -13,6 +13,7 @@ const char DIM_fileid[] = "Hatari dim.c";
 #include "main.h"
 #include "file.h"
 #include "filename.h"
+#include "utils.h"
 #include "floppy.h"
 #include "floppies/dim.h"
 
@@ -81,7 +82,46 @@ const char DIM_fileid[] = "Hatari dim.c";
   preserve the unknown field when saving the disk image later.
 
 */
+
+
 #define DIM_HEADER_SIZE 32
+
+#define DIM_FIRST_DATA_CLUSTER			2		/* FAT entries 0 and 1 are reserved */
+
+#define DIM_FAT12_ENTRY_MASK			0x0FFF
+
+/* Special values for cluster number */
+#define DIM_FAT12_FREE				0x000
+#define DIM_FAT12_RESERVED			0x001
+#define DIM_FAT12_BAD_FIRST			0xFF0		/* $FF0-$FF7 mark bad clusters */
+#define DIM_FAT12_BAD_LAST			0xFF7
+
+#define DIM_BPB_FLAG_FAT16			0x0001		/* 'bflags' bit set for a 16-bit FAT */
+
+								/* Example values for 80 tracks, 9 sectors per track, 2 sides */
+#define	DIM_HEADER_SIGNATURE			0x00		/* "BB" */
+#define	DIM_HEADER_DISK_CONF			0x02		/* 1 */
+#define	DIM_HEADER_USED_SECTORS_ONLY		0x03		/* 0 or 1 */
+#define	DIM_HEADER_RESERVED			0x04		/* reserved, word always 0 */
+#define	DIM_HEADER_SIDES			0x06		/* 1 (=2 sides) */
+#define	DIM_HEADER_UNUSED_1			0x07		/* unused, always 0 */
+#define	DIM_HEADER_SECTORS_PER_TRACK		0x08		/* 9 */
+#define	DIM_HEADER_UNUSED_2			0x09		/* unused, always 0 */
+#define	DIM_HEADER_STARTING_TRACK		0x0a		/* 0 */
+#define	DIM_HEADER_UNUSED_3			0x0b		/* unused, always 0 */
+#define	DIM_HEADER_ENDING_TRACK			0x0c		/* 79 */
+#define	DIM_HEADER_DENSITY			0x0d		/* 0 (=double density) */
+#define	DIM_HEADER_SECTOR_SIZE			0x0e		/* 0200 */
+#define	DIM_HEADER_SECTORS_PER_CLUSTER		0x10		/* 0002 */
+#define	DIM_HEADER_BYTES_PER_CLUSTER		0x12		/* 0400 */
+#define	DIM_HEADER_ROOT_DIR_SIZE		0x14		/* 0007 */
+#define	DIM_HEADER_SECTORS_PER_FAT		0x16		/* 0005 */
+#define	DIM_HEADER_FAT_START_SECTOR		0x18		/* 0006 */
+#define	DIM_HEADER_DATA_START_SECTOR		0x1a		/* 0012 */
+#define	DIM_HEADER_CLUSTERS_COUNT		0x1c		/* 02c7 */
+#define	DIM_HEADER_BPB_FLAGS			0x1e		/* 0000 */
+
+
 
 #ifdef SAVE_TO_DIM_IMAGES
 static struct {
@@ -100,14 +140,64 @@ bool DIM_FileNameIsDIM(const char *pszFileName, bool bAllowGZ)
 }
 
 
+
+/**
+ * Return number of entries a FAT12 table can hold, two entries are packed into every three bytes
+ */
+static int DIM_GetFAT12EntryCount(uint16_t FATSectors)
+{
+	return ( FATSectors*NUMBYTESPERSECTOR*2 ) / 3;
+}
+
+/**
+ * Return entry 'Cluster' from a FAT12 table
+ */
+static uint16_t DIM_GetFAT12Entry(unsigned char *pFAT,int Cluster)
+{
+	uint8_t *pEntry;
+
+	pEntry = pFAT + (Cluster*3)/2;
+	if (Cluster & 1)
+		return (uint16_t)((pEntry[0]>>4) | (pEntry[1]<<4));
+	else
+		return (uint16_t)((pEntry[0] | (pEntry[1]<<8)) & DIM_FAT12_ENTRY_MASK);
+}
+
+/**
+ * Return TRUE if FAT entry marks a bad cluster
+ */
+static bool DIM_IsClusterBad(uint16_t FATEntry)
+{
+	return ( FATEntry >= DIM_FAT12_BAD_FIRST ) && ( FATEntry <= DIM_FAT12_BAD_LAST );
+}
+
+//-----------------------------------------------------------------------
+/*
+	FastCopy stores any cluster whose FAT entry is not free, reserved or bad
+*/
+static bool DIM_IsClusterUsed(unsigned short int FATEntry)
+{
+	return ( FATEntry != DIM_FAT12_FREE ) && ( FATEntry != DIM_FAT12_RESERVED ) && !DIM_IsClusterBad(FATEntry);
+}
+
+
+
+
 /**
  * Load .DIM file into memory, set number of bytes loaded and return a pointer
  * to the buffer.
  */
 uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int *pImageType)
 {
-	uint8_t *pDimFile;
-	uint8_t *pDiskBuffer = NULL;
+	uint8_t		*pDimFile;
+	uint8_t		*pDiskBuffer = NULL;
+	uint8_t		*pDim_Header;
+	uint8_t		*pDim_Data;
+	uint8_t		*pFAT;
+	uint16_t	SectorsPerTrack, SectorsPerImage;
+	uint16_t	SectorsPerCluster, SectorsPerFAT, FATStartSector, DataStartSector, ClusterCount;
+	uint16_t	LastCluster , Cluster , ClusterSector;
+	int		BytesPerCluster;
 
 	assert(drive < MAX_FLOPPYDRIVES);
 
@@ -119,10 +209,12 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 	pDimFile = File_Read(pszFileName, pImageSize, NULL);
 	if (pDimFile)
 	{
-		/* Check header for valid image: */
-		if (*pImageSize < DIM_HEADER_SIZE + 512 ||
-		    pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 ||
-		    pDimFile[0x03] != 0 || pDimFile[0x0A] != 0)
+		pDim_Header = pDimFile;
+		pDim_Data = pDimFile + DIM_HEADER_SIZE;
+
+		/* Check header for valid image */
+		if (*pImageSize < DIM_HEADER_SIZE + 512
+		  ||  pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 )	/* 0x4242 "BB" */
 		{
 			fprintf(stderr, "This is not a valid DIM image!\n");
 			*pImageSize = 0;
@@ -130,22 +222,84 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 			return NULL;
 		}
 
-		/* Simply use disk contents without the DIM header: */
-		*pImageSize -= 32;
+		SectorsPerTrack = pDim_Header[ DIM_HEADER_SECTORS_PER_TRACK ] * ( pDim_Header[ DIM_HEADER_SIDES ]+1 );		// Both sides
+		SectorsPerImage = ( pDim_Header[ DIM_HEADER_ENDING_TRACK ] + 1 ) * SectorsPerTrack;
+		*pImageSize = SectorsPerImage * NUMBYTESPERSECTOR;
+
 		pDiskBuffer = malloc(*pImageSize);
-		if (pDiskBuffer)
-		{
-			memcpy(pDiskBuffer, pDimFile + DIM_HEADER_SIZE, *pImageSize);
-#ifdef SAVE_TO_DIM_IMAGES
-			memcpy(headers[drive].data, pDimFile, DIM_HEADER_SIZE);
-			strncpy(headers[drive].filename, pszFileName, FILENAME_MAX - 1);
-			headers[drive].filename[FILENAME_MAX - 1] = 0;
-#endif
-		}
-		else
+		if (!pDiskBuffer)
 		{
 			perror("DIM_ReadDisk");
 		}
+
+		/* Anything not stored in the file is left blank */
+		memset ( pDiskBuffer , 0 , *pImageSize );
+
+
+		/* Only used sectors ? */
+		if ( pDim_Header[ DIM_HEADER_USED_SECTORS_ONLY ] )
+		{
+			/* Image is 'Get Sectors Used' */
+			SectorsPerCluster = Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_SECTORS_PER_CLUSTER );
+			SectorsPerFAT = Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_SECTORS_PER_FAT );
+			FATStartSector = Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_FAT_START_SECTOR );
+			DataStartSector = Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_DATA_START_SECTOR );
+			ClusterCount = Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_CLUSTERS_COUNT );
+			LastCluster = DIM_FIRST_DATA_CLUSTER + ClusterCount - 1;
+			BytesPerCluster = SectorsPerCluster * NUMBYTESPERSECTOR;
+
+			/* Only whole discs with a 12-bit FAT can be used, and every cluster must fit on the disc and in the FAT */
+			if ( ( pDim_Header[ DIM_HEADER_STARTING_TRACK ] != 0 )
+			  || ( Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_BPB_FLAGS ) & DIM_BPB_FLAG_FAT16 )
+			  || ( Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_SECTOR_SIZE ) != NUMBYTESPERSECTOR)
+			  || ( SectorsPerCluster == 0 )
+			  || ( FATStartSector + SectorsPerFAT > DataStartSector )
+			  || ( DataStartSector + ClusterCount * SectorsPerCluster > SectorsPerImage )
+			  || ( LastCluster >= DIM_GetFAT12EntryCount ( SectorsPerFAT) ) )
+			{
+				fprintf(stderr, "Error : DIM image with only used sectors and incorrect values\n");
+				*pImageSize = 0;
+				free(pDimFile);
+				return NULL;
+			}
+
+			else
+			{
+				/* Boot sector, both FATs and root directory are stored in full */
+				memcpy ( pDiskBuffer , pDim_Data , DataStartSector*NUMBYTESPERSECTOR );
+				pDim_Data += DataStartSector*NUMBYTESPERSECTOR;
+
+				/* Copy each used cluster to its position on the disc, using the second FAT as TOS does */
+				pFAT = pDiskBuffer + FATStartSector*NUMBYTESPERSECTOR;
+
+				for ( Cluster = DIM_FIRST_DATA_CLUSTER ; Cluster <= LastCluster ; Cluster++ )
+				{
+//fprintf ( stderr , "dim cluster=%03x fat_entry=%03x\n" , Cluster , DIM_GetFAT12Entry( pFAT, Cluster ) );
+					if ( DIM_IsClusterUsed ( DIM_GetFAT12Entry( pFAT, Cluster ) ) )
+					{
+						ClusterSector = DataStartSector + ( Cluster-DIM_FIRST_DATA_CLUSTER ) * SectorsPerCluster;
+						memcpy ( pDiskBuffer + ClusterSector*NUMBYTESPERSECTOR , pDim_Data , BytesPerCluster );
+						pDim_Data += BytesPerCluster;
+					}
+				}
+			}
+		}
+
+		/* All sectors */
+		else
+		{
+			/* Image is 'Get Sectors All' : copy the stored tracks, which may not start at track 0 */
+			/* Unused track will be blank memory from above */
+			memcpy ( pDiskBuffer + (int)(pDim_Header[ DIM_HEADER_STARTING_TRACK ] ) * SectorsPerTrack * NUMBYTESPERSECTOR ,
+				pDim_Data ,
+				(int)( pDim_Header[ DIM_HEADER_ENDING_TRACK ] - pDim_Header[ DIM_HEADER_STARTING_TRACK ] + 1 ) * SectorsPerTrack * NUMBYTESPERSECTOR );
+		}
+
+#ifdef SAVE_TO_DIM_IMAGES
+		memcpy(headers[drive].data, pDimFile, DIM_HEADER_SIZE);
+		strncpy(headers[drive].filename, pszFileName, FILENAME_MAX - 1);
+		headers[drive].filename[FILENAME_MAX - 1] = 0;
+#endif
 
 		/* Free DIM file we loaded */
 		free(pDimFile);
@@ -156,6 +310,17 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 		*pImageSize = 0;
 		return NULL;
 	}
+
+#if 0
+/* DEBUG : write the memory buffer as a .ST image to debug DIM loading when only used sectors are stored
+ * we can then compare the original .ST file (that was converted to .DIM) with the new .ST image
+ * obtained from loading the .DIM
+ */
+#include "floppies/st.h"
+char name[400];
+sprintf ( name , "%s.st" , pszFileName );
+ST_WriteDisk(drive, name, pDiskBuffer, *pImageSize);
+#endif
 
 	*pImageType = FLOPPY_IMAGE_TYPE_DIM;
 	return pDiskBuffer;
