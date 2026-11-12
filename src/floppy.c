@@ -567,7 +567,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
 	{
-		Log_AlertDlg(LOG_INFO, "Image '%s' filename extension, or content unrecognized", filename);
+		Log_AlertDlg(LOG_INFO, "Image '%s' filename extension or content unrecognized", filename);
 		return false;
 	}
 
