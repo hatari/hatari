@@ -37,16 +37,24 @@ const char DIM_fileid[] = "Hatari dim.c";
   0x0002  Byte      1 = disk configuration has been detected automatically (from the BPB)
                     0 = the user specified the disk configuration
   0x0003  Byte      Image contains all sectors (0) or only used sectors (1)
-  0x0004  Word      Reserved, always zero
-  0x0006  Byte      Sides (0 or 1; add 1 to this to get correct number of sides)
-  0x0007  Byte      Unused, always zero
-  0x0008  Byte      Sectors per track
-  0x0009  Byte      Unused, always zero
-  0x000A  Byte      Starting Track (0 based)
-  0x000B  Byte      Unused, always zero
-  0x000C  Byte      Ending Track (0 based)
+  0x0004  Word      Padding, always zero
+  0x0005  Word      Sides (0 or 1; add 1 to this to get correct number of sides)
+  0x0007  Word      Sectors per track
+  0x0009  Word      Starting Track (0 based)
+  0x000B  Byte      Ending Track (0 based)
   0x000D  Byte      Double-Density(0) or High-Density (1)
   0x000E  18 Bytes  A copy of the Bios Parameter Block (BPB) of this disk.
+
+  Bytes $02-$0D are FastCopy's configuration block written as it is in memory, so
+  the words sit at odd offsets and $04 is the compiler's alignment byte. The values
+  are small, so the high bytes at $05, $07, $09 and $0B are always zero.
+
+  $0D is the density FastCopy drove the drive at, so it cannot always be worked out
+  from the sectors per track. When the configuration is read from the disc it is 0 on
+  a double density drive; on a high density drive it comes from the drive's media
+  detect bit if HD detection is set up in the options, else it is 1 for more than 11
+  sectors per track. With a user specified configuration it is the HD setting of the
+  dialog. An HD disc formatted as 720K and read with detection gives 1 with 9 sectors.
 
   The BPB is stored as nine 68000 words:
 
@@ -64,8 +72,9 @@ const char DIM_fileid[] = "Hatari dim.c";
 
   $02 $03
    0   0   Geometry typed in by the user. Only tracks 'Starting track' to
-             'Ending track' are stored, so the image may be part of a disc. The
-              BPB is still filled in but cannot be relied on.
+   0   1  'Ending track' are stored, so the image may be part of a disc. The
+             BPB is still filled in but cannot be relied on. $03 is the 'Get
+             Sectors Used' setting, which only counts with $02 set.
    1   0   Geometry from the BPB. The whole disc is stored.
    1   1   Geometry from the BPB and FAT. Only used clusters are stored.
 
@@ -75,7 +84,11 @@ const char DIM_fileid[] = "Hatari dim.c";
   For a 'Get Sectors Used' image the boot sector, both FATs and the root directory
   (sectors 0 to datrec-1) are stored in full. These are followed only by the
   clusters marked as used in the FAT, in cluster order, each stored in full
-  (clsiz sectors). Clusters marked free($000) or bad($FF0-$FF7) are not stored.
+  (clsiz sectors). Clusters marked free($000), reserved($001) or bad($FF0-$FF7) are
+  not stored, and the image ends with the last used cluster. When restoring, FastCopy
+  takes the used clusters from the second FAT in the image. FastCopy decides sector by
+  sector, so sectors after the last whole cluster, when the disc has any, are stored if
+  the FAT entry for the cluster they would be in is used.
 
 
   We take a copy of the header while reading the disk image, so we can
@@ -84,9 +97,11 @@ const char DIM_fileid[] = "Hatari dim.c";
 */
 
 
-#define DIM_HEADER_SIZE 32
+#define DIM_HEADER_SIZE				32
 
 #define DIM_FIRST_DATA_CLUSTER			2		/* FAT entries 0 and 1 are reserved */
+#define DIM_MAX_SIDES				1		/* Header holds sides-1 */
+#define DIM_MAX_SECTORS_PER_TRACK		23
 
 #define DIM_FAT12_ENTRY_MASK			0x0FFF
 
@@ -102,14 +117,15 @@ const char DIM_fileid[] = "Hatari dim.c";
 #define	DIM_HEADER_SIGNATURE			0x00		/* "BB" */
 #define	DIM_HEADER_DISK_CONF			0x02		/* 1 */
 #define	DIM_HEADER_USED_SECTORS_ONLY		0x03		/* 0 or 1 */
-#define	DIM_HEADER_RESERVED			0x04		/* reserved, word always 0 */
+#define	DIM_HEADER_RESERVED			0x04		/* reserved, always 0 */
+#define	DIM_HEADER_HIHG0_1			0x05		/* high byte of the side, always 0 */
 #define	DIM_HEADER_SIDES			0x06		/* 1 (=2 sides) */
-#define	DIM_HEADER_UNUSED_1			0x07		/* unused, always 0 */
-#define	DIM_HEADER_SECTORS_PER_TRACK		0x08		/* 9 */
-#define	DIM_HEADER_UNUSED_2			0x09		/* unused, always 0 */
-#define	DIM_HEADER_STARTING_TRACK		0x0a		/* 0 */
-#define	DIM_HEADER_UNUSED_3			0x0b		/* unused, always 0 */
-#define	DIM_HEADER_ENDING_TRACK			0x0c		/* 79 */
+#define	DIM_HEADER_HIGH0_2			0x07		/* high byte of the sectors per track, always 0 */
+#define	DIM_HEADER_SECTORS_PER_TRACK		0x08		/* 09 */
+#define	DIM_HEADER_HIGH0_3			0x09		/* high byte of the starting track, always 0 */
+#define	DIM_HEADER_STARTING_TRACK		0x0a		/* 00 */
+#define	DIM_HEADER_HIGH0_4			0x0b		/* high byte of the ending track, always 0 */
+#define	DIM_HEADER_ENDING_TRACK			0x0c		/* 4f */
 #define	DIM_HEADER_DENSITY			0x0d		/* 0 (=double density) */
 #define	DIM_HEADER_SECTOR_SIZE			0x0e		/* 0200 */
 #define	DIM_HEADER_SECTORS_PER_CLUSTER		0x10		/* 0002 */
@@ -214,7 +230,7 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 
 		/* Check header for valid image */
 		if (*pImageSize < DIM_HEADER_SIZE + 512
-		  ||  pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 )	/* 0x4242 "BB" */
+		  ||  pDim_Header[0x00] != 0x42 || pDim_Header[0x01] != 0x42 )	/* 0x4242 "BB" */
 		{
 			fprintf(stderr, "This is not a valid DIM image!\n");
 			*pImageSize = 0;
@@ -249,6 +265,7 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 			BytesPerCluster = SectorsPerCluster * NUMBYTESPERSECTOR;
 
 			/* Only whole discs with a 12-bit FAT can be used, and every cluster must fit on the disc and in the FAT */
+			/* FastCopy also reads 16-bit FATs, but they are only used on hard disc partitions, never on floppies */
 			if ( ( pDim_Header[ DIM_HEADER_STARTING_TRACK ] != 0 )
 			  || ( Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_BPB_FLAGS ) & DIM_BPB_FLAG_FAT16 )
 			  || ( Mem_ReadU16_BE ( pDim_Header + DIM_HEADER_SECTOR_SIZE ) != NUMBYTESPERSECTOR)
@@ -296,7 +313,7 @@ uint8_t *DIM_ReadDisk(int drive, const char *pszFileName, long *pImageSize, int 
 		}
 
 #ifdef SAVE_TO_DIM_IMAGES
-		memcpy(headers[drive].data, pDimFile, DIM_HEADER_SIZE);
+		memcpy(headers[drive].data, pDim_Header, DIM_HEADER_SIZE);
 		strncpy(headers[drive].filename, pszFileName, FILENAME_MAX - 1);
 		headers[drive].filename[FILENAME_MAX - 1] = 0;
 #endif
