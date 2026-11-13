@@ -1929,7 +1929,7 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 
 			/* Memory options */
 		case OPT_MEMSIZE:
-			if (!Opt_Int(arg, OPT_MEMSIZE, &val, 0, 1024, 0))
+			if (!Opt_Int(arg, OPT_MEMSIZE, &val, 0, 14*1024, 0))
 			{
 				return false;
 			}
