@@ -136,7 +136,7 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
    $ sudo apt install gcc-m68k-linux-gnu
 
 2. Get latest upstream kernel sources:
-     $ release=v7.2
+     $ release=v7.3
      $ repo=git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    Either just the latest release (= faster):
      $ git clone --depth 1 --branch $release $repo
@@ -165,8 +165,14 @@ VFS: Cannot open root device "/dev/sda" or unknown-block(8,0): error -6
 - "Optimize for size" is used instead of "Optimize for performance".
   Latter is 1/4th (1MB) larger, although it boots much faster
 
-- With v6.17 or newer, "dead code elimination" option can be
-  used to get 1/2MB smaller kernel image
+- Since v6.17 kernel, supplied config uses "dead code elimination"
+  option to get 1/2MB smaller kernel image. However, it breaks booting
+  kernel from TT-RAM. If that matters, disable it from the kernel
+  config:
+    sed -i 's/\(LD_DEAD_CODE_DATA_ELIMINATION=.*\)/\1n/' .config
+
+- BASE_SMALL option is used to reduce size of kernel data structures
+  to save memory (may reduce performance)
 
 - Normal Linux builds require 030 (or better) with MMU and FPU
   (only uCLinux would work on 68000 without MMU)
@@ -692,9 +698,11 @@ $ aranym-mmu -l linux.config
 
   => Fix: Use Hatari >=2.6 version.
 
-- When 040 or 060 data cache is enabled, boots crash to double bus
-  error. Although screen is black, CPU trace indicates a panic. With
-  040, panic is called in atari_stram_init(), with 60, somewhere else.
+- When 040 or 060 data cache is enabled, boots freezes right at start
+  when kernel is loaded to TT-RAM, and kernel crashes to double bus
+  error when it is loaded to ST-RAM. Although screen is black, CPU
+  trace of latter indicates a panic. With 040, panic is called in
+  atari_stram_init(), with 60, somewhere else.
 
   => Workaround: disable CPU data cache for 040/060 ("--data-cache off")
 
