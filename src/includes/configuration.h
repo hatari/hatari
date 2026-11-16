@@ -261,12 +261,20 @@ typedef struct
 #define MAX_SCSI_DEVS 8
 #define MAX_IDE_DEVS 2
 
+typedef enum
+{
+  SCSI_DEVTYPE_DISK,
+  SCSI_DEVTYPE_NETWORK      /* DaynaPORT SCSI/Link on TAP interface sNetworkIf */
+} SCSI_DEVTYPE;
+
 typedef struct
 {
   bool bUseDevice;
   char sDeviceFile[FILENAME_MAX];
   int nBlockSize;
   int nScsiVersion;
+  SCSI_DEVTYPE nDeviceType;
+  char sNetworkIf[32];
 } CNF_SCSIDEV;
 
 typedef enum
