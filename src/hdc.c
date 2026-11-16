@@ -18,6 +18,7 @@ const char HDC_fileid[] = "Hatari hdc.c";
 #include "filename.h"
 #include "fdc.h"
 #include "hdc.h"
+#include "daynaport.h"
 #include "cycles.h"
 #include "cycInt.h"
 #include "ioMem.h"
@@ -674,6 +675,12 @@ static void HDC_EmulateCommandPacket(SCSI_CTRLR *ctr)
 
 	ctr->data_len = 0;
 
+	if (dev->network)
+	{
+		DaynaPort_EmulateCommand(ctr);
+		return;
+	}
+
 	switch (ctr->opcode)
 	{
 	 case HD_TEST_UNIT_RDY:
@@ -992,7 +999,7 @@ int HDC_InitDevice(const char *hdtype, SCSI_DEV *dev, CNF_SCSIDEV *conf)
  */
 void HDC_UnInitDevice(SCSI_DEV *dev)
 {
-	if (dev->enabled)
+	if (dev->enabled && dev->image_file)
 	{
 		File_UnLock(dev->image_file);
 		fclose(dev->image_file);
