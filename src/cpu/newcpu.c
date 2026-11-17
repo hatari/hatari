@@ -2283,7 +2283,7 @@ static void update_68k_cycles (void)
 		}
 #ifndef WINUAE_FOR_HATARI		/* [NP] TODO : handle any cpu frequency, not just mulltiplier ? */
 	} else if (currprefs.cpu_frequency) {
-		cpucycleunit = CYCLE_UNIT * baseclock / currprefs.cpu_frequency;
+		cpucycleunit = (uae_u64)CYCLE_UNIT * baseclock / ((uae_u64)8 * currprefs.cpu_frequency);
 #endif
 	} else if (currprefs.cpu_memory_cycle_exact && currprefs.cpu_clock_multiplier == 0) {
 		if (currprefs.cpu_model >= 68040) {
