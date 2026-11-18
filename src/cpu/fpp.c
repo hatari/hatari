@@ -2214,12 +2214,13 @@ static void trace_t0_68040(void)
  * unspecified table (8-25), so the 68882 tail is used for it.
  */
 
-#ifndef CPU_TESTER
+//#ifndef CPU_TESTER
 
 #define FPU_TIMING_MAX_BUSY 4096
 
 static evt_t fpu_timing_start, fpu_busy_until;
 
+#if 0
 struct fpu_op_timing {
 	// FPn,FPn: 68881 total, 68882 tail, 68040 FPU latency, 68060 total.
 	// -1: not implemented in this FPU.
