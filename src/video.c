@@ -533,6 +533,7 @@ static uint8_t *pVideoRaster;			/* Pointer to Video raster, after VideoBase in P
 static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync;			/* whether TT colors need conversion */
+static bool bTTPaletteDirty;			/* TT palette was written since the last HBL snapshot */
 static int VideoRasterDelayedInc;		/* Number of bytes to add at the end of the current video line */
 
 int TTSpecialVideoMode;				/* TT special video mode */
@@ -857,6 +858,7 @@ void Video_Reset(void)
 	pVideoRasterDelayed = NULL;
 
 	TTSpecialVideoMode = nPrevTTSpecialVideoMode = 0;
+	bTTPaletteDirty = false;
 
 	/* Clear framecycles counter at the time of the reset */
 	/* We must take into account if CyclesGlobalClockCounter is 4*n or 4*n+2 */
@@ -4655,6 +4657,13 @@ static void Video_ClearOnVBL(void)
 
 	Video_ResetShifterTimings();
 
+	if (Config_IsMachineTT() && !bUseVDIRes)
+	{
+		int width, height, bpp;
+		Video_GetTTRes(&width, &height, &bpp);
+		ConvGen_TTBeginFrame(height);
+	}
+
         if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_RestartVideoCounter();
 	else
@@ -4692,13 +4701,13 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 
 
 /**
- * Set a TT palette color
+ * Set a TT palette color from a 0x0RGB TT color word
  */
-static void Video_SetTTPaletteColor(int idx, uint32_t addr)
+static void Video_SetTTPaletteColorWord(int idx, uint16_t color)
 {
 	uint8_t r,g,b, lowbyte, highbyte;
 
-	lowbyte = IoMem_ReadByte(addr + 1);
+	lowbyte = color & 0xff;
 
 	if (TTSpecialVideoMode & 0x10)		/* TT Hyper-mono mode? */
 	{
@@ -4706,13 +4715,13 @@ static void Video_SetTTPaletteColor(int idx, uint32_t addr)
 	}
 	else
 	{
-		highbyte = IoMem_ReadByte(addr);
+		highbyte = color >> 8;
 		r = (highbyte << 4) | (highbyte  & 0x0f);
 		g = (lowbyte & 0xf0) | (lowbyte >> 4);
 		b = (lowbyte << 4) | (lowbyte & 0x0f);
 	}
 
-	//printf("%d (%x): (%d,%d,%d)\n", idx, addr, r,g,b);
+	//printf("%d: (%d,%d,%d)\n", idx, r,g,b);
 	ConvGen_SetPaletteColor(idx, r,g,b);
 }
 
@@ -4725,42 +4734,114 @@ static int TTPaletteSTBank(void)
 }
 
 /**
+ * Fill colors[] with the TT palette words in the order the renderer indexes
+ * them, using the current resolution, palette bank and special modes.
+ * Returns the number of colors, or 0 when the palette is hardwired (mono).
+ */
+static int Video_GetTTPaletteWords(int bpp, uint16_t *colors)
+{
+	uint32_t ttpalette = 0xff8400;
+	int i, count;
+
+	if (TTRes == TT_HIGH_RES || (bUseVDIRes && bpp == 1))
+	{
+		/* Monochrome mode... palette is hardwired (?) */
+		return 0;
+	}
+
+	if (bpp == 1)
+	{
+		/* Duochrome mode... palette is taken from the last two TT colors */
+		int base = (IoMem_ReadWord(0xff8400) & 0x2) >> 1;
+		colors[base] = IoMem_ReadWord(0xff85fc);
+		colors[base ^ 1] = IoMem_ReadWord(0xff85fe);
+		return 2;
+	}
+
+	count = 1 << bpp;
+	if (count <= 16)
+	{
+		/* use correct ST palette bank */
+		ttpalette += TTPaletteSTBank() * 16*SIZE_WORD;
+	}
+
+	for (i = 0; i < count; i++)
+	{
+		colors[i] = IoMem_ReadWord(ttpalette);
+		ttpalette += SIZE_WORD;
+	}
+	return count;
+}
+
+/**
  * Convert TT palette to host palette
  */
 static void Video_UpdateTTPalette(int bpp)
 {
-	if (TTRes == TT_HIGH_RES || (bUseVDIRes && bpp == 1))
+	uint16_t colors[256];
+	int i, count;
+
+	count = Video_GetTTPaletteWords(bpp, colors);
+	if (count == 0)
 	{
-		/* Monochrome mode... palette is hardwired (?) */
+		/* Monochrome mode */
 		ConvGen_SetPaletteColor(0, 255, 255, 255);
 		ConvGen_SetPaletteColor(1, 0, 0, 0);
 	}
-	else if (bpp == 1)
-	{
-		/* Duochrome mode... palette is taken last two TT colors */
-		int base = (IoMem_ReadWord(0xff8400) & 0x2) >> 1;
-		Video_SetTTPaletteColor(base, 0xff85fc);
-		Video_SetTTPaletteColor(base ^ 1, 0xff85fe);
-	}
 	else
 	{
-		uint32_t ttpalette = 0xff8400;
-		int i, colors = 1 << bpp;
-
-		if (colors <= 16)
-		{
-			/* use correct ST palette bank */
-			ttpalette += TTPaletteSTBank() * 16*SIZE_WORD;
-		}
-
-		for (i = 0; i < colors; i++)
-		{
-			Video_SetTTPaletteColor(i, ttpalette);
-			ttpalette += SIZE_WORD;
-		}
+		for (i = 0; i < count; i++)
+			Video_SetTTPaletteColorWord(i, colors[i]);
 	}
 
 	bTTColorsSync = true;
+}
+
+/**
+ * Record the current TT palette for one scanline.  Called at each HBL so a
+ * mid-frame palette write only affects the lines that follow it (the TT
+ * shifter latches the palette while scanning out).
+ */
+static void Video_TT_SnapshotPaletteLine(int line, int bpp)
+{
+	uint16_t colors[256];
+	int count;
+
+	count = Video_GetTTPaletteWords(bpp, colors);
+	if (count > 0)
+		ConvGen_TTSetLinePalette(line, colors, count, (TTSpecialVideoMode & 0x10) != 0);
+}
+
+/**
+ * Record the TT palette for the scanline being displayed when a palette
+ * register is written.  This mirrors the ST/STE path: a write before the end
+ * of the visible part changes the current line, a later one changes the next.
+ * Writes during VBL or the borders only set the dirty flag; the first visible
+ * line then takes the accumulated palette.
+ */
+static void Video_TT_RecordPaletteWrite(void)
+{
+	int FrameCycles, HblCounterVideo, LineCycles;
+	int width, height, bpp, line;
+
+	bTTPaletteDirty = true;
+
+	if (!Config_IsMachineTT() || bUseVDIRes)
+		return;
+
+	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
+	LineCycles = VIDEO_CYCLE_TO_HPOS ( LineCycles );
+	Video_GetTTRes ( &width , &height , &bpp );
+
+	line = HblCounterVideo - nStartHBL;
+	if ( LineCycles >= LINE_END_CYCLE_NO_RIGHT )
+		line++;
+
+	if ( line >= 0 && line < height )
+	{
+		Video_TT_SnapshotPaletteLine ( line , bpp );
+		bTTPaletteDirty = false;
+	}
 }
 
 
@@ -6003,6 +6084,7 @@ void Video_TTShiftMode_WriteWord(void)
 	}
 	/* in case bank was switched and there are <= 16 colors */
 	bTTColorsSync = false;
+	Video_TT_RecordPaletteWrite();
 }
 
 
@@ -6040,6 +6122,7 @@ void Video_TTColorRegs_Write(void)
 		addr += 2;
 	}
 	bTTColorsSync = false;
+	Video_TT_RecordPaletteWrite();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -6091,6 +6174,7 @@ void Video_TTColorRegs_STRegWrite(void)
 		addr += 2;
 	}
 	bTTColorsSync = false;
+	Video_TT_RecordPaletteWrite();
 }
 
 
@@ -6125,6 +6209,18 @@ static void Video_TT_RasterHBL(void)
 			lines = height;
 
 		pVideoRaster = ( ( Video_GetScreenBaseAddr() + lines * linebytes ) & 0xffffff ) + STRam;
+	}
+
+	/* Record the palette for the line that was just scanned out, so mid-frame
+	 * palette writes (Timer B, HBL handlers) only change the following lines. */
+	if ( nHBL >= nStartHBL )
+	{
+		int line = nHBL - nStartHBL;
+		if ( line < height && ( bTTPaletteDirty || line == 0 ) )
+		{
+			Video_TT_SnapshotPaletteLine(line, bpp);
+			bTTPaletteDirty = false;
+		}
 	}
 }
 

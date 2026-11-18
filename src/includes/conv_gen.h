@@ -13,6 +13,10 @@ void ConvGen_SetPaletteColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t bl
 void ConvGen_GetPaletteColor(int idx, uint8_t *r, uint8_t *g, uint8_t *b);
 void ConvGen_MemorySnapShot_Capture(bool bSave);
 
+/* TT per-scanline palette overrides (mid-frame palette changes) */
+void ConvGen_TTBeginFrame(int height);
+void ConvGen_TTSetLinePalette(int line, const uint16_t *colors, int count, bool hypermono);
+
 void ConvGen_Convert(uint32_t vaddr, void *fvram, int vw, int vh,
                      int vbpp, int nextline, int hscroll,
                      int leftBorderSize, int rightBorderSize,
