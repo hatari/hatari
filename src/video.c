@@ -4834,7 +4834,7 @@ static void Video_TT_RecordPaletteWrite(void)
 	Video_GetTTRes ( &width , &height , &bpp );
 
 	line = HblCounterVideo - nStartHBL;
-	if ( LineCycles >= LINE_END_CYCLE_NO_RIGHT )
+	if ( LineCycles >= LINE_END_CYCLE_50 )
 		line++;
 
 	if ( line >= 0 && line < height )
