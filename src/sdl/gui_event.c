@@ -56,17 +56,40 @@ void GuiEvent_WarpMouse(int x, int y, bool restore)
 /**
  * Handle mouse motion event.
  */
+#if ENABLE_SDL3
+static void GuiEvent_HandleMouseMotion(float xrel, float yrel)
+#else
 static void GuiEvent_HandleMouseMotion(int dx, int dy)
+#endif
 {
 	static int ax = 0, ay = 0;
+#if ENABLE_SDL3
+	static float rx = 0.0f, ry = 0.0f;
+	int dx, dy;
+#endif
 
 	/* Ignore motion when position has changed right after a reset or TOS
 	 * (especially version 4.04) might get confused and play key clicks */
 	if (bIgnoreNextMouseMotion || nVBLs < 10)
 	{
 		bIgnoreNextMouseMotion = false;
+#if ENABLE_SDL3
+		rx = ry = 0.0f;
+#endif
 		return;
 	}
+
+#if ENABLE_SDL3
+	/* SDL3 mouse deltas can contain fractions, especially under Wayland.
+	 * Keep the remainder so that small movements are not lost when
+	 * converting each event to integer Atari mouse motion. */
+	xrel += rx;
+	yrel += ry;
+	dx = (int)xrel;
+	dy = (int)yrel;
+	rx = xrel - dx;
+	ry = yrel - dy;
+#endif
 
 	/* In zoomed low res mode, we divide dx and dy by the zoom factor so that
 	 * the ST mouse cursor stays in sync with the host mouse. However, we have
