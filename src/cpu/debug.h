@@ -364,6 +364,7 @@ extern void mmu_do_hit (void);
 #ifdef WINUAE_FOR_HATARI
 extern bool debug_mmu_translating(void);
 extern bool debug_mmu_translate_data(uaecptr addr, bool super, uaecptr *phys);
+extern bool debug_mmu_translate_to_physical(uaecptr addr, bool super, uaecptr *phys);
 #endif
 
 #endif /* UAE_DEBUG_H */

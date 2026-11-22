@@ -20,6 +20,7 @@ const char Natfeats_fileid[] = "Hatari natfeats.c";
 #include "reset.h"
 #include "natfeats.h"
 #include "debugui.h"
+#include "debug.h"
 #include "statusbar.h"
 #include "nf_scsidrv.h"
 #include "log.h"
@@ -328,8 +329,13 @@ bool NatFeat_ID(uint32_t stack, uint32_t *retval)
 	const char *name;
 	uint32_t ptr;
 	int i;
+	uint32_t stack_phys;
 
-	ptr = STMemory_ReadLong(stack);
+	/* If MMU is enabled, stack is a "logical" address and must be converted to "physical" */
+	if ( !debug_mmu_translate_to_physical ( stack, true, &stack_phys ) )
+		return false;
+
+	ptr = STMemory_ReadLong(stack_phys);
 	if ( !STMemory_CheckAreaType ( ptr, FEATNAME_MAX, ABFLAG_RAM | ABFLAG_ROM ) ) {
 		M68000_BusError(ptr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA, 0);
 		LOG_TRACE(TRACE_NATFEATS, "NF ID(0x%x) => BUS ERROR (invalid address)\n", ptr);
@@ -359,8 +365,16 @@ bool NatFeat_ID(uint32_t stack, uint32_t *retval)
  */
 bool NatFeat_Call(uint32_t stack, bool super, uint32_t *retval)
 {
-	uint32_t subid = STMemory_ReadLong(stack);
-	unsigned int idx = MASTERID2IDX(subid);
+	uint32_t subid;
+	unsigned int idx;
+	uint32_t stack_phys;
+
+	/* If MMU is enabled, stack is a "logical" address and must be converted to "physical" */
+	if ( !debug_mmu_translate_to_physical ( stack, true, &stack_phys ) )
+		return false;
+
+	subid = STMemory_ReadLong(stack_phys);
+	idx = MASTERID2IDX(subid);
 	subid = MASKOUTMASTERID(subid);
 
 	if (idx >= ARRAY_SIZE(features)) {
@@ -372,6 +386,6 @@ bool NatFeat_Call(uint32_t stack, bool super, uint32_t *retval)
 		M68000_Exception(8, M68000_EXC_SRC_CPU);
 		return false;
 	}
-	stack += SIZE_LONG;
-	return features[idx].cb(stack, subid, retval);
+	stack_phys += SIZE_LONG;
+	return features[idx].cb(stack_phys, subid, retval);
 }

@@ -404,6 +404,27 @@ bool debug_mmu_translate_data(uaecptr addr, bool super, uaecptr *phys)
 	regs.s = olds;
 	return ok;
 }
+
+/* Translate a logical data address for Hatari's debugger, as supervisor
+ * or user data, into *phys. Returns false when the MMU can't map it.
+ *
+ * This combines debug_mmu_translating() to check if MMU is enabled or not,
+ * with debug_mmu_translate_data() to do the real translation.
+ *
+ * If MMU is not enabled we set "*phys" to "addr"
+ */
+bool debug_mmu_translate_to_physical(uaecptr addr, bool super, uaecptr *phys)
+{
+	/* If MMU is enabled, "addr" is a "logical" address and must be converted to "physical" */
+	if ( debug_mmu_translating() )
+		return debug_mmu_translate_data ( addr, super, phys );
+	else
+	{
+		*phys  = addr;
+		return true;
+	}
+}
+
 #endif
 
 uae_u32 get_byte_debug (uaecptr addr)
