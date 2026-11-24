@@ -1643,8 +1643,10 @@ static bool GemDOS_Cconws(uint32_t Params)
  */
 static bool GemDOS_SetDrv(uint32_t Params)
 {
-	/* Read details from stack for our own use */
-	CurrentDrive = STMemory_ReadWord(Params);
+	/* Read details from stack for our own use.
+           Atari TOS 1-3 ignore the upper 8 bits.
+         */
+	CurrentDrive = STMemory_ReadWord(Params) & 0xFF;
 
 	LOG_TRACE(TRACE_OS_GEMDOS, "GEMDOS 0x0E Dsetdrv(0x%x) at PC=0x%X\n", (int)CurrentDrive,
 		  CallingPC);
