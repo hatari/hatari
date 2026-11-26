@@ -253,6 +253,7 @@ typedef struct
   bool bFilenameConversion;
   bool bGemdosHostTime;
   bool bBootFromHardDisk;
+  bool bIdeTwisted;      /* IDE cable with byte lanes crossed (ST adapters) */
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
 } CNF_HARDDISK;
 

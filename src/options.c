@@ -179,6 +179,7 @@ typedef enum {
 	OPT_IDEMASTERHDIMAGE,
 	OPT_IDESLAVEHDIMAGE,
 	OPT_IDEBYTESWAP,
+	OPT_IDETWISTED,
 
 	OPT_MEMSIZE,		/* memory options */
 	OPT_TT_RAM,
@@ -459,6 +460,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Emulate an IDE 1 (slave) harddrive with an image <file>" },
 	{ OPT_IDEBYTESWAP,   NULL, "--ide-swap",
 	  "<id>=<x>", "Set IDE (0/1) byte-swap option (off/on/auto)" },
+	{ OPT_IDETWISTED,   NULL, "--ide-twisted",
+	  "<bool>", "IDE cable with crossed byte lanes (ST adapters)" },
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -1926,6 +1929,10 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 			ConfigureParams.Ide[drive].nByteSwap = val;
 			break;
 		}
+
+		case OPT_IDETWISTED:
+			ok = Opt_Bool(argv[++i], OPT_IDETWISTED, &ConfigureParams.HardDisk.bIdeTwisted);
+			break;
 
 			/* Memory options */
 		case OPT_MEMSIZE:

@@ -372,6 +372,7 @@ static const struct Config_Tag configs_HardDisk[] =
 {
 	{ "nGemdosDrive", Int_Tag, &ConfigureParams.HardDisk.nGemdosDrive },
 	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
+	{ "bIdeTwisted", Bool_Tag, &ConfigureParams.HardDisk.bIdeTwisted },
 	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
 	{ "nGemdosCase", Int_Tag, &ConfigureParams.HardDisk.nGemdosCase },
@@ -652,6 +653,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for hard disks */
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
+	ConfigureParams.HardDisk.bIdeTwisted = false;
 	ConfigureParams.HardDisk.bFilenameConversion = false;
 	ConfigureParams.HardDisk.bGemdosHostTime = false;
 	ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;

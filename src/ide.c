@@ -150,6 +150,36 @@ static uint32_t fcha2io(uint32_t address)
 
 
 /**
+ * Twisted cable: the drive's D0-D7 lands on the CPU's D8-D15. The byte
+ * registers then answer at the even address below their usual one, the odd
+ * addresses read as $FF, and every data word arrives with its bytes swapped
+ * (the data register itself does not move).
+ */
+static uint32_t ide_reg_port(uint32_t address)
+{
+	if (!ConfigureParams.HardDisk.bIdeTwisted)
+		return fcha2io(address);
+	if (address & 1)
+		return 0xffffffff;
+	return fcha2io(address + 1);
+}
+
+static inline uint32_t ide_twist16(uint32_t w)
+{
+	if (ConfigureParams.HardDisk.bIdeTwisted)
+		w = ((w >> 8) & 0x00ff) | ((w & 0x00ff) << 8);
+	return w;
+}
+
+static inline uint32_t ide_twist32(uint32_t l)
+{
+	if (ConfigureParams.HardDisk.bIdeTwisted)
+		l = ((l >> 8) & 0x00ff00ff) | ((l & 0x00ff00ff) << 8);
+	return l;
+}
+
+
+/**
  * Handle byte read access from IDE IO memory.
  * Note: Registers are available from usermode, too, so there is no check for
  * the supervisor mode required here.
@@ -169,7 +199,7 @@ uae_u32 REGPARAM3 Ide_Mem_bget(uaecptr addr)
 		return -1;
 	}
 
-	ideport = fcha2io(addr);
+	ideport = ide_reg_port(addr);
 
 	if (ideport >= 1 && ideport <= 7)
 	{
@@ -208,7 +238,7 @@ uae_u32 REGPARAM3 Ide_Mem_wget(uaecptr addr)
 
 	if (addr == 0xf00000 || addr == 0xf00002)
 	{
-		retval = ide_data_readw(ide_state, 0);
+		retval = ide_twist16(ide_data_readw(ide_state, 0));
 	}
 	else
 	{
@@ -239,7 +269,7 @@ uae_u32 REGPARAM3 Ide_Mem_lget(uaecptr addr)
 
 	if (addr == 0xf00000)
 	{
-		retval = ide_data_readl(ide_state, 0);
+		retval = ide_twist32(ide_data_readl(ide_state, 0));
 	}
 	else
 	{
@@ -276,7 +306,7 @@ void REGPARAM3 Ide_Mem_bput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	ideport = fcha2io(addr);
+	ideport = ide_reg_port(addr);
 
 	if (ideport >= 1 && ideport <= 7)
 	{
@@ -310,7 +340,7 @@ void REGPARAM3 Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 	if (addr == 0xf00000 || addr == 0xf00002)
 	{
-		ide_data_writew(ide_state, 0, val);
+		ide_data_writew(ide_state, 0, ide_twist16(val));
 	}
 }
 
@@ -338,7 +368,7 @@ void REGPARAM3 Ide_Mem_lput(uaecptr addr, uae_u32 val)
 
 	if (addr == 0xf00000)
 	{
-		ide_data_writel(ide_state, 0, val);
+		ide_data_writel(ide_state, 0, ide_twist32(val));
 	}
 }
 
