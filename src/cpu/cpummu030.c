@@ -3655,7 +3655,18 @@ void m68k_do_rte_mmu030c (uaecptr a7)
 				mmu030_ad[mmu030_idx_done].val = mmu030_data_buffer_out;
 				mmu030_idx_done++;
 			}
-		} else {
+		} else
+#ifdef WINUAE_FOR_HATARI
+		/*
+		 * Frame $B: the prefetch fixup below runs the instruction again from
+		 * its start, and that run does this write. Doing it here as well made
+		 * a read-modify-write do its work twice: addq.l #1,abs.l on a
+		 * copy-on-write page added 2 (absolute writes stack frame $B), and the
+		 * X server of NetBSD/atari lost one of its extensions.
+		 */
+		if (frame != 0xb)
+#endif
+		{
 			if (mmu030_state[1] & MMU030_STATEFLAG1_SUBACCESS0) {
 				mmu030_unaligned_write_continue(addr, fc, write_dcache030_retry);
 			} else {
