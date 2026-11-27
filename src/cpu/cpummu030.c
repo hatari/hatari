@@ -78,6 +78,17 @@ int mmu030_opcode_stageb;
 int mmu030_fake_prefetch;
 uaecptr mmu030_fake_prefetch_addr;
 
+/* Logical and physical address of the last CPU access through the 030 MMU.
+ * A memory bank that raises a bus error only knows the physical address, but
+ * the 68030 stacks the logical one as the data cycle fault address. */
+static uaecptr mmu030_access_log, mmu030_access_phys;
+
+STATIC_INLINE void mmu030_note_access(uaecptr log, uaecptr phys)
+{
+	mmu030_access_log = log;
+	mmu030_access_phys = phys;
+}
+
 uae_u16 mmu030_state[3];
 uae_u32 mmu030_data_buffer_out;
 uae_u32 mmu030_disp_store[2];
@@ -1916,6 +1927,9 @@ void mmu030_hardware_bus_error(uaecptr addr, uae_u32 v, bool read, bool ins, int
 	} else {
 		flags |= MMU030_SSW_RW;
 	}
+	/* The bank gave us the physical address: stack the logical one */
+	if (addr - mmu030_access_phys < 4)
+		addr = mmu030_access_log + (addr - mmu030_access_phys);
 	mmu030_page_fault(addr, read, flags, fc);
 }
 
@@ -2128,6 +2142,7 @@ STATIC_INLINE void cacheablecheck(uaecptr addr)
 
 void mmu030_put_long(uaecptr addr, uae_u32 val, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2148,12 +2163,14 @@ void mmu030_put_long(uaecptr addr, uae_u32 val, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	x_phys_put_long(addr,val);
 }
 
 void mmu030_put_word(uaecptr addr, uae_u16 val, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2174,12 +2191,14 @@ void mmu030_put_word(uaecptr addr, uae_u16 val, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	x_phys_put_word(addr,val);
 }
 
 void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,true)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2200,6 +2219,7 @@ void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	x_phys_put_byte(addr,val);
 }
@@ -2207,6 +2227,7 @@ void mmu030_put_byte(uaecptr addr, uae_u8 val, uae_u32 fc)
 
 uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2227,6 +2248,7 @@ uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	uae_u32 v = x_phys_get_long(addr);
 	return v;
@@ -2234,6 +2256,7 @@ uae_u32 mmu030_get_long(uaecptr addr, uae_u32 fc)
 
 uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2254,6 +2277,7 @@ uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	uae_u16 v = x_phys_get_word(addr);
 	return v;
@@ -2261,6 +2285,7 @@ uae_u16 mmu030_get_word(uaecptr addr, uae_u32 fc)
 
 uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_ttr_access(addr,fc,false)) && mmu030.enabled) {
 #if MMU_DPAGECACHE030
@@ -2281,6 +2306,7 @@ uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc)
 			}
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	uae_u8 v = x_phys_get_byte(addr);
 	return v;
@@ -2289,6 +2315,7 @@ uae_u8 mmu030_get_byte(uaecptr addr, uae_u32 fc)
 
 uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
 	uae_u32 v;
 #if MMU_IPAGECACHE030
 	if (((addr & mmu030.translation.page.imask) | fc) == mmu030.mmu030_last_logical_address) {
@@ -2297,6 +2324,7 @@ uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc)
 		return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | (p[3]);
 #else
 		mmu030_cache_state = mmu030.mmu030_cache_state;
+		mmu030_note_access(addr, mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
 		v = x_phys_get_ilong(mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
 		return v;
 #endif
@@ -2314,6 +2342,7 @@ uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc)
 			addr = mmu030_get_i_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc, MMU030_SSW_SIZE_L);
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	v = x_phys_get_ilong(addr);
 	return v;
@@ -2321,6 +2350,7 @@ uae_u32 mmu030_get_ilong(uaecptr addr, uae_u32 fc)
 
 uae_u16 mmu030_get_iword(uaecptr addr, uae_u32 fc)
 {
+	const uaecptr laddr = addr;
 	uae_u16 v;
 #if MMU_IPAGECACHE030
 	if (((addr & mmu030.translation.page.imask) | fc) == mmu030.mmu030_last_logical_address) {
@@ -2329,6 +2359,7 @@ uae_u16 mmu030_get_iword(uaecptr addr, uae_u32 fc)
 		return (p[0] << 8) | p[1];
 #else
 		mmu030_cache_state = mmu030.mmu030_cache_state;
+		mmu030_note_access(addr, mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
 		v = x_phys_get_iword(mmu030.mmu030_last_physical_address + (addr & mmu030.translation.page.mask));
 		return v;
 #endif
@@ -2346,6 +2377,7 @@ uae_u16 mmu030_get_iword(uaecptr addr, uae_u32 fc)
 			addr = mmu030_get_i_atc(addr, mmu030_logical_is_in_atc(addr, fc, false), fc, MMU030_SSW_SIZE_W);
 		}
 	}
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	v = x_phys_get_iword(addr);
 	return v;
@@ -2355,6 +2387,7 @@ uae_u16 mmu030_get_iword(uaecptr addr, uae_u32 fc)
 
 static void mmu030_put_generic_lrmw(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int flags)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_lrmw_ttr_access(addr,fc)) && mmu030.enabled) {
 		int atc_line_num = mmu030_logical_is_in_atc(addr, fc, true);
@@ -2367,6 +2400,7 @@ static void mmu030_put_generic_lrmw(uaecptr addr, uae_u32 val, uae_u32 fc, int s
 		}
 	}
 
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	if (size == sz_byte)
 		x_phys_put_byte(addr, val);
@@ -2378,6 +2412,7 @@ static void mmu030_put_generic_lrmw(uaecptr addr, uae_u32 val, uae_u32 fc, int s
 
 void mmu030_put_generic(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int flags)
 {
+	const uaecptr laddr = addr;
  	mmu030_cache_state = CACHE_ENABLE_ALL;
 
 	if (flags & MMU030_SSW_RM) {
@@ -2396,6 +2431,7 @@ void mmu030_put_generic(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int fla
 		}
 	}
 
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	if (size == sz_byte)
 		x_phys_put_byte(addr, val);
@@ -2407,6 +2443,7 @@ void mmu030_put_generic(uaecptr addr, uae_u32 val, uae_u32 fc, int size, int fla
 
 static uae_u32 mmu030_get_generic_lrmw(uaecptr addr, uae_u32 fc, int size, int flags)
 {
+	const uaecptr laddr = addr;
 	uae_u32 v;
 	mmu030_cache_state = CACHE_ENABLE_ALL;
 	if (fc != 7 && (!tt_enabled || !mmu030_match_lrmw_ttr_access(addr,fc)) && mmu030.enabled) {
@@ -2420,6 +2457,7 @@ static uae_u32 mmu030_get_generic_lrmw(uaecptr addr, uae_u32 fc, int size, int f
 		}
 	}
 
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	if (size == sz_byte)
 		v = x_phys_get_byte(addr);
@@ -2433,6 +2471,7 @@ static uae_u32 mmu030_get_generic_lrmw(uaecptr addr, uae_u32 fc, int size, int f
 
 uae_u32 mmu030_get_generic(uaecptr addr, uae_u32 fc, int size, int flags)
 {
+	const uaecptr laddr = addr;
 	uae_u32 v;
 	mmu030_cache_state = CACHE_ENABLE_ALL;
 
@@ -2451,6 +2490,7 @@ uae_u32 mmu030_get_generic(uaecptr addr, uae_u32 fc, int size, int flags)
 		}
 	}
 
+	mmu030_note_access(laddr, addr);
 	cacheablecheck(addr);
 	if (size == sz_byte)
 		v = x_phys_get_byte(addr);
