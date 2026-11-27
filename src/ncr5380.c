@@ -40,6 +40,14 @@ bool bScsiEmuOn;
 static SCSI_CTRLR ScsiBus;
 
 static uint8_t Ncr5380_IRQ_Line;		/* Connected to TT MFP GPIP7 */
+static uint8_t Ncr5380_DMAC_IRQ_Line = MFP_GPIP_STATE_HIGH;	/* TT SCSI DMA, TT MFP GPIP5, active low */
+
+#define TT_SCSI_DMA_BUSERR	0x80	/* $FF8715: a transfer caused a bus error */
+#define TT_SCSI_DMA_ZERO	0x40	/* $FF8715: the byte counter is zero */
+
+static uint8_t Ncr5380_TT_DMA_BusErr;		/* TT_SCSI_DMA_BUSERR or 0 */
+
+static void Ncr5380_TT_DMAC_Set_IRQ(uint8_t Line_State);
 
 
 #define MAX_TOTAL_SCSI_DEVICES 8
@@ -683,6 +691,34 @@ static void Ncr5380_UpdateDmaAddrAndLen(uint32_t nDmaAddr, uint32_t nDataLen)
 	}
 }
 
+/*
+ * TT SCSI DMA controller: when its byte counter reaches zero (or a transfer
+ * caused a bus error) it sets the status bit in $FF8715 and pulls its
+ * interrupt line, TT MFP GPIP5, low. NetBSD splits a transfer into one DMA
+ * per physical memory segment and needs this to start the next one.
+ */
+/* Bits 7 and 6 of $FF8715 are read-only status: a CPU write does not
+ * change them (NetBSD writes 0 there to clear interrupts, then reads them) */
+static void Ncr5380_TT_DMAC_Update_Status(void)
+{
+	uint32_t nLen = (uint32_t)IoMem[0xff8709] << 24 | IoMem[0xff870b] << 16
+	                | IoMem[0xff870d] << 8 | IoMem[0xff870f];
+
+	IoMem[0xff8715] &= ~(TT_SCSI_DMA_BUSERR | TT_SCSI_DMA_ZERO);
+	IoMem[0xff8715] |= Ncr5380_TT_DMA_BusErr;
+	if (nLen == 0)
+		IoMem[0xff8715] |= TT_SCSI_DMA_ZERO;
+}
+
+static void Ncr5380_TT_DMAC_Check_End(void)
+{
+	if (ScsiBus.bDmaError)
+		Ncr5380_TT_DMA_BusErr = TT_SCSI_DMA_BUSERR;
+	Ncr5380_TT_DMAC_Update_Status();
+	if (IoMem[0xff8715] & (TT_SCSI_DMA_BUSERR | TT_SCSI_DMA_ZERO))
+		Ncr5380_TT_DMAC_Set_IRQ(MFP_GPIP_STATE_LOW);
+}
+
 static void dma_check(struct soft_scsi *ncr)
 {
 	int i, nDataLen;
@@ -755,6 +791,7 @@ static void dma_check(struct soft_scsi *ncr)
 				const uint32_t addr = nDmaAddr + nDataLen - nRemainingBytes;
 				IoMem[0xff8710 + i] = STMemory_ReadByte(addr + i);
 			}
+			Ncr5380_TT_DMAC_Check_End();
 		}
 	}
 	else if (ncr_soft_scsi.dma_direction > 0 && ScsiBus.dmawrite_to_fh)
@@ -776,6 +813,8 @@ static void dma_check(struct soft_scsi *ncr)
 			ScsiBus.status = HD_STATUS_ERROR;
 		}
 		Ncr5380_UpdateDmaAddrAndLen(nDmaAddr, nDataLen);
+		if (!Config_IsMachineFalcon())
+			Ncr5380_TT_DMAC_Check_End();
 	}
 
 	if (Config_IsMachineFalcon())
@@ -1102,6 +1141,8 @@ void Ncr5380_Reset(void)
 
 	ncr5380_reset(&ncr_soft_scsi);
 	bus_free(&ncr_soft_scsi.rscsi);
+	Ncr5380_DMAC_IRQ_Line = MFP_GPIP_STATE_HIGH;
+	Ncr5380_TT_DMA_BusErr = 0;
 
 	for (i = 0; i < MAX_TOTAL_SCSI_DEVICES; i++) {
 		if (ScsiBus.devs[i].enabled) {
@@ -1177,6 +1218,12 @@ void Ncr5380_IoMemTT_ReadByte(void)
 
 void Ncr5380_TT_DMA_Ctrl_WriteWord(void)
 {
+	/* Writing the control register ends the DMA controller's interrupt;
+	 * a new transfer (enable bit set) clears the bus error status */
+	Ncr5380_TT_DMAC_Set_IRQ(MFP_GPIP_STATE_HIGH);
+	if (IoMem[0xff8715] & 2)
+		Ncr5380_TT_DMA_BusErr = 0;
+	Ncr5380_TT_DMAC_Update_Status();
 	if (IoMem[0xff8715] & 2)
 		dma_check(&ncr_soft_scsi);
 }
@@ -1235,6 +1282,24 @@ static void Ncr5380_Change_IRQ ( uint8_t bit )
 uint8_t	Ncr5380_Get_Line_IRQ_MFP ( void )
 {
 	return Ncr5380_IRQ_Line;
+}
+
+
+static void Ncr5380_TT_DMAC_Set_IRQ(uint8_t Line_State)
+{
+	if (!Config_IsMachineTT() || Ncr5380_DMAC_IRQ_Line == Line_State)
+		return;
+	Ncr5380_DMAC_IRQ_Line = Line_State;
+	MFP_GPIP_Set_Line_Input(pMFP_TT, MFP_TT_GPIP_LINE_SCSI_DMAC, Line_State);
+}
+
+/**
+ * Return the value of the TT SCSI DMA controller's IRQ line (TT MFP GPIP5)
+ * IRQ signal is active low (1/high irq cleared, 0/low irq set)
+ */
+uint8_t	Ncr5380_Get_Line_DMAC_IRQ_MFP ( void )
+{
+	return Ncr5380_DMAC_IRQ_Line;
 }
 
 
