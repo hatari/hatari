@@ -49,13 +49,17 @@ const char HostNet_fileid[] = "Hatari hostnet.c";
 #endif
 
 #ifdef HAVE_SLIRP
-#include <slirp/libslirp.h>
+#include <libslirp.h>	/* pkg-config's include dir is .../include/slirp */
 /* 4.9 polls sockets as SOCKETs, which on 64-bit Windows don't fit an int */
 #if SLIRP_CHECK_VERSION(4, 9, 0)
 #define HN_SLIRP_SOCKETS 1
 typedef slirp_os_socket hn_socket;
 #else
 typedef int hn_socket;
+#endif
+/* slirp_ssize_t came with 4.8; before, the callbacks return ssize_t */
+#if !SLIRP_CHECK_VERSION(4, 8, 0)
+typedef ssize_t slirp_ssize_t;
 #endif
 #ifdef _WIN32
 #include <winsock2.h>
@@ -113,6 +117,7 @@ struct hostnet {
 	int q_head, q_count;
 };
 
+#ifdef HAVE_SLIRP
 static void queue_put(hostnet_t *net, const uint8_t *frame, int len)
 {
 	int slot;
@@ -145,6 +150,7 @@ static int queue_get(hostnet_t *net, uint8_t *frame, int max)
 	net->q_count--;
 	return len;
 }
+#endif
 
 
 /* ---------------------------------------------------------------- TAP */
@@ -435,7 +441,7 @@ static bool slirp_open(hostnet_t *net, const char *opts,
 	cfg.if_mtu = 1500;
 	cfg.if_mru = 1500;
 
-	/* options: net= host= dns= guest= hostfwd= (the rest to the caller) */
+	/* options: net= host= dns= guest= loopback= hostfwd= (the rest to the caller) */
 	for (o = opts; o && *o; o = strchr(o, ',') ? strchr(o, ',') + 1 : NULL)
 	{
 		if (*o == ',')
@@ -464,6 +470,17 @@ static bool slirp_open(hostnet_t *net, const char *opts,
 		else if (strncmp(o, "guest=", 6) == 0)
 		{
 			if (!parse_addr(o + 6, &cfg.vdhcp_start))
+				goto bad;
+		}
+		else if (strncmp(o, "loopback=", 9) == 0)
+		{
+			/* off: the host address (.2) no longer reaches the host's
+			 * own 127.0.0.1 */
+			if (strncmp(o + 9, "off", 3) == 0)
+				cfg.disable_host_loopback = true;
+			else if (strncmp(o + 9, "on", 2) == 0)
+				cfg.disable_host_loopback = false;
+			else
 				goto bad;
 		}
 		else if (strncmp(o, "hostfwd=", 8) == 0)

@@ -24,6 +24,8 @@ typedef struct hostnet hostnet_t;
  *   slirp                    user-mode NAT, no host setup or privileges
  *                            options: net=<a.b.c.0/nn> host=<addr>
  *                            dns=<addr> guest=<addr>
+ *                            loopback=on|off (default on: the host address
+ *                            also reaches the host's 127.0.0.1)
  *                            hostfwd=tcp|udp:[<hostaddr>:]<hostport>-[<guestaddr>]:<guestport>
  *   pcap:<if>                bridge onto a host interface (libpcap, Npcap)
  *   pcap:list                print the interfaces pcap can open

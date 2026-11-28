@@ -149,7 +149,8 @@ if(PortMidi_FOUND)
 endif(PortMidi_FOUND)
 
 # host networking (hostnet.c): both optional
-if(PKG_CONFIG_FOUND)
+option(ENABLE_SLIRP "Use libslirp for user-mode NAT networking" ON)
+if(PKG_CONFIG_FOUND AND ENABLE_SLIRP)
 	pkg_check_modules(SLIRP slirp>=4.1)
 endif()
 if(SLIRP_FOUND)
