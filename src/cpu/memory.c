@@ -27,6 +27,10 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "m68000.h"
 #include "configuration.h"
 #include "video.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#include "riebl.h"
+#endif
 
 #include "newcpu.h"
 
@@ -1199,6 +1203,111 @@ static addrbank ROMmem_bank =
     ROMmem_lget, ROMmem_wget, ABFLAG_ROM | ABFLAG_DIRECTACCESS
 };
 
+#if ENABLE_NETUSBEE
+/*
+ * The EtherNEC or NetUSBee on the cartridge port: every read in
+ * $FA0000-$FBFFFF goes to the card, which takes its data from the address.
+ * A word is one bus cycle, a long two. Writes give a bus error, as
+ * on the bare cartridge port.
+ */
+static uae_u32 REGPARAM3 NetCart_wget(uaecptr addr)
+{
+	addr &= 0xffffff;
+	return (NetUSBee_ReadByte(addr, true) << 8) | NetUSBee_ReadByte(addr + 1, false);
+}
+
+static uae_u32 REGPARAM3 NetCart_lget(uaecptr addr)
+{
+	return (NetCart_wget(addr) << 16) | NetCart_wget(addr + 2);
+}
+
+static uae_u32 REGPARAM3 NetCart_bget(uaecptr addr)
+{
+	return NetUSBee_ReadByte(addr & 0xffffff, true);
+}
+
+static addrbank NetCart_bank =
+{
+    NetCart_lget, NetCart_wget, NetCart_bget,
+    ROMmem_lput, ROMmem_wput, ROMmem_bput,
+    ROMmem_xlate, ROMmem_check, NULL, "netcart_mem" , "Network card on the cartridge port",
+    NetCart_lget, NetCart_wget, ABFLAG_IO
+};
+
+/*
+ * The VME bus with a Riebl card: the card's registers and memory answer,
+ * the rest of the window gives bus errors as without a card. The window
+ * is CE_MEMBANK_CHIP16: a long is two word cycles (D16).
+ */
+static uae_u32 REGPARAM3 RieblMem_bget(uaecptr addr)
+{
+	uint32_t off;
+
+	if (Riebl_Decode(addr, &off))
+		return Riebl_ReadByte(off);
+	return BusErrMem_bget(addr);
+}
+
+static uae_u32 REGPARAM3 RieblMem_wget(uaecptr addr)
+{
+	uint32_t off;
+
+	if (Riebl_Decode(addr, &off))
+		return Riebl_ReadWord(off);
+	return BusErrMem_wget(addr);
+}
+
+static uae_u32 REGPARAM3 RieblMem_lget(uaecptr addr)
+{
+	uint32_t off, off2;
+
+	if (Riebl_Decode(addr, &off) && Riebl_Decode(addr + 2, &off2))
+		return ((uae_u32)Riebl_ReadWord(off) << 16) | Riebl_ReadWord(off2);
+	return BusErrMem_lget(addr);
+}
+
+static void REGPARAM3 RieblMem_bput(uaecptr addr, uae_u32 val)
+{
+	uint32_t off;
+
+	if (Riebl_Decode(addr, &off))
+		Riebl_WriteByte(off, val);
+	else
+		BusErrMem_bput(addr, val);
+}
+
+static void REGPARAM3 RieblMem_wput(uaecptr addr, uae_u32 val)
+{
+	uint32_t off;
+
+	if (Riebl_Decode(addr, &off))
+		Riebl_WriteWord(off, val);
+	else
+		BusErrMem_wput(addr, val);
+}
+
+static void REGPARAM3 RieblMem_lput(uaecptr addr, uae_u32 val)
+{
+	uint32_t off, off2;
+
+	if (Riebl_Decode(addr, &off) && Riebl_Decode(addr + 2, &off2))
+	{
+		Riebl_WriteWord(off, val >> 16);
+		Riebl_WriteWord(off2, val);
+	}
+	else
+		BusErrMem_lput(addr, val);
+}
+
+static addrbank RieblMem_bank =
+{
+    RieblMem_lget, RieblMem_wget, RieblMem_bget,
+    RieblMem_lput, RieblMem_wput, RieblMem_bput,
+    BusErrMem_xlate, BusErrMem_check, NULL, "riebl_mem" , "VME bus with a Riebl card",
+    RieblMem_lget, RieblMem_wget, ABFLAG_IO
+};
+#endif
+
 static addrbank IdeMem_bank =
 {
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
@@ -1569,6 +1678,32 @@ static void fill_ce_banks (int start, int size, int banktype, int cachable )
 
 
 /*
+ * The VME regions on TT :      0xFE000000 to 0xFEFEFFFF (A24/D16) and 0xFEFF0000 to 0xFEFFFFFF (A16/D16) : total is 16 MB
+ * and on MegaSTE :             0x00A00000 to 0x00DEFFFF (A24/D16) and 0x00DF0000 to 0x00DFFFFF (A16/D16) : total is 4 MB
+ * They return bus errors, except where a Riebl card answers. On MegaSTE the
+ * VME window overlaps the standard RAM decoding, so memory_map_Standard_RAM
+ * (which runs again on each MMU config register write) calls this too.
+ */
+static void memory_map_VME ( void )
+{
+	addrbank *bank = &BusErrMem_bank;
+
+#if ENABLE_NETUSBEE
+	if ( Riebl_IsEnabled() )
+	{
+		RieblMem_bank.baseaddr = NULL;		/* No direct memory access, handlers only */
+		init_bank ( &RieblMem_bank , 0 );
+		bank = &RieblMem_bank;
+	}
+#endif
+	if ( Config_IsMachineTT() )
+		map_banks_ce(bank, VMEmem_start_TT >> 16, ( VMEmem_end_TT - VMEmem_start_TT ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+	else if ( Config_IsMachineMegaSTE() )
+		map_banks_ce(bank, VMEmem_start_MegaSTE >> 16, ( VMEmem_end_MegaSTE - VMEmem_start_MegaSTE ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+}
+
+
+/*
  * Initialize the standard RAM memory banks
  *   - Unmodified STF/STE can have a max of 4 MB, but we can allow up to 14 MB
  *     if RAM detection code is bypassed in the ROM (see tos.c)
@@ -1642,6 +1777,9 @@ void memory_map_Standard_RAM ( uint32_t MMU_Bank0_Size , uint32_t MMU_Bank1_Size
 		/* Use normal memcpy functions for video rendering */
 		Video_Set_Memcpy ( false );
 	}
+
+	if ( Config_IsMachineMegaSTE() )
+		memory_map_VME();
 }
 
 
@@ -1789,6 +1927,11 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	}
 
 	/* Cartridge memory: */
+#if ENABLE_NETUSBEE
+	if (NetUSBee_Configured())
+		map_banks_ce(&NetCart_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);
+	else
+#endif
 	map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);		/* [NP] tested on real STF, no bus wait from cartridge */
 	ROMmem_bank.baseaddr = ROMmemory;
 	ROMmem_bank.mask = ROMmem_mask;
@@ -1816,17 +1959,8 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 		map_banks_ce(&BusErrMem_bank, IdeMem_start >> 16, 0x1, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 	}
 
-	/* VME regions on TT :      0xFE000000 to 0xFEFEFFFF (A24/D16) and 0xFEFF0000 to 0xFEFFFFFF (A16/D16) : total is 16 MB */
-	/* VME regions on MegaSTE : 0x00A00000 to 0x00DEFFFF (A24/D16) and 0x00DF0000 to 0x00DFFFFF (A16/D16) : total is 4 MB */
-	/* Hatari doesn't emulate VME for now, so these regions should return bus errors */
-	if ( Config_IsMachineTT() )
-	{
-		map_banks_ce(&BusErrMem_bank, VMEmem_start_TT >> 16, ( VMEmem_end_TT - VMEmem_start_TT ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-	}
-	else if ( Config_IsMachineMegaSTE() )
-	{
-		map_banks_ce(&BusErrMem_bank, VMEmem_start_MegaSTE >> 16, ( VMEmem_end_MegaSTE - VMEmem_start_MegaSTE ) >> 16 , 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
-	}
+	/* VME regions: bus errors, or the Riebl card */
+	memory_map_VME();
 
 	/* Illegal memory regions cause a bus error on the ST: */
 	map_banks_ce(&BusErrMem_bank, 0xF10000 >> 16, 0x9, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);

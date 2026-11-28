@@ -57,6 +57,10 @@ option(ENABLE_DSP_EMU "Enable DSP 56k emulator for Falcon mode" ON)
 option(ENABLE_TRACING "Enable tracing messages for debugging" ON)
 option(ENABLE_TOOLS "Build the Hatari tools" ON)
 
+# The EtherNEC and NetUSBee network cards on the cartridge port (ne2000.c,
+# netusbee.c); their NAT needs libslirp
+option(ENABLE_NETUSBEE "EtherNEC and NetUSBee network cards" ON)
+
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
 cmake_dependent_option(ENABLE_LIBRETRO "Build a core for libretro"
@@ -147,6 +151,29 @@ find_package(PortMidi)
 if(PortMidi_FOUND)
 	set(HAVE_PORTMIDI 1)
 endif(PortMidi_FOUND)
+
+# host networking (hostnet.c): both optional
+option(ENABLE_SLIRP "Use libslirp for user-mode NAT networking" ON)
+if(PKG_CONFIG_FOUND AND ENABLE_SLIRP)
+	pkg_check_modules(SLIRP slirp>=4.1)
+endif()
+if(SLIRP_FOUND)
+	set(HAVE_SLIRP 1)
+endif()
+if(PKG_CONFIG_FOUND)
+	pkg_check_modules(PCAP libpcap)
+endif()
+if(NOT PCAP_FOUND)
+	# Npcap's SDK on Windows, or a libpcap without a .pc file
+	find_path(PCAP_INCLUDE_DIRS pcap/pcap.h)
+	find_library(PCAP_LIBRARIES NAMES pcap wpcap)
+	if(PCAP_INCLUDE_DIRS AND PCAP_LIBRARIES)
+		set(PCAP_FOUND 1)
+	endif()
+endif()
+if(PCAP_FOUND)
+	set(HAVE_PCAP 1)
+endif()
 
 find_package(CapsImage)
 if(CapsImage_FOUND)
@@ -506,6 +533,18 @@ else()
   message( "  - portmidi :\tnot found, install it for MIDI support on Windows / OSX" )
 endif(PortMidi_FOUND)
 
+if(SLIRP_FOUND)
+  message( "  - slirp :\tfound, user-mode NAT networking (any OS)" )
+else()
+  message( "  - slirp :\tnot found, install libslirp for networking without host setup" )
+endif(SLIRP_FOUND)
+
+if(PCAP_FOUND)
+  message( "  - pcap :\tfound, bridged networking" )
+else()
+  message( "  - pcap :\tnot found, install libpcap (Npcap on Windows) for bridged networking" )
+endif(PCAP_FOUND)
+
 if(CapsImage_FOUND)
   message( "  - capsimage :\tv5 found, allow to use .IPF, .RAW and .CTR disk images" )
 else()
@@ -527,6 +566,12 @@ else()
     message( "          \tNatFeats SCSI devices on udev-based systems (Linux)" )
   endif()
 endif(Udev_FOUND)
+
+if(ENABLE_NETUSBEE)
+  message( "  - netusbee :\tEtherNEC and NetUSBee network cards (see doc/netusbee.txt)" )
+else()
+  message( "  - netusbee :\tno network cards (off)" )
+endif(ENABLE_NETUSBEE)
 
 if(Capstone_FOUND)
   message( "  - capstone :\tfound, allows nice disassembly with --disasm ext" )

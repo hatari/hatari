@@ -1,0 +1,148 @@
+Contents:
+
+1. Introduction
+2. Setup
+3. Options
+4. The network
+5. The cartridge port
+6. Drivers
+7. The code
+
+
+1. Introduction
+---------------
+
+Hatari can put a network card on the cartridge port:
+
+- EtherNEC: an NE2000 (RTL8019AS) network card, after the design of
+  Dr. Thomas Redelberger.
+- NetUSBee: the same NE2000, and an ISP1160 USB host with two ports.
+  The USB host is not emulated yet: the NetUSBee works as an EtherNEC.
+
+Hatari puts the card on the cartridge port of every machine: ST, STE,
+Mega ST, Mega STE, TT and Falcon.
+
+The card reaches the host's network through a NAT (libslirp, as in QEMU):
+no TAP device, no root, no other program.
+
+
+2. Setup
+--------
+
+1. Build Hatari with libslirp (and glib, which libslirp needs): CMake
+   says "- slirp : found" in its summary. Without libslirp the card is
+   there, but not connected to a network. -DENABLE_NETUSBEE=OFF takes
+   the cards out.
+
+2. Start Hatari with a card:
+       hatari --ethernec on
+   or
+       hatari --netusbee on
+
+3. In the guest, load a driver (see 6) and set the network:
+       IP address   10.0.2.15, netmask 255.255.255.0
+       gateway      10.0.2.2
+       DNS          10.0.2.3
+   The NAT also serves DHCP (it gives 10.0.2.15).
+
+
+3. Options
+----------
+
+--ethernec <bool>
+	Put an EtherNEC on the cartridge port.
+--netusbee <bool>
+	Put a NetUSBee on the cartridge port.
+--nat <bool>
+	Connect the card to the host's network through the NAT (default
+	on). Off: the card is on a network of its own.
+--nat-forwards <list>
+	Host ports that go to the guest, comma separated, each one
+	tcp|udp:bind-ip:host-port:guest-port. For example
+	tcp:127.0.0.1:2323:23 lets "telnet localhost 2323" on the host
+	reach the guest's telnet server.
+--nat-loopback <bool>
+	The gateway, 10.0.2.2, reaches the host's own 127.0.0.1 (default
+	off). Then the guest can use a server that listens only on the
+	host's loopback, such as a web proxy. Every service on the host's
+	loopback is open to the guest.
+
+The configuration file keeps them in its [Net] section: nCartDevice
+(0 none, 1 EtherNEC, 2 NetUSBee), bNat, szNatForwards and
+bNatLoopback.
+
+A change of card needs a cold reset. A change of the NAT options
+applies at once (the open connections close).
+
+
+4. The network
+--------------
+
+The NAT is libslirp, through hostnet.c:
+
+- the guest is 10.0.2.15, the gateway 10.0.2.2, DNS 10.0.2.3
+- TCP and UDP from the guest go out through the host's sockets, as if
+  Hatari itself opened them; ping works to the gateway and DNS
+- DNS questions go to the host's resolver
+- --nat-forwards opens host ports to the guest
+
+Hatari moves frames from the NAT into the card at each VBL, and right
+after the guest sends one. While the card's receive ring is full, the
+next frame waits: it is not lost.
+
+The card's address is 02:4E:53:54:00:01. NetBSD shows it as
+02:02:4e:4e:53:53: its driver reads the address PROM as an NE1000 does,
+and each PROM byte is there twice.
+
+
+5. The cartridge port
+---------------------
+
+The card holds the cartridge port, as the real card does. So while a
+card is on, Hatari has none of what needs its own cartridge code:
+
+- no cartridge image (--cartridge)
+- no GEMDOS HD folder (--harddrive): use an ACSI, SCSI or IDE disk image
+  instead
+- no extended VDI mode (--vdi)
+- no autostart, no GEMDOS, VDI or AES tracing
+
+Hatari says so when it starts.
+
+The cartridge port can only be read. The card's driver writes a register
+with a read at $FB0000 + register * 512 + data * 2, and reads a register
+at $FA0000 + register * 512. Registers 0-15 are the NE2000's, 16-23 its
+data port (8 bits), 24-31 its reset port. A word read is one bus cycle;
+the NE2000 drives the even byte only.
+
+The card has no interrupt line: the drivers poll it. A snapshot keeps
+the chip's registers and its 32 KB of buffer memory, not the network
+connections.
+
+
+6. Drivers
+----------
+
+The EtherNEC drivers, unchanged, work with both cards. Tested:
+- STinG: ENEC.STX (Thomas Redelberger). Tested with STinG 1.26 on a
+  Mega ST with TOS 2.06: ping, DNS, Telnet, FTP_SERV.
+- NetBSD/atari: ne0 ("EtherNEC on Atari ROM cartridge slot"). Tested
+  with NetBSD 6.1.4 on the TT: ping, DNS, ftp(1), telnetd. (NetBSD
+  needs the TT fixes that are sent on their own.)
+Not tested yet: the EtherNEC .XIF driver of MiNTnet (FreeMiNT), and
+MagiCNet.
+
+
+7. The code
+-----------
+
+src/ne2000.c	the NE2000 chip: a DP8390 with the RTL8019AS ID and
+		page 3 registers. From QEMU's hw/net/ne2000.c (MIT
+		license, see the file), without the host side.
+src/netusbee.c	the card: the cartridge port wiring, the NAT through
+		hostnet.c, the options, snapshots
+		(src/includes/netusbee.h)
+
+Hatari calls it from cpu/memory.c (the $FA0000-$FBFFFF bank), reset.c,
+video.c (each VBL), cart.c and tos.c (no cartridge code with a card), memorySnapShot.c,
+change.c, options.c and configuration.c.

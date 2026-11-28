@@ -62,6 +62,7 @@
 #include "stMemory.h"
 #include "blitter.h"
 #include "scc.h"
+#include "riebl.h"
 #endif
 
 
@@ -2965,7 +2966,13 @@ static int iack_cycle(int nr)
 	}
 	if ( nr == 29 )								/* SCC (level 5) */
         {
-		vector = SCC_Process_IACK ();
+#if ENABLE_NETUSBEE
+		/* The SCC is first on the IACK daisy chain, then the VME cards */
+		if ( SCC_Get_Line_IRQ() != SCC_IRQ_ON && Riebl_GetIRQ() )
+			vector = Riebl_Process_IACK ();
+		else
+#endif
+			vector = SCC_Process_IACK ();
 	}
 	else if ( ( nr == 26 ) || ( nr == 28 ) )				/* HBL (level 2) or VBL (level 6) */
 	{

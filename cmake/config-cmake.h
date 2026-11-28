@@ -9,6 +9,12 @@
 /* Define if you have the PortMidi library */
 #cmakedefine HAVE_PORTMIDI 1
 
+/* Define if you have libslirp (user-mode NAT networking) */
+#cmakedefine HAVE_SLIRP 1
+
+/* Define if you have libpcap / Npcap (bridged networking) */
+#cmakedefine HAVE_PCAP 1
+
 /* Define if you have the libarchive library */
 #cmakedefine HAVE_LIBARCHIVE 1
 
@@ -110,6 +116,9 @@
 
 /* Define to 1 to use SDL3 instead of SDL2 */
 #cmakedefine ENABLE_SDL3 1
+
+/* The EtherNEC and NetUSBee network cards on the cartridge port */
+#cmakedefine ENABLE_NETUSBEE 1
 
 /* Define to 1 to enable trace logs - undefine to slightly increase speed */
 #cmakedefine ENABLE_TRACING 1

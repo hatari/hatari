@@ -456,6 +456,10 @@ const char Video_fileid[] = "Hatari video.c";
 #include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#include "riebl.h"
+#endif
 #include "ymFormat.h"
 #include "falcon/videl.h"
 #include "blitter.h"
@@ -5087,6 +5091,12 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Process shortcut keys */
 	ShortCut_ActKey();
+
+#if ENABLE_NETUSBEE
+	/* The network cards: frames from the network */
+	NetUSBee_Vbl();
+	Riebl_Vbl();
+#endif
 
 	/* Update the IKBD's internal clock */
 	IKBD_UpdateClockOnVBL ();

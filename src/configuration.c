@@ -12,6 +12,7 @@
 const char Configuration_fileid[] = "Hatari configuration.c";
 
 #include "main.h"
+#include "riebl.h"
 #include "configuration.h"
 #include "conv_st.h"
 #include "cfgopts.h"
@@ -506,6 +507,18 @@ static const struct Config_Tag configs_Lilo[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+/* Used to load/save the network card options */
+static const struct Config_Tag configs_Net[] =
+{
+	{ "nCartDevice", Int_Tag, &ConfigureParams.Net.nCartDevice },
+	{ "bNat", Bool_Tag, &ConfigureParams.Net.bNat },
+	{ "szNatForwards", String_Tag, ConfigureParams.Net.szNatForwards },
+	{ "bNatLoopback", Bool_Tag, &ConfigureParams.Net.bNatLoopback },
+	{ "bRiebl", Bool_Tag, &ConfigureParams.Net.bRiebl },
+	{ "nRieblAddr", Int_Tag, &ConfigureParams.Net.nRieblAddr },
+	{ NULL , Error_Tag, NULL }
+};
+
 /* Used to load/save RS232 options */
 static const struct Config_Tag configs_Rs232[] =
 {
@@ -760,6 +773,14 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Midi.sMidiOutFileName, "/dev/snd/midiC1D0");
 	strcpy(ConfigureParams.Midi.sMidiInPortName, "Off");
 	strcpy(ConfigureParams.Midi.sMidiOutPortName, "Off");
+
+	/* The network card on the cartridge port: none */
+	ConfigureParams.Net.nCartDevice = CNF_NET_CART_NONE;
+	ConfigureParams.Net.bNat = true;
+	ConfigureParams.Net.szNatForwards[0] = '\0';
+	ConfigureParams.Net.bNatLoopback = false;
+	ConfigureParams.Net.bRiebl = false;
+	ConfigureParams.Net.nRieblAddr = RIEBL_ADDR_DEFAULT;
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = false;
@@ -1124,6 +1145,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Lilo, "[LILO]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
+	Configuration_LoadSection(psFileName, configs_Net, "[Net]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
 	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
 	Configuration_LoadSection(psFileName, configs_System, "[System]");
@@ -1187,6 +1209,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Lilo, "[LILO]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
+	Configuration_SaveSection(sConfigFileName, configs_Net, "[Net]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
 	Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
 	Configuration_SaveSection(sConfigFileName, configs_System, "[System]");
@@ -1264,6 +1287,9 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MachineClocks,sizeof(MachineClocks));
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
+
+	/* the network card on the cartridge port changes the memory map */
+	MemorySnapShot_Store(&ConfigureParams.Net.nCartDevice, sizeof(ConfigureParams.Net.nCartDevice));
 
 	if (!bSave)
 		Configuration_Apply(true);

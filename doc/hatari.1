@@ -372,6 +372,37 @@ Enable SCC channel B serial port support and use <file> for the input
 Enable SCC channel B serial port support and use <file> for the output
 (only for Mega-STE, TT and Falcon)
 
+.SS "Network card options"
+.TP
+.B \-\-ethernec <bool>
+Put an EtherNEC (NE2000) network card on the cartridge port.
+See netusbee.txt
+.TP
+.B \-\-netusbee <bool>
+Put a NetUSBee (NE2000 and a USB host with 2 ports) on the cartridge port.
+Its USB host is not emulated yet.
+A card on the cartridge port turns off the cartridge image, the GEMDOS
+HD folder, the extended VDI modes and GEMDOS/VDI/AES tracing
+.TP
+.B \-\-riebl <bool>
+Put a Riebl (Am7990 LANCE) Ethernet card on the VME bus (TT and Mega STE).
+See riebl.txt
+.TP
+.B \-\-riebl\-addr <address>
+The VME A24 address of the Riebl card's memory (default 0x010000, for NetBSD;
+0xC10000 for the stock Atari System V driver)
+.TP
+.B \-\-nat <bool>
+Connect the cards to the host's network through a NAT (libslirp,
+default on). The guest is 10.0.2.15, the gateway 10.0.2.2, DNS 10.0.2.3
+.TP
+.B \-\-nat\-forwards <list>
+Host ports that go to the guest, comma separated, each one
+tcp|udp:bind-ip:host-port:guest-port
+.TP
+.B \-\-nat\-loopback <bool>
+The gateway (10.0.2.2) reaches the host's own 127.0.0.1 (default off)
+
 .SS "Floppy drive options"
 .TP
 .B \-\-drive\-a <bool>
