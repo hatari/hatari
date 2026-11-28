@@ -1748,6 +1748,14 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 		/* If there's no Fast-RAM, region 0x01000000 - 0x80000000 (2047 MB) must return bus errors */
 		map_banks_ce ( &BusErrMem_bank, TTmem_start >> 16, ( TTmem_end - TTmem_start ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
 
+		/* On the TT nothing answers above the TT-RAM space either, up to the
+		 * VME bus: 0x80000000 - 0xFDFFFFFF gives bus errors. NetBSD tells a TT
+		 * from a Hades by reading the Hades' PCI space at 0xA0010000; reading 0
+		 * there made it set up a Hades and crash at its first VME probe. The
+		 * VME bus region is mapped further down. */
+		if (Config_IsMachineTT())
+			map_banks_ce ( &BusErrMem_bank, TTmem_end >> 16, ( VMEmem_start_TT - TTmem_end ) >> 16, 0, CE_MEMBANK_CHIP16, CE_MEMBANK_NOT_CACHABLE);
+
 		if (TTmem_size > 0)
 		{
 			TTmemory = (uae_u8 *)malloc ( TTmem_size );

@@ -2212,8 +2212,10 @@ static void	MFP_GPIP_Update_TT ( MFP_STRUCT *pMFP )
 	/* Bit 5 : SCSI DMA controller */
 	if ( ( pMFP->DDR & 0x20 ) == 0 )
 	{
-		/* not emulated yet */
-		gpip_new |= 0x20;			/* set bit 5 */
+		if ( Ncr5380_Get_Line_DMAC_IRQ_MFP() )
+			gpip_new |= 0x20;		/* set bit 5 */
+		else
+			gpip_new &= ~0x20;		/* clear bit 5 */
 	}
 
 	/* Bit 4 : Disk change */
