@@ -29,6 +29,7 @@ set(SOURCES
 	floppies/scp.c
 	gemdos.c
 	hdc.c
+	hostnet.c
 	ide.c
 	ikbd.c
 	inffile.c
@@ -141,6 +142,14 @@ endif(X11_FOUND)
 if(CapsImage_FOUND)
 	include_directories(${CAPSIMAGE_INCLUDE_DIR})
 endif(CapsImage_FOUND)
+
+if(SLIRP_FOUND)
+	include_directories(${SLIRP_INCLUDE_DIRS})
+endif(SLIRP_FOUND)
+
+if(PCAP_FOUND)
+	include_directories(${PCAP_INCLUDE_DIRS})
+endif(PCAP_FOUND)
 
 if(Capstone_FOUND)
 	include_directories(${CAPSTONE_INCLUDE_DIR})
@@ -387,6 +396,28 @@ if(PortMidi_FOUND)
 		target_link_libraries(retro-hatari ${PORTMIDI_LIBRARY})
 	endif(ENABLE_LIBRETRO)
 endif(PortMidi_FOUND)
+
+if(SLIRP_FOUND)
+	if(ENABLE_HATARI)
+		target_link_directories(${APP_NAME} PRIVATE ${SLIRP_LIBRARY_DIRS})
+		target_link_libraries(${APP_NAME} ${SLIRP_LIBRARIES})
+	endif(ENABLE_HATARI)
+	if(ENABLE_LIBRETRO)
+		target_link_directories(retro-hatari PRIVATE ${SLIRP_LIBRARY_DIRS})
+		target_link_libraries(retro-hatari ${SLIRP_LIBRARIES})
+	endif(ENABLE_LIBRETRO)
+endif(SLIRP_FOUND)
+
+if(PCAP_FOUND)
+	if(ENABLE_HATARI)
+		target_link_directories(${APP_NAME} PRIVATE ${PCAP_LIBRARY_DIRS})
+		target_link_libraries(${APP_NAME} ${PCAP_LIBRARIES})
+	endif(ENABLE_HATARI)
+	if(ENABLE_LIBRETRO)
+		target_link_directories(retro-hatari PRIVATE ${PCAP_LIBRARY_DIRS})
+		target_link_libraries(retro-hatari ${PCAP_LIBRARIES})
+	endif(ENABLE_LIBRETRO)
+endif(PCAP_FOUND)
 
 if(CapsImage_FOUND)
 	if(ENABLE_HATARI)
