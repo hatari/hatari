@@ -94,6 +94,7 @@ const char M68000_fileid[] = "Hatari m68000.c";
 #include "cart.h"
 #include "cpu/cpummu.h"
 #include "cpu/cpummu030.h"
+#include "riebl.h"
 #include "scc.h"
 #include "scu_vme.h"
 #include "blitter.h"
@@ -744,7 +745,11 @@ void	M68000_Update_intlev ( void )
 	else
 		M68000_ClearIRQ ( 6 );
 
+#if ENABLE_NETUSBEE
+	if ( SCC_Get_Line_IRQ() == SCC_IRQ_ON || Riebl_GetIRQ() )	/* VME IRQ 5: the SCC and VME cards */
+#else
 	if ( SCC_Get_Line_IRQ() == SCC_IRQ_ON )
+#endif
 		M68000_SetIRQ ( 5 );
 	else
 		M68000_ClearIRQ ( 5 );

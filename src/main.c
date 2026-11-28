@@ -62,6 +62,7 @@ const char Main_fileid[] = "Hatari main.c";
 #include "hatari-glue.h"
 #if ENABLE_NETUSBEE
 #include "netusbee.h"
+#include "riebl.h"
 #endif
 
 #include "falcon/dsp.h"
@@ -348,6 +349,7 @@ void Main_UnInit(void)
 {
 #if ENABLE_NETUSBEE
 	NetUSBee_UnInit();
+	Riebl_UnInit();
 #endif
 	Control_RemoveFifo();
 

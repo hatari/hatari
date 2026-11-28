@@ -159,6 +159,8 @@ typedef enum {
 	OPT_NAT,
 	OPT_NAT_FORWARDS,
 	OPT_NAT_LOOPBACK,
+	OPT_RIEBL,
+	OPT_RIEBL_ADDR,
 #endif
 
 	OPT_DRIVEA,		/* floppy options */
@@ -418,13 +420,17 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable SCC channel B and use <file> as the output" },
 #if ENABLE_NETUSBEE
 
-	{ OPT_HEADER, NULL, NULL, NULL, "Network card (cartridge port)" },
+	{ OPT_HEADER, NULL, NULL, NULL, "Network cards (cartridge port, VME bus)" },
 	{ OPT_ETHERNEC, NULL, "--ethernec",
 	  "<bool>", "Put an EtherNEC (NE2000) network card on the cartridge port" },
 	{ OPT_NETUSBEE, NULL, "--netusbee",
 	  "<bool>", "Put a NetUSBee (NE2000; its USB host is not emulated yet) on the cartridge port" },
+	{ OPT_RIEBL, NULL, "--riebl",
+	  "<bool>", "Put a Riebl (Am7990 LANCE) Ethernet card on the VME bus (TT, Mega STE)" },
+	{ OPT_RIEBL_ADDR, NULL, "--riebl-addr",
+	  "<addr>", "VME A24 address of the Riebl card's memory (default 0x010000; 0xC10000 for Atari System V)" },
 	{ OPT_NAT, NULL, "--nat",
-	  "<bool>", "Connect the card to the host's network through a NAT (libslirp, default on)" },
+	  "<bool>", "Connect the cards to the host's network through a NAT (libslirp, default on)" },
 	{ OPT_NAT_FORWARDS, NULL, "--nat-forwards",
 	  "<list>", "Host ports to the guest: tcp|udp:bind-ip:host-port:guest-port,..." },
 	{ OPT_NAT_LOOPBACK, NULL, "--nat-loopback",
@@ -1727,6 +1733,19 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 					ConfigureParams.Net.nCartDevice = card;
 				else if (ok && ConfigureParams.Net.nCartDevice == card)
 					ConfigureParams.Net.nCartDevice = CNF_NET_CART_NONE;
+			}
+			break;
+		case OPT_RIEBL:
+			ok = Opt_Bool(arg, OPT_RIEBL, &ConfigureParams.Net.bRiebl);
+			break;
+		case OPT_RIEBL_ADDR:
+			{
+				char *end;
+				long a = strtol(arg, &end, 0);
+				if (*end || a < 0x10000 || a > 0xFE0000 || (a & 0xffff))
+					return Opt_ShowError(OPT_RIEBL_ADDR, arg,
+						"A24 address, a multiple of 0x10000 (0x10000-0xFE0000)");
+				ConfigureParams.Net.nRieblAddr = a;
 			}
 			break;
 		case OPT_NAT:

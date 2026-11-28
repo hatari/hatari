@@ -41,6 +41,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c";
 #include "hdc.h"
 #if ENABLE_NETUSBEE
 #include "netusbee.h"
+#include "riebl.h"
 #endif
 #include "ioMem.h"
 #include "log.h"
@@ -380,6 +381,7 @@ void MemorySnapShot_Capture_Do(void)
 		HDC_MemorySnapShot_Capture(true);
 #if ENABLE_NETUSBEE
 		NetUSBee_MemorySnapShot_Capture(true);
+		Riebl_MemorySnapShot_Capture(true);
 #endif
 
 		/* end marker */
@@ -481,6 +483,7 @@ void MemorySnapShot_Restore_Do(void)
 		HDC_MemorySnapShot_Capture(false);
 #if ENABLE_NETUSBEE
 		NetUSBee_MemorySnapShot_Capture(false);
+		Riebl_MemorySnapShot_Capture(false);
 #endif
 
 		/* version string check catches release-to-release

@@ -47,6 +47,7 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "debugdsp.h"
 #if ENABLE_NETUSBEE
 #include "netusbee.h"
+#include "riebl.h"
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -117,6 +118,7 @@ static int Reset_ST(bool bCold)
 	HDC_Reset(bCold);
 #if ENABLE_NETUSBEE
 	NetUSBee_Reset(bCold);        /* Network card (the cartridge port has no reset line) */
+	Riebl_Reset(bCold);           /* Network card on the VME bus */
 #endif
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();

@@ -43,6 +43,7 @@ const char Change_fileid[] = "Hatari change.c";
 #include "hatari-glue.h"
 #if ENABLE_NETUSBEE
 #include "netusbee.h"
+#include "riebl.h"
 #endif
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
@@ -178,6 +179,11 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 
 	/* A network card on or off changes the memory map */
 	if (current->Net.nCartDevice != changed->Net.nCartDevice)
+		return true;
+
+	/* The Riebl card (VME bus) is in the memory map */
+	if (current->Net.bRiebl != changed->Net.bRiebl ||
+	    current->Net.nRieblAddr != changed->Net.nRieblAddr)
 		return true;
 
 	return false;
@@ -514,7 +520,10 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 #if ENABLE_NETUSBEE
 	/* The NAT changes at once (the card at the reset) */
 	if (!NeedReset)
+	{
 		NetUSBee_Apply();
+		Riebl_Apply();
+	}
 #endif
 
 	/* Force things associated with screen change */

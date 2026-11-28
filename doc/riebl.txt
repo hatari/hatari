@@ -1,0 +1,52 @@
+The Riebl Ethernet card
+=======================
+
+The Riebl card is an Ethernet card for the VME bus of the TT and the
+Mega STE: an AMD Am7990 LANCE with 64 KB of memory that the CPU and the
+chip share. Hatari emulates it in src/am7990.c (the chip) and
+src/riebl.c (the card).
+
+Its network is the same NAT as the EtherNEC's (libslirp, see
+netusbee.txt): the guest is 10.0.2.15 (DHCP works), the gateway
+10.0.2.2, DNS 10.0.2.3.
+
+
+Options
+-------
+
+--riebl <bool>
+	Put the card on the VME bus (TT and Mega STE only).
+--riebl-addr <addr>
+	The VME A24 address of the card's memory, a multiple of 0x10000.
+	The registers are the 16 bytes below it. Default 0x010000: the
+	address NetBSD looks for (CPU address 0xFE010000 on a TT).
+	The stock Atari System V driver wants 0xC10000.
+--nat, --nat-forwards, --nat-loopback
+	As for the EtherNEC. With both cards on, the host ports go to the
+	EtherNEC.
+
+
+The card
+--------
+
+In the VME A24 space:
+	base - 16	word	the LANCE's data port (RDP)
+	base - 14	word	the LANCE's address port (RAP)
+	base		64 KB	the memory; the LANCE sees it at its address 0
+
+The memory has a battery. The card keeps its setup there:
+	0xEE8A	long	0x09051990 when the battery is good
+	0xEE8E	6 bytes	the Ethernet address (Hatari: 00:00:36:04:00:01)
+The card interrupts on VME IRQ 5 (the SCC's level on the TT). Its
+vector is the byte at 0xFFFF of the memory: the driver writes it.
+
+Not emulated: collisions, babble and the chip's timing (a frame goes
+out at once). Frames for a full receive ring wait in Hatari.
+
+
+Tested
+------
+
+NetBSD 6.1.4 and 1.6.2 ATARITT kernels (le0 at vme0): DHCP (6.1.4),
+ping, DNS, ntpdate, HTTP downloads at about 450-500 KB/s, telnet and
+rsh through --nat-forwards.

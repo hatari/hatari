@@ -24,6 +24,7 @@
 /* Set the card up as the configuration says: at start, and at each reset
  * (only what changed changes). */
 extern void NetUSBee_Apply(void);
+extern bool NetUSBee_NatSpec(char *spec, size_t len, bool forwards);
 extern void NetUSBee_UnInit(void);
 /* Whether a card holds the cartridge port now. */
 extern bool NetUSBee_OnCartPort(void);

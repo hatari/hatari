@@ -54,12 +54,13 @@ bool NetUSBee_OnCartPort(void)
 /*
  * The backend spec for hostnet.c from the configuration: "" without the NAT.
  * --nat-forwards is "tcp|udp:bind-ip:host-port:guest-port,..."; each becomes
- * a hostfwd= option. Returns false (and an empty spec) when it is bad.
+ * a hostfwd= option (only with forwards: one card can have the host ports).
+ * Returns false (and an empty spec) when it is bad. The Riebl card uses it too.
  */
-static bool make_spec(char *spec, size_t len)
+bool NetUSBee_NatSpec(char *spec, size_t len, bool forwards)
 {
 	const CNF_NET *n = &ConfigureParams.Net;
-	const char *p = n->szNatForwards;
+	const char *p = forwards ? n->szNatForwards : "";
 
 	spec[0] = 0;
 	if (!n->bNat)
@@ -111,7 +112,7 @@ static void apply_net(void)
 {
 	char spec[sizeof(net_spec)];
 
-	if (!make_spec(spec, sizeof(spec)))
+	if (!NetUSBee_NatSpec(spec, sizeof(spec), true))
 		spec[0] = 0;
 	if (net && strcmp(spec, net_spec) == 0)
 		return;

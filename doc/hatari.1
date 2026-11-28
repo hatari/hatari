@@ -384,8 +384,16 @@ Its USB host is not emulated yet.
 A card on the cartridge port turns off the cartridge image, the GEMDOS
 HD folder, the extended VDI modes and GEMDOS/VDI/AES tracing
 .TP
+.B \-\-riebl <bool>
+Put a Riebl (Am7990 LANCE) Ethernet card on the VME bus (TT and Mega STE).
+See riebl.txt
+.TP
+.B \-\-riebl\-addr <address>
+The VME A24 address of the Riebl card's memory (default 0x010000, for NetBSD;
+0xC10000 for the stock Atari System V driver)
+.TP
 .B \-\-nat <bool>
-Connect the card to the host's network through a NAT (libslirp,
+Connect the cards to the host's network through a NAT (libslirp,
 default on). The guest is 10.0.2.15, the gateway 10.0.2.2, DNS 10.0.2.3
 .TP
 .B \-\-nat\-forwards <list>
