@@ -57,6 +57,10 @@ option(ENABLE_DSP_EMU "Enable DSP 56k emulator for Falcon mode" ON)
 option(ENABLE_TRACING "Enable tracing messages for debugging" ON)
 option(ENABLE_TOOLS "Build the Hatari tools" ON)
 
+# The EtherNEC and NetUSBee network cards on the cartridge port (ne2000.c,
+# netusbee.c); their NAT needs libslirp
+option(ENABLE_NETUSBEE "EtherNEC and NetUSBee network cards" ON)
+
 find_path(LIBRETRO_INCLUDE_DIR libretro.h
           PATH_SUFFIXES libretro libretro-common)
 cmake_dependent_option(ENABLE_LIBRETRO "Build a core for libretro"
@@ -562,6 +566,12 @@ else()
     message( "          \tNatFeats SCSI devices on udev-based systems (Linux)" )
   endif()
 endif(Udev_FOUND)
+
+if(ENABLE_NETUSBEE)
+  message( "  - netusbee :\tEtherNEC and NetUSBee network cards (see doc/netusbee.txt)" )
+else()
+  message( "  - netusbee :\tno network cards (off)" )
+endif(ENABLE_NETUSBEE)
 
 if(Capstone_FOUND)
   message( "  - capstone :\tfound, allows nice disassembly with --disasm ext" )

@@ -70,6 +70,11 @@ set(SOURCES
 	xbios.c
 	ymFormat.c)
 
+# The EtherNEC and NetUSBee network cards on the cartridge port
+if(ENABLE_NETUSBEE)
+	list(APPEND SOURCES ne2000.c netusbee.c)
+endif(ENABLE_NETUSBEE)
+
 # Some code is shared with the hmsa tool, so we list this separately:
 set(SOURCES_HMSA
 	createBlankImage.c

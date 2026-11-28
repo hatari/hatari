@@ -33,6 +33,9 @@ const char Cart_fileid[] = "Hatari cart.c";
 #include "vdi.h"
 #include "hatari-glue.h"
 #include "newcpu.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 
 #include "cartData.c"
 
@@ -97,6 +100,11 @@ static void Cart_LoadImage(void)
 bool Cart_UseBuiltinCartridge(void)
 {
 #define NEEDS_CART (TRACE_OS_GEMDOS | TRACE_OS_BASE | TRACE_OS_VDI | TRACE_OS_AES)
+#if ENABLE_NETUSBEE
+	/* a network card holds the cartridge port */
+	if (NetUSBee_Configured())
+		return false;
+#endif
 	return (bUseVDIRes || INF_Overriding(AUTOSTART_INTERCEPT) ||
 	        ConfigureParams.HardDisk.bUseHardDiskDirectories ||
 	        LOG_TRACE_LEVEL(NEEDS_CART))
@@ -115,6 +123,22 @@ void Cart_ResetImage(void)
 {
 	/* "Clear" cartridge ROM space */
 	memset(&RomMem[0xfa0000], 0xff, 0x20000);
+
+#if ENABLE_NETUSBEE
+	/* A network card holds the cartridge port: no cartridge, and none
+	 * of what needs Hatari's own cartridge code */
+	if (NetUSBee_Configured())
+	{
+		if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0 ||
+		    ConfigureParams.HardDisk.bUseHardDiskDirectories ||
+		    INF_Overriding(AUTOSTART_INTERCEPT) || LOG_TRACE_LEVEL(NEEDS_CART))
+		{
+			Log_AlertDlg(LOG_WARN, "The network card is on the cartridge port: no cartridge image,"
+				     " GEMDOS HD folder, autostart nor GEMDOS/VDI/AES tracing.");
+		}
+		return;
+	}
+#endif
 
 	/* Print a warning if user tries to use an external cartridge file
 	 * together with something else requiring cartridge code:

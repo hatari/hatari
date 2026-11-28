@@ -41,6 +41,9 @@ const char Change_fileid[] = "Hatari change.c";
 #include "vdi.h"
 #include "video.h"
 #include "hatari-glue.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
 #endif
@@ -171,6 +174,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 
 	/* MIDI related IRQs start/stop needs reset */
 	if (current->Midi.bEnableMidi != changed->Midi.bEnableMidi)
+		return true;
+
+	/* A network card on or off changes the memory map */
+	if (current->Net.nCartDevice != changed->Net.nCartDevice)
 		return true;
 
 	return false;
@@ -503,6 +510,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			Midi_Reset();
 		}
 	}
+
+#if ENABLE_NETUSBEE
+	/* The NAT changes at once (the card at the reset) */
+	if (!NeedReset)
+		NetUSBee_Apply();
+#endif
 
 	/* Force things associated with screen change */
 	if (bScreenModeChange)

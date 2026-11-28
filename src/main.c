@@ -60,6 +60,9 @@ const char Main_fileid[] = "Hatari main.c";
 #include "clocks_timings.h"
 
 #include "hatari-glue.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 
 #include "falcon/dsp.h"
 #include "falcon/videl.h"
@@ -343,6 +346,9 @@ void Main_Init(int argc, char *argv[])
 
 void Main_UnInit(void)
 {
+#if ENABLE_NETUSBEE
+	NetUSBee_UnInit();
+#endif
 	Control_RemoveFifo();
 
 	/* cleanly close the AVI file, if needed */

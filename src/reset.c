@@ -45,6 +45,9 @@ const char Reset_fileid[] = "Hatari reset.c";
 #include "falcon/dsp.h"
 #include "debugcpu.h"
 #include "debugdsp.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -112,6 +115,9 @@ static int Reset_ST(bool bCold)
 	IKBD_Reset(bCold);            /* Keyboard (after ACIA) */
 	SCC_Reset();
 	HDC_Reset(bCold);
+#if ENABLE_NETUSBEE
+	NetUSBee_Reset(bCold);        /* Network card (the cartridge port has no reset line) */
+#endif
 	if (Config_IsMachineFalcon() && !bUseVDIRes)
 		VIDEL_reset();
 	else

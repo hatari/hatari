@@ -27,6 +27,9 @@ const char Memory_fileid[] = "Hatari memory.c";
 #include "m68000.h"
 #include "configuration.h"
 #include "video.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 
 #include "newcpu.h"
 
@@ -1199,6 +1202,38 @@ static addrbank ROMmem_bank =
     ROMmem_lget, ROMmem_wget, ABFLAG_ROM | ABFLAG_DIRECTACCESS
 };
 
+#if ENABLE_NETUSBEE
+/*
+ * The EtherNEC or NetUSBee on the cartridge port: every read in
+ * $FA0000-$FBFFFF goes to the card, which takes its data from the address.
+ * A word is one bus cycle, a long two. Writes give a bus error, as
+ * on the bare cartridge port.
+ */
+static uae_u32 REGPARAM3 NetCart_wget(uaecptr addr)
+{
+	addr &= 0xffffff;
+	return (NetUSBee_ReadByte(addr, true) << 8) | NetUSBee_ReadByte(addr + 1, false);
+}
+
+static uae_u32 REGPARAM3 NetCart_lget(uaecptr addr)
+{
+	return (NetCart_wget(addr) << 16) | NetCart_wget(addr + 2);
+}
+
+static uae_u32 REGPARAM3 NetCart_bget(uaecptr addr)
+{
+	return NetUSBee_ReadByte(addr & 0xffffff, true);
+}
+
+static addrbank NetCart_bank =
+{
+    NetCart_lget, NetCart_wget, NetCart_bget,
+    ROMmem_lput, ROMmem_wput, ROMmem_bput,
+    ROMmem_xlate, ROMmem_check, NULL, "netcart_mem" , "Network card on the cartridge port",
+    NetCart_lget, NetCart_wget, ABFLAG_IO
+};
+#endif
+
 static addrbank IdeMem_bank =
 {
     Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
@@ -1789,6 +1824,11 @@ void memory_init(uae_u32 NewSTMemSize, uae_u32 NewTTMemSize, uae_u32 NewRomMemSt
 	}
 
 	/* Cartridge memory: */
+#if ENABLE_NETUSBEE
+	if (NetUSBee_Configured())
+		map_banks_ce(&NetCart_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CE_MEMBANK_NOT_CACHABLE);
+	else
+#endif
 	map_banks_ce(&ROMmem_bank, 0xFA0000 >> 16, 0x2, 0, CE_MEMBANK_FAST16, CACHE_ENABLE_BOTH);		/* [NP] tested on real STF, no bus wait from cartridge */
 	ROMmem_bank.baseaddr = ROMmemory;
 	ROMmem_bank.mask = ROMmem_mask;

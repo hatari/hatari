@@ -336,6 +336,18 @@ typedef struct
 } CNF_SCREEN;
 
 
+/* The network card on the cartridge port (EtherNEC, NetUSBee) */
+#define CNF_NET_CART_NONE	0
+#define CNF_NET_CART_ETHERNEC	1
+#define CNF_NET_CART_NETUSBEE	2
+typedef struct
+{
+  int nCartDevice;			/* CNF_NET_CART_* */
+  bool bNat;				/* reach the host's network through the built-in NAT */
+  char szNatForwards[FILENAME_MAX];		/* "tcp:127.0.0.1:2323:23,..." host ports to the guest */
+  bool bNatLoopback;			/* the gateway reaches the host's 127.0.0.1 */
+} CNF_NET;
+
 /* Printer configuration */
 typedef struct
 {
@@ -442,6 +454,7 @@ typedef struct
   CNF_ROM Rom;
   CNF_LILO Lilo;
   CNF_RS232 RS232;
+  CNF_NET Net;
   CNF_PRINTER Printer;
   CNF_MIDI Midi;
   CNF_SYSTEM System;

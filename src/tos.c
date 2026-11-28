@@ -35,6 +35,9 @@ const char TOS_fileid[] = "Hatari tos.c";
 #include "tos.h"
 #include "lilo.h"
 #include "vdi.h"
+#if ENABLE_NETUSBEE
+#include "netusbee.h"
+#endif
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
 #include "video.h"
@@ -1190,6 +1193,15 @@ int TOS_InitImage(void)
 	/* Are we allowed VDI under this TOS? */
 	if (bUseVDIRes)
 	{
+#if ENABLE_NETUSBEE
+		if (NetUSBee_Configured())
+		{
+			/* the VDI mode needs Hatari's cartridge code */
+			Log_AlertDlg(LOG_ERROR, "Extended VDI resolutions need the cartridge port, and the network card is on it.");
+			bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = false;
+		}
+		else
+#endif
 		if (TosVersion == 0x0100)
 		{
 			/* Warn user */

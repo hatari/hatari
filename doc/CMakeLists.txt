@@ -1,6 +1,6 @@
 
 INSTALL(FILES authors.txt bugs.txt emutos.txt keymap-sample.txt
-        m68k-linux.txt memory-usage.txt midi-linux.txt
+        m68k-linux.txt memory-usage.txt midi-linux.txt netusbee.txt
 	release-notes.txt scsi-driver.txt thanks.txt todo.txt
 	video-recording.txt
 	DESTINATION ${DOCDIR})

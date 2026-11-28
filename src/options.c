@@ -153,6 +153,13 @@ typedef enum {
 	OPT_SCCA_LAN_OUT,
 	OPT_SCCB_IN,
 	OPT_SCCB_OUT,
+#if ENABLE_NETUSBEE
+	OPT_ETHERNEC,		/* network card options */
+	OPT_NETUSBEE,
+	OPT_NAT,
+	OPT_NAT_FORWARDS,
+	OPT_NAT_LOOPBACK,
+#endif
 
 	OPT_DRIVEA,		/* floppy options */
 	OPT_DRIVEB,
@@ -409,6 +416,20 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable SCC channel B and use <file> as the input" },
 	{ OPT_SCCB_OUT, NULL, "--scc-b-out",
 	  "<file>", "Enable SCC channel B and use <file> as the output" },
+#if ENABLE_NETUSBEE
+
+	{ OPT_HEADER, NULL, NULL, NULL, "Network card (cartridge port)" },
+	{ OPT_ETHERNEC, NULL, "--ethernec",
+	  "<bool>", "Put an EtherNEC (NE2000) network card on the cartridge port" },
+	{ OPT_NETUSBEE, NULL, "--netusbee",
+	  "<bool>", "Put a NetUSBee (NE2000; its USB host is not emulated yet) on the cartridge port" },
+	{ OPT_NAT, NULL, "--nat",
+	  "<bool>", "Connect the card to the host's network through a NAT (libslirp, default on)" },
+	{ OPT_NAT_FORWARDS, NULL, "--nat-forwards",
+	  "<list>", "Host ports to the guest: tcp|udp:bind-ip:host-port:guest-port,..." },
+	{ OPT_NAT_LOOPBACK, NULL, "--nat-loopback",
+	  "<bool>", "The gateway (10.0.2.2) reaches the host's 127.0.0.1 (default off)" },
+#endif
 
 	{ OPT_HEADER, NULL, NULL, NULL, "Floppy drive" },
 	{ OPT_DRIVEA, NULL, "--drive-a",
@@ -1693,6 +1714,33 @@ bool Opt_ParseParameters(int argc, const char * const argv[], int *exitval)
 					arg, sizeof(ConfigureParams.RS232.SccOutFileName[CNF_SCC_CHANNELS_B]),
 					&ConfigureParams.RS232.EnableScc[CNF_SCC_CHANNELS_B]);
 			break;
+
+#if ENABLE_NETUSBEE
+			/* network card options */
+		case OPT_ETHERNEC:
+		case OPT_NETUSBEE:
+			{
+				bool on;
+				int card = (optid == OPT_ETHERNEC) ? CNF_NET_CART_ETHERNEC : CNF_NET_CART_NETUSBEE;
+				ok = Opt_Bool(arg, optid, &on);
+				if (ok && on)
+					ConfigureParams.Net.nCartDevice = card;
+				else if (ok && ConfigureParams.Net.nCartDevice == card)
+					ConfigureParams.Net.nCartDevice = CNF_NET_CART_NONE;
+			}
+			break;
+		case OPT_NAT:
+			ok = Opt_Bool(arg, OPT_NAT, &ConfigureParams.Net.bNat);
+			break;
+		case OPT_NAT_FORWARDS:
+			if (strlen(arg) >= sizeof(ConfigureParams.Net.szNatForwards))
+				return Opt_ShowError(OPT_NAT_FORWARDS, arg, "Too long");
+			strcpy(ConfigureParams.Net.szNatForwards, arg);
+			break;
+		case OPT_NAT_LOOPBACK:
+			ok = Opt_Bool(arg, OPT_NAT_LOOPBACK, &ConfigureParams.Net.bNatLoopback);
+			break;
+#endif
 
 			/* disk options */
 		case OPT_DRIVEA:
